@@ -1,0 +1,33 @@
+import { NextResponse, type NextRequest } from "next/server";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
+
+// Handles every Supabase auth email link (signup confirmation, password
+// recovery, email change, magic link) — the email template just needs to
+// point at this route with the right `type` and an optional `next` path.
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url);
+  const tokenHash = searchParams.get("token_hash");
+  const type = searchParams.get("type") as EmailOtpType | null;
+  const next = searchParams.get("next") ?? "/dashboard";
+
+  if (tokenHash && type) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      type,
+      token_hash: tokenHash,
+    });
+
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  const message =
+    searchParams.get("error_description") ??
+    "That confirmation link is invalid or has expired.";
+
+  return NextResponse.redirect(
+    `${origin}/auth/error?message=${encodeURIComponent(message)}`,
+  );
+}

@@ -30,8 +30,8 @@ const actions = [
   {
     href: "/profile",
     icon: UserCog,
-    title: "Edit profile",
-    description: "Update your bio, region, and display name.",
+    title: "Your profile",
+    description: "View your activity and manage your account.",
   },
 ];
 

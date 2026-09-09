@@ -108,6 +108,7 @@ export async function updateProfile(
   }
 
   revalidatePath("/profile");
+  revalidatePath("/profile/settings");
   revalidatePath("/dashboard");
   return { success: true };
 }

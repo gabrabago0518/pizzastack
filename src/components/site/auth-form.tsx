@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuthFormState } from "@/lib/supabase/actions";
+import type { Game } from "@/lib/supabase/types";
 
 interface AuthFormProps {
   mode: "login" | "signup";
   action: (state: AuthFormState, formData: FormData) => Promise<AuthFormState>;
+  games?: Game[];
 }
 
-export function AuthForm({ mode, action }: AuthFormProps) {
+export function AuthForm({ mode, action, games }: AuthFormProps) {
   const [state, formAction, isPending] = useActionState<AuthFormState, FormData>(
     action,
     {},
@@ -60,6 +62,31 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
         />
       </div>
+
+      {mode === "signup" && games && games.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <Label>Games you play (optional)</Label>
+          <div className="flex flex-wrap gap-2">
+            {games.map((game) => (
+              <div key={game.id}>
+                <input
+                  type="checkbox"
+                  id={`signup-game-${game.id}`}
+                  name="gameIds"
+                  value={game.id}
+                  className="peer sr-only"
+                />
+                <label
+                  htmlFor={`signup-game-${game.id}`}
+                  className="cursor-pointer rounded-full border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-150 select-none hover:scale-[1.04] hover:text-foreground active:scale-[0.97] peer-checked:border-transparent peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background"
+                >
+                  {game.name}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {state.error ? (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

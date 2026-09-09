@@ -29,11 +29,13 @@ export async function signUp(
     return { error: "Password must be at least 8 characters." };
   }
 
+  const gameIds = formData.getAll("gameIds").map(String);
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { username } },
+    options: { data: { username, game_ids: gameIds } },
   });
 
   if (error) {

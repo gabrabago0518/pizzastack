@@ -8,10 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { updateProfile, type ProfileFormState } from "@/app/profile/actions";
+import { GamesPicker } from "@/components/site/games-picker";
 import { REGIONS } from "@/lib/regions";
-import type { Profile } from "@/lib/supabase/types";
+import type { Game, Profile } from "@/lib/supabase/types";
 
-export function ProfileForm({ profile }: { profile: Profile }) {
+export function ProfileForm({
+  profile,
+  allGames,
+  initialSelectedGameIds,
+}: {
+  profile: Profile;
+  allGames: Game[];
+  initialSelectedGameIds: string[];
+}) {
   const [state, formAction, isPending] = useActionState<ProfileFormState, FormData>(
     updateProfile,
     {},
@@ -60,6 +69,17 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             </option>
           ))}
         </SelectNative>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label>Games you play</Label>
+        <p className="text-sm text-muted-foreground">
+          Tap a game to add or remove it from your profile.
+        </p>
+        <GamesPicker
+          allGames={allGames}
+          initialSelectedIds={initialSelectedGameIds}
+        />
       </div>
 
       {state.error ? (

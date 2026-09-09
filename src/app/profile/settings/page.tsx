@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { ProfileForm } from "@/components/site/profile-form";
-import { GamesPicker } from "@/components/site/games-picker";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
@@ -44,24 +43,15 @@ export default async function ProfileSettingsPage() {
           This is what other players see on your listings and coach profile.
         </p>
 
-        <Card className="mb-8">
+        <Card>
           <CardContent>
-            <ProfileForm profile={profile} />
+            <ProfileForm
+              profile={profile}
+              allGames={allGames}
+              initialSelectedGameIds={myGames.map((game) => game.id)}
+            />
           </CardContent>
         </Card>
-
-        <div className="flex flex-col gap-3">
-          <div>
-            <h2 className="font-display text-lg">Games you play</h2>
-            <p className="text-sm text-muted-foreground">
-              Tap a game to add or remove it from your profile.
-            </p>
-          </div>
-          <GamesPicker
-            allGames={allGames}
-            initialSelectedIds={myGames.map((game) => game.id)}
-          />
-        </div>
       </div>
     </Section>
   );

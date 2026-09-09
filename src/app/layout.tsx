@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { ChatFab } from "@/components/site/chat-fab";
+import { CookieConsent } from "@/components/site/cookie-consent";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveListingIdForUser } from "@/lib/queries";
 
@@ -72,6 +73,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1">{children}</main>
         <Footer />
         <ChatFab activeListingId={activeListingId} />
+        <CookieConsent />
       </body>
     </html>
   );

@@ -40,7 +40,12 @@ export function Footer() {
 
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>&copy; {new Date().getFullYear()} Pizzastack.gg. All rights reserved.</p>
-        <p>Squad up. Level up.</p>
+        <div className="flex items-center gap-4">
+          <Link href="/privacy" className="transition-colors hover:text-foreground">
+            Privacy & Cookies
+          </Link>
+          <p>Squad up. Level up.</p>
+        </div>
       </div>
     </footer>
   );

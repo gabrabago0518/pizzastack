@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/coaches`, changeFrequency: "daily", priority: 0.8 },
     { url: `${siteUrl}/login`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${siteUrl}/signup`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${siteUrl}/privacy`, changeFrequency: "yearly", priority: 0.1 },
   ];
 
   const playerRoutes: MetadataRoute.Sitemap = (profiles ?? []).map((profile) => ({

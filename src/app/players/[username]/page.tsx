@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { Section } from "@/components/site/section";
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,21 +35,11 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
   ]);
 
   const label = profile.display_name || profile.username;
-  const initial = label.charAt(0).toUpperCase();
 
   return (
     <Section className="!pb-24">
       <div className="mb-8 flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-        <div className="flex size-28 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-border bg-muted">
-          {profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL
-            <img src={profile.avatar_url} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="font-display text-3xl text-muted-foreground">
-              {initial}
-            </span>
-          )}
-        </div>
+        <AvatarDisplay url={profile.avatar_url} label={label} />
         <div className="flex flex-col items-center gap-1.5 sm:items-start">
           <h1 className="font-display text-3xl">{label}</h1>
           <p className="text-muted-foreground">@{profile.username}</p>

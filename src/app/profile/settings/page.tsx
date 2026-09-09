@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { Section } from "@/components/site/section";
+import { AvatarUpload } from "@/components/site/avatar-upload";
 import { ProfileForm } from "@/components/site/profile-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -45,6 +46,12 @@ export default async function ProfileSettingsPage() {
 
         <Card>
           <CardContent>
+            <div className="mb-6 flex justify-center">
+              <AvatarUpload
+                initialUrl={profile.avatar_url}
+                displayLabel={profile.display_name || profile.username}
+              />
+            </div>
             <ProfileForm
               profile={profile}
               allGames={allGames}

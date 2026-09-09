@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ExternalLink, Settings } from "lucide-react";
 
 import { Section } from "@/components/site/section";
-import { AvatarUpload } from "@/components/site/avatar-upload";
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +41,9 @@ export default async function ProfilePage() {
     <Section className="!pb-24">
       <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
         <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <AvatarUpload
-            initialUrl={profile.avatar_url}
-            displayLabel={profile.display_name || profile.username}
+          <AvatarDisplay
+            url={profile.avatar_url}
+            label={profile.display_name || profile.username}
           />
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
             <h1 className="font-display text-3xl">

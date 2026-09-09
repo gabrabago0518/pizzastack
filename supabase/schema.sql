@@ -193,3 +193,30 @@ create policy "Users can delete their own avatar"
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------------
+-- profile_games: which games a player has added to their profile.
+-- ---------------------------------------------------------------------------
+create table if not exists public.profile_games (
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  game_id uuid not null references public.games (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (profile_id, game_id)
+);
+
+alter table public.profile_games enable row level security;
+
+drop policy if exists "Profile games are publicly readable" on public.profile_games;
+create policy "Profile games are publicly readable"
+  on public.profile_games for select
+  using (true);
+
+drop policy if exists "Users can add their own profile games" on public.profile_games;
+create policy "Users can add their own profile games"
+  on public.profile_games for insert
+  with check (auth.uid() = profile_id);
+
+drop policy if exists "Users can remove their own profile games" on public.profile_games;
+create policy "Users can remove their own profile games"
+  on public.profile_games for delete
+  using (auth.uid() = profile_id);

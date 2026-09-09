@@ -137,6 +137,37 @@ export interface Database {
           },
         ];
       };
+      profile_games: {
+        Row: {
+          profile_id: string;
+          game_id: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          game_id: string;
+        };
+        Update: {
+          profile_id?: string;
+          game_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_games_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profile_games_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

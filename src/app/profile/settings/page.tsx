@@ -5,9 +5,10 @@ import { ArrowLeft } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { ProfileForm } from "@/components/site/profile-form";
+import { GamesPicker } from "@/components/site/games-picker";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile } from "@/lib/queries";
+import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Profile settings — Pizzastack.gg",
@@ -24,6 +25,11 @@ export default async function ProfileSettingsPage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
+  const [allGames, myGames] = await Promise.all([
+    getGames(),
+    getGamesForProfile(user.id),
+  ]);
+
   return (
     <Section className="!pb-24">
       <div className="mx-auto max-w-xl">
@@ -37,11 +43,25 @@ export default async function ProfileSettingsPage() {
         <p className="mb-8 text-muted-foreground">
           This is what other players see on your listings and coach profile.
         </p>
-        <Card>
+
+        <Card className="mb-8">
           <CardContent>
             <ProfileForm profile={profile} />
           </CardContent>
         </Card>
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <h2 className="font-display text-lg">Games you play</h2>
+            <p className="text-sm text-muted-foreground">
+              Tap a game to add or remove it from your profile.
+            </p>
+          </div>
+          <GamesPicker
+            allGames={allGames}
+            initialSelectedIds={myGames.map((game) => game.id)}
+          />
+        </div>
       </div>
     </Section>
   );

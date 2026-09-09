@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   CoachProfileWithRelations,
   LfgPostWithRelations,
+  Game,
 } from "@/lib/supabase/types";
 
 export async function getGames() {
@@ -142,4 +143,16 @@ export async function searchCoachProfiles(query: string, limit = 12) {
     .limit(limit)
     .returns<CoachProfileWithRelations[]>();
   return data ?? [];
+}
+
+export async function getGamesForProfile(profileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profile_games")
+    .select("games(*)")
+    .eq("profile_id", profileId)
+    .returns<{ games: Game | null }[]>();
+  return (data ?? [])
+    .map((row) => row.games)
+    .filter((game): game is Game => game !== null);
 }

@@ -112,3 +112,44 @@ export async function updateProfile(
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+export interface ToggleGameResult {
+  error?: string;
+}
+
+export async function toggleProfileGame(
+  gameId: string,
+  selected: boolean,
+): Promise<ToggleGameResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to edit your profile." };
+  }
+
+  if (selected) {
+    const { error } = await supabase
+      .from("profile_games")
+      .insert({ profile_id: user.id, game_id: gameId });
+    // 23505 = unique_violation (already added) — treat as a no-op success.
+    if (error && error.code !== "23505") {
+      return { error: error.message };
+    }
+  } else {
+    const { error } = await supabase
+      .from("profile_games")
+      .delete()
+      .eq("profile_id", user.id)
+      .eq("game_id", gameId);
+    if (error) {
+      return { error: error.message };
+    }
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/profile/settings");
+  return {};
+}

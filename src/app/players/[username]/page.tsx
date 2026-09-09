@@ -8,6 +8,7 @@ import {
   getProfileByUsername,
   getLfgPostsByAuthor,
   getCoachProfilesByAuthor,
+  getGamesForProfile,
 } from "@/lib/queries";
 
 interface PlayerPageProps {
@@ -26,9 +27,10 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
   const profile = await getProfileByUsername(username);
   if (!profile) notFound();
 
-  const [posts, coachProfiles] = await Promise.all([
+  const [posts, coachProfiles, games] = await Promise.all([
     getLfgPostsByAuthor(profile.id),
     getCoachProfilesByAuthor(profile.id),
+    getGamesForProfile(profile.id),
   ]);
 
   const label = profile.display_name || profile.username;
@@ -51,6 +53,15 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
           <h1 className="font-display text-3xl">{label}</h1>
           <p className="text-muted-foreground">@{profile.username}</p>
           {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
+          {games.length > 0 ? (
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+              {games.map((game) => (
+                <Badge key={game.id} variant="secondary">
+                  {game.name}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 

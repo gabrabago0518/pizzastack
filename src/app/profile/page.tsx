@@ -13,6 +13,7 @@ import {
   getProfile,
   getLfgPostsByAuthor,
   getCoachProfilesByAuthor,
+  getGamesForProfile,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -30,9 +31,10 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles] = await Promise.all([
+  const [posts, coachProfiles, games] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
+    getGamesForProfile(user.id),
   ]);
 
   return (
@@ -57,6 +59,15 @@ export default async function ProfilePage() {
                 View public profile <ExternalLink className="size-3.5" />
               </Link>
             </div>
+            {games.length > 0 ? (
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+                {games.map((game) => (
+                  <Badge key={game.id} variant="secondary">
+                    {game.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 

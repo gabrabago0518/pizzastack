@@ -182,16 +182,16 @@ export interface Database {
           id: string;
           post_id: string;
           requester_id: string;
-          status: "pending" | "accepted" | "declined";
+          status: "pending" | "accepted" | "declined" | "removed" | "left";
           created_at: string;
         };
         Insert: {
           post_id: string;
           requester_id: string;
-          status?: "pending" | "accepted" | "declined";
+          status?: "pending" | "accepted" | "declined" | "removed" | "left";
         };
         Update: {
-          status?: "pending" | "accepted" | "declined";
+          status?: "pending" | "accepted" | "declined" | "removed" | "left";
         };
         Relationships: [
           {

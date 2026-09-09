@@ -157,6 +157,13 @@ create table if not exists public.lfg_join_requests (
   unique (post_id, requester_id)
 );
 
+-- 'removed' (owner kicked an accepted player) and 'left' (player left on
+-- their own) added after the initial three statuses.
+alter table public.lfg_join_requests drop constraint if exists lfg_join_requests_status_check;
+alter table public.lfg_join_requests
+  add constraint lfg_join_requests_status_check
+  check (status in ('pending', 'accepted', 'declined', 'removed', 'left'));
+
 alter table public.lfg_join_requests enable row level security;
 
 drop policy if exists "Requesters and post owners can view join requests" on public.lfg_join_requests;
@@ -176,9 +183,13 @@ create policy "Users can request to join a listing"
   );
 
 drop policy if exists "Post owners can respond to join requests" on public.lfg_join_requests;
-create policy "Post owners can respond to join requests"
+drop policy if exists "Owners and requesters can update join requests" on public.lfg_join_requests;
+create policy "Owners and requesters can update join requests"
   on public.lfg_join_requests for update
-  using (auth.uid() = (select author_id from public.lfg_posts where id = post_id));
+  using (
+    auth.uid() = (select author_id from public.lfg_posts where id = post_id)
+    or auth.uid() = requester_id
+  );
 
 drop policy if exists "Requesters can cancel their own pending request" on public.lfg_join_requests;
 create policy "Requesters can cancel their own pending request"

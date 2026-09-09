@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { postSystemMessage } from "@/lib/party-chat";
 
 export async function POST(
   request: Request,
@@ -37,11 +38,7 @@ export async function POST(
       .maybeSingle();
 
     if (requester) {
-      await supabase.from("lfg_messages").insert({
-        post_id: updated.post_id,
-        kind: "system",
-        body: `@${requester.username} entered the party`,
-      });
+      await postSystemMessage(supabase, updated.post_id, `@${requester.username} entered the party`);
     }
   }
 

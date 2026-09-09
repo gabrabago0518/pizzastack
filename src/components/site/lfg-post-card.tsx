@@ -6,21 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { JoinRequestsManager } from "@/components/site/join-requests-manager";
+import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { formatRelativeTime } from "@/lib/utils";
 import type { LfgPostWithRelations, JoinRequestWithRequester } from "@/lib/supabase/types";
 
-type JoinStatus = "none" | "pending" | "accepted" | "declined";
+type JoinStatus = "none" | "pending" | "accepted" | "declined" | "removed" | "left";
 
 export function LfgPostCard({
   post,
   viewerId,
+  myRequestId,
   myRequestStatus = "none",
   pendingRequests = [],
+  partyMembers = [],
 }: {
   post: LfgPostWithRelations;
   viewerId?: string;
+  myRequestId?: string;
   myRequestStatus?: JoinStatus;
   pendingRequests?: JoinRequestWithRequester[];
+  partyMembers?: JoinRequestWithRequester[];
 }) {
   const isOwner = viewerId === post.author_id;
 
@@ -89,13 +94,18 @@ export function LfgPostCard({
         </div>
 
         {isOwner ? (
-          <div className="relative">
+          <div className="relative flex flex-col gap-3">
             <JoinRequestsManager requests={pendingRequests} />
+            <PartyMembersManager members={partyMembers} />
           </div>
         ) : (
           <div className="relative flex justify-end">
             {viewerId ? (
-              <JoinRequestButton postId={post.id} initialStatus={myRequestStatus} />
+              <JoinRequestButton
+                postId={post.id}
+                requestId={myRequestId}
+                initialStatus={myRequestStatus}
+              />
             ) : (
               <Button asChild size="sm" variant="outline">
                 <Link href="/login">

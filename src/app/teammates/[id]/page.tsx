@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { JoinRequestsManager } from "@/components/site/join-requests-manager";
+import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { ListingChat } from "@/components/site/listing-chat";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -43,10 +44,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const isOwner = viewer?.id === post.author_id;
   const joinRequests = viewer ? await getJoinRequestsForPosts([post.id]) : [];
 
-  const myRequestStatus =
-    joinRequests.find((request) => request.requester_id === viewer?.id)?.status ??
-    "none";
+  const myRequest = joinRequests.find((request) => request.requester_id === viewer?.id);
+  const myRequestStatus = myRequest?.status ?? "none";
   const pendingRequests = joinRequests.filter((request) => request.status === "pending");
+  const acceptedMembers = joinRequests.filter((request) => request.status === "accepted");
 
   const chatUnlocked = Boolean(viewer) && (isOwner || myRequestStatus === "accepted");
   const messages = chatUnlocked ? await getMessagesForPost(post.id) : [];
@@ -126,11 +127,18 @@ export default async function ListingPage({ params }: ListingPageProps) {
             </div>
 
             {isOwner ? (
-              <JoinRequestsManager requests={pendingRequests} />
+              <>
+                <JoinRequestsManager requests={pendingRequests} />
+                <PartyMembersManager members={acceptedMembers} />
+              </>
             ) : (
               <div className="flex justify-end">
                 {viewer ? (
-                  <JoinRequestButton postId={post.id} initialStatus={myRequestStatus} />
+                  <JoinRequestButton
+                    postId={post.id}
+                    requestId={myRequest?.id}
+                    initialStatus={myRequestStatus}
+                  />
                 ) : (
                   <Button asChild size="sm" variant="outline">
                     <Link href="/login">

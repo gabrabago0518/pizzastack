@@ -1,17 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, UserPlus, Check, Clock } from "lucide-react";
+import { Loader2, UserPlus, Clock, LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-type JoinStatus = "none" | "pending" | "accepted" | "declined";
+type JoinStatus = "none" | "pending" | "accepted" | "declined" | "removed" | "left";
 
 export function JoinRequestButton({
   postId,
+  requestId,
   initialStatus,
 }: {
   postId: string;
+  requestId?: string;
   initialStatus: JoinStatus;
 }) {
   const [status, setStatus] = React.useState<JoinStatus>(initialStatus);
@@ -32,11 +34,32 @@ export function JoinRequestButton({
     });
   }
 
+  function handleLeave() {
+    if (!requestId) return;
+    setStatus("left");
+    setError(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/join-requests/${requestId}/leave`, {
+        method: "POST",
+      });
+      const result = (await response.json()) as { error?: string };
+      if (result.error) {
+        setStatus("accepted");
+        setError(result.error);
+      }
+    });
+  }
+
   if (status === "accepted") {
     return (
-      <Button variant="outline" size="sm" disabled className="text-accent">
-        <Check /> Accepted
-      </Button>
+      <div className="flex flex-col items-end gap-1">
+        <Button variant="outline" size="sm" onClick={handleLeave} disabled={isPending}>
+          {isPending ? <Loader2 className="animate-spin" /> : <LogOut />}
+          Leave party
+        </Button>
+        {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      </div>
     );
   }
 
@@ -44,6 +67,22 @@ export function JoinRequestButton({
     return (
       <Button variant="outline" size="sm" disabled className="text-muted-foreground">
         Declined
+      </Button>
+    );
+  }
+
+  if (status === "removed") {
+    return (
+      <Button variant="outline" size="sm" disabled className="text-muted-foreground">
+        Removed
+      </Button>
+    );
+  }
+
+  if (status === "left") {
+    return (
+      <Button variant="outline" size="sm" disabled className="text-muted-foreground">
+        Left
       </Button>
     );
   }

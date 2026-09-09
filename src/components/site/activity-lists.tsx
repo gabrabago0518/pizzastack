@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { LfgPostWithRelations, CoachProfileWithRelations } from "@/lib/supabase/types";
@@ -21,19 +23,21 @@ export function LfgPostsList({
     <ul className="flex flex-col gap-3">
       {posts.map((post) => (
         <li key={post.id}>
-          <Card>
-            <CardContent className="flex items-center justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">{post.title}</span>
-                <Badge variant="muted" className="w-fit">
-                  {post.games?.name}
+          <Link href={`/teammates/${post.id}`}>
+            <Card className="transition-colors hover:border-primary/40">
+              <CardContent className="flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium">{post.title}</span>
+                  <Badge variant="muted" className="w-fit">
+                    {post.games?.name}
+                  </Badge>
+                </div>
+                <Badge variant={post.status === "open" ? "accent" : "outline"}>
+                  {post.status}
                 </Badge>
-              </div>
-              <Badge variant={post.status === "open" ? "accent" : "outline"}>
-                {post.status}
-              </Badge>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         </li>
       ))}
     </ul>

@@ -53,6 +53,12 @@ export async function createLfgPost(
   });
 
   if (error) {
+    // 23505 = unique_violation on lfg_posts_one_open_per_author.
+    if (error.code === "23505") {
+      return {
+        error: "You already have an active listing. Close it before posting a new one.",
+      };
+    }
     return { error: error.message };
   }
 

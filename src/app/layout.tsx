@@ -3,6 +3,9 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
+import { ChatFab } from "@/components/site/chat-fab";
+import { createClient } from "@/lib/supabase/server";
+import { getActiveListingIdForUser } from "@/lib/queries";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -20,7 +23,13 @@ export const metadata: Metadata = {
     "A community hub for gamers to squad up for their next match and connect with coaches who can level up their game.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const activeListingId = user ? await getActiveListingIdForUser(user.id) : null;
+
   return (
     <html
       lang="en"
@@ -30,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        {activeListingId ? <ChatFab postId={activeListingId} /> : null}
       </body>
     </html>
   );

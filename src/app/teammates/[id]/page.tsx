@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
+import { CloseListingButton } from "@/components/site/close-listing-button";
 import { ListingChat } from "@/components/site/listing-chat";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -130,6 +131,11 @@ export default async function ListingPage({ params }: ListingPageProps) {
               <>
                 <JoinRequestsManager requests={pendingRequests} />
                 <PartyMembersManager members={acceptedMembers} />
+                {post.status === "open" ? (
+                  <div className="flex justify-end">
+                    <CloseListingButton postId={post.id} />
+                  </div>
+                ) : null}
               </>
             ) : (
               <div className="flex justify-end">

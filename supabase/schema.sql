@@ -122,6 +122,25 @@ alter table public.lfg_posts
 alter table public.lfg_posts
   add column if not exists mode text;
 
+-- Backfill: accounts predating the one-active-listing rule may already have
+-- more than one open post. Keep only the most recent one open so the unique
+-- index below can actually be created.
+update public.lfg_posts p
+set status = 'closed'
+where p.status = 'open'
+  and p.id <> (
+    select p2.id from public.lfg_posts p2
+    where p2.author_id = p.author_id and p2.status = 'open'
+    order by p2.created_at desc
+    limit 1
+  );
+
+-- A player can only have one open listing at a time — close it before
+-- posting another. Partial unique index only constrains 'open' rows.
+create unique index if not exists lfg_posts_one_open_per_author
+  on public.lfg_posts (author_id)
+  where status = 'open';
+
 alter table public.lfg_posts enable row level security;
 
 drop policy if exists "LFG posts are publicly readable" on public.lfg_posts;

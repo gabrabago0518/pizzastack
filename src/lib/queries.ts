@@ -207,6 +207,34 @@ export async function getMessagesForPost(postId: string) {
   return data ?? [];
 }
 
+// The listing to point the floating chat button at: the player's own open
+// listing takes priority, otherwise the most recent open party they're an
+// accepted member of. Returns null if neither applies.
+export async function getActiveListingIdForUser(userId: string) {
+  const supabase = await createClient();
+
+  const { data: owned } = await supabase
+    .from("lfg_posts")
+    .select("id")
+    .eq("author_id", userId)
+    .eq("status", "open")
+    .maybeSingle();
+  if (owned) return owned.id;
+
+  const { data: joined } = await supabase
+    .from("lfg_join_requests")
+    .select("post_id, lfg_posts!inner(status)")
+    .eq("requester_id", userId)
+    .eq("status", "accepted")
+    .eq("lfg_posts.status", "open")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .returns<{ post_id: string; lfg_posts: { status: string } | null }>();
+
+  return joined?.post_id ?? null;
+}
+
 export async function getGamesForProfile(profileId: string) {
   const supabase = await createClient();
   const { data } = await supabase

@@ -25,22 +25,12 @@ export async function fetchCs2RankFromLeetify(steamId64: string): Promise<Cs2Ran
   }
 
   const response = await fetch(url, { headers });
-  const rawBody = await response.text();
-
-  // TEMPORARY: log the raw response while diagnosing why ranks are coming
-  // back empty — this endpoint's shape was confirmed from a third-party
-  // wrapper's types, not Leetify's own docs (unreachable from the sandbox
-  // this was built in), so it needs verifying against a real response.
-  console.log(
-    `[leetify] GET /v3/profile?steam64_id=${steamId64} -> ${response.status}: ${rawBody.slice(0, 2000)}`,
-  );
-
   if (!response.ok) {
     if (response.status === 404) return { premierRating: null, competitiveRank: null };
     throw new Error(`Leetify request failed (${response.status})`);
   }
 
-  const data = JSON.parse(rawBody) as LeetifyProfileResponse;
+  const data = (await response.json()) as LeetifyProfileResponse;
   const competitiveRanks = data.ranks?.competitive ?? [];
   const highestCompetitiveRank = competitiveRanks.length
     ? Math.max(...competitiveRanks.map((entry) => entry.rank))

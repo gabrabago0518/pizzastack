@@ -25,7 +25,12 @@ export function LfgPostCard({
   const isOwner = viewerId === post.author_id;
 
   return (
-    <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+    <Card className="relative transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+      <Link
+        href={`/teammates/${post.id}`}
+        className="absolute inset-0 rounded-[inherit]"
+        aria-label={post.title}
+      />
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
@@ -34,14 +39,7 @@ export function LfgPostCard({
               {post.mode ? <Badge variant="outline">{post.mode}</Badge> : null}
               {post.rank ? <Badge variant="muted">{post.rank}</Badge> : null}
             </div>
-            <h3 className="font-display text-lg leading-snug">
-              <Link
-                href={`/teammates/${post.id}`}
-                className="transition-colors hover:text-primary"
-              >
-                {post.title}
-              </Link>
-            </h3>
+            <h3 className="font-display text-lg leading-snug">{post.title}</h3>
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatRelativeTime(post.created_at)}
@@ -68,7 +66,7 @@ export function LfgPostCard({
           {post.profiles?.username ? (
             <Link
               href={`/players/${post.profiles.username}`}
-              className="flex items-center gap-1.5 transition-colors hover:text-foreground"
+              className="relative flex items-center gap-1.5 transition-colors hover:text-foreground"
             >
               <Users className="size-3.5" />@{post.profiles.username}
             </Link>
@@ -91,9 +89,11 @@ export function LfgPostCard({
         </div>
 
         {isOwner ? (
-          <JoinRequestsManager requests={pendingRequests} />
+          <div className="relative">
+            <JoinRequestsManager requests={pendingRequests} />
+          </div>
         ) : (
-          <div className="flex justify-end">
+          <div className="relative flex justify-end">
             {viewerId ? (
               <JoinRequestButton postId={post.id} initialStatus={myRequestStatus} />
             ) : (

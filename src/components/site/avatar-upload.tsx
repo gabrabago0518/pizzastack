@@ -4,6 +4,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 
+import { AvatarCropDialog } from "@/components/site/avatar-crop-dialog";
 import { uploadAvatar, type AvatarFormState } from "@/app/profile/actions";
 
 export function AvatarUpload({
@@ -18,7 +19,8 @@ export function AvatarUpload({
     {},
   );
   const [preview, setPreview] = React.useState<string | null>(initialUrl);
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const [cropSrc, setCropSrc] = React.useState<string | null>(null);
+  const [cropOpen, setCropOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Fall back to the last confirmed avatar if the upload failed, so a
@@ -27,15 +29,25 @@ export function AvatarUpload({
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    formRef.current?.requestSubmit();
+    setCropSrc(URL.createObjectURL(file));
+    setCropOpen(true);
+  }
+
+  function handleCropped(blob: Blob) {
+    setPreview(URL.createObjectURL(blob));
+    const formData = new FormData();
+    formData.set("avatar", blob, "avatar.png");
+    React.startTransition(() => {
+      formAction(formData);
+    });
   }
 
   const initial = displayLabel.charAt(0).toUpperCase() || "?";
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -73,6 +85,16 @@ export function AvatarUpload({
           "Click to change avatar"
         )}
       </p>
-    </form>
+
+      {cropSrc ? (
+        <AvatarCropDialog
+          key={cropSrc}
+          imageSrc={cropSrc}
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          onCropped={handleCropped}
+        />
+      ) : null}
+    </div>
   );
 }

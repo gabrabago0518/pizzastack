@@ -11,7 +11,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Profile settings — Pizzastack.gg",
+  title: "Profile Settings",
+  robots: { index: false, follow: false },
 };
 
 export default async function ProfileSettingsPage() {

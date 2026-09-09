@@ -28,7 +28,20 @@ export async function generateMetadata({
   params,
 }: PlayerPageProps): Promise<Metadata> {
   const { username } = await params;
-  return { title: `@${username} — Pizzastack.gg` };
+  const profile = await getProfileByUsername(username);
+  if (!profile) return { title: "Player not found" };
+
+  const label = profile.display_name || profile.username;
+  const description = profile.bio
+    ? profile.bio.slice(0, 155)
+    : `@${profile.username}'s gaming profile on Pizzastack.gg${
+        profile.region ? ` — ${profile.region}` : ""
+      }.`;
+
+  return {
+    title: `${label} (@${profile.username})`,
+    description,
+  };
 }
 
 export default async function PlayerProfilePage({ params }: PlayerPageProps) {

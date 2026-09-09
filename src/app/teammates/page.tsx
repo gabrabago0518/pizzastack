@@ -11,7 +11,10 @@ import { getGames, getLfgPosts, getJoinRequestsForPosts } from "@/lib/queries";
 import type { JoinRequestWithRequester } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
-  title: "Find Teammates — Pizzastack.gg",
+  title: "Find Teammates",
+  description:
+    "Browse open LFG listings from players looking for a squad, a duo, or a fifth. Filter by game and jump in.",
+  alternates: { canonical: "/teammates" },
 };
 
 export default async function TeammatesPage({

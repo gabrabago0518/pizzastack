@@ -29,7 +29,16 @@ export async function generateMetadata({
 }: ListingPageProps): Promise<Metadata> {
   const { id } = await params;
   const post = await getLfgPostById(id);
-  return { title: post ? `${post.title} — Pizzastack.gg` : "Listing — Pizzastack.gg" };
+  if (!post) return { title: "Listing not found" };
+
+  const details = [post.games?.name, post.mode, post.rank, post.region].filter(Boolean);
+  const description =
+    post.description ||
+    `${details.join(" · ")} — looking for ${post.players_needed} more player${
+      post.players_needed === 1 ? "" : "s"
+    } on Pizzastack.gg.`;
+
+  return { title: post.title, description };
 }
 
 export default async function ListingPage({ params }: ListingPageProps) {

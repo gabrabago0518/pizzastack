@@ -17,10 +17,42 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pizzastack.gg";
+const siteDescription =
+  "A community hub for gamers to squad up for their next match and connect with coaches who can level up their game.";
+
 export const metadata: Metadata = {
-  title: "Pizzastack.gg — Find teammates. Find coaches.",
-  description:
-    "A community hub for gamers to squad up for their next match and connect with coaches who can level up their game.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Pizzastack.gg — Find teammates. Find coaches.",
+    template: "%s — Pizzastack.gg",
+  },
+  description: siteDescription,
+  keywords: [
+    "find teammates",
+    "looking for group",
+    "LFG",
+    "gaming community",
+    "squad finder",
+    "esports coaching",
+    "game coach",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "Pizzastack.gg",
+    title: "Pizzastack.gg — Find teammates. Find coaches.",
+    description: siteDescription,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pizzastack.gg — Find teammates. Find coaches.",
+    description: siteDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

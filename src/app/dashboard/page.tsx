@@ -16,7 +16,8 @@ import {
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Pizzastack.gg",
+  title: "Dashboard",
+  robots: { index: false, follow: false },
 };
 
 const actions = [

@@ -5,7 +5,8 @@ import { CoachForm } from "@/components/site/coach-form";
 import { getGames } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Become a coach — Pizzastack.gg",
+  title: "Become a Coach",
+  robots: { index: false, follow: false },
 };
 
 export default async function NewCoachProfilePage() {

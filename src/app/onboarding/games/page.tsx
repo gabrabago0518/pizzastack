@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getGames, getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "What do you play? — Pizzastack.gg",
+  title: "What Do You Play?",
+  robots: { index: false, follow: false },
 };
 
 export default async function OnboardingGamesPage() {

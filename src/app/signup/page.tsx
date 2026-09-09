@@ -5,7 +5,9 @@ import { AuthForm } from "@/components/site/auth-form";
 import { signUp } from "@/lib/supabase/actions";
 
 export const metadata: Metadata = {
-  title: "Sign up — Pizzastack.gg",
+  title: "Sign Up",
+  description:
+    "Create a free Pizzastack.gg account to find teammates, post LFG listings, and connect with coaches.",
 };
 
 export default function SignupPage() {

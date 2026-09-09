@@ -19,7 +19,11 @@ export async function generateMetadata({
   searchParams,
 }: SearchPageProps): Promise<Metadata> {
   const { q } = await searchParams;
-  return { title: q ? `"${q}" — Search — Pizzastack.gg` : "Search — Pizzastack.gg" };
+  return {
+    title: q ? `"${q}" search results` : "Search",
+    description: "Search for players, coach listings, and LFG squads on Pizzastack.gg.",
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {

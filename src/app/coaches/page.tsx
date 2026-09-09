@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { getGames, getCoachProfiles } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Find Coaches — Pizzastack.gg",
+  title: "Find Coaches",
+  description:
+    "Browse players who coach your game and reach out directly — no fees, no booking system.",
+  alternates: { canonical: "/coaches" },
 };
 
 export default async function CoachesPage({

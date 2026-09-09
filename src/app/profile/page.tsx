@@ -18,7 +18,8 @@ import {
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Your profile — Pizzastack.gg",
+  title: "Your Profile",
+  robots: { index: false, follow: false },
 };
 
 export default async function ProfilePage() {

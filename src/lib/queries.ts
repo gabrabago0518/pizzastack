@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CoachProfileWithRelations,
@@ -40,7 +41,9 @@ export async function getLfgPosts(gameSlug?: string) {
   return data ?? [];
 }
 
-export async function getLfgPostById(id: string) {
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getLfgPostById = cache(async (id: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lfg_posts")
@@ -49,7 +52,7 @@ export async function getLfgPostById(id: string) {
     .maybeSingle()
     .returns<LfgPostWithRelations>();
   return data;
-}
+});
 
 export async function getCoachProfiles(gameSlug?: string) {
   const supabase = await createClient();
@@ -76,7 +79,9 @@ export async function getProfile(userId: string) {
   return data;
 }
 
-export async function getProfileByUsername(username: string) {
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getProfileByUsername = cache(async (username: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
@@ -84,7 +89,7 @@ export async function getProfileByUsername(username: string) {
     .eq("username", username)
     .single();
   return data;
-}
+});
 
 export async function getLfgPostsByAuthor(userId: string) {
   const supabase = await createClient();

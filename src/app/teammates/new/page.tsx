@@ -5,7 +5,8 @@ import { LfgForm } from "@/components/site/lfg-form";
 import { getGames } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Post a listing — Pizzastack.gg",
+  title: "Post a Listing",
+  robots: { index: false, follow: false },
 };
 
 export default async function NewLfgPostPage() {

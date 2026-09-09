@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useActionState } from "react";
 import Link from "next/link";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
+import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
 import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
@@ -136,7 +137,7 @@ export function LfgForm({
             <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
               {dotaRankTier ? (
                 <>
-                  <ShieldCheck className="size-4 text-secondary" />
+                  <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
                   {formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
                 </>
               ) : (

@@ -317,11 +317,15 @@ create table if not exists public.coach_profiles (
   unique (profile_id, game_id)
 );
 
--- rank: a snapshot of the coach's verified rank at signup time, for games
--- with a data source (currently just Dota 2, via profiles.dota_rank_tier).
--- Set by the server from verified profile data, never from the form.
+-- rank/rank_tier: a snapshot of the coach's verified rank at signup time,
+-- for games with a data source (currently just Dota 2, via
+-- profiles.dota_rank_tier/dota_rank_tier). rank is the display label,
+-- rank_tier the raw numeric medal used to pick the right rank icon. Both
+-- set by the server from verified profile data, never from the form.
 alter table public.coach_profiles
   add column if not exists rank text;
+alter table public.coach_profiles
+  add column if not exists rank_tier smallint;
 
 alter table public.coach_profiles enable row level security;
 

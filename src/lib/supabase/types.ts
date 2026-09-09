@@ -126,6 +126,7 @@ export interface Database {
           rate_note: string | null;
           contact_method: string;
           rank: string | null;
+          rank_tier: number | null;
           created_at: string;
         };
         Insert: {
@@ -136,6 +137,7 @@ export interface Database {
           rate_note?: string | null;
           contact_method: string;
           rank?: string | null;
+          rank_tier?: number | null;
         };
         Update: {
           headline?: string;
@@ -143,6 +145,7 @@ export interface Database {
           rate_note?: string | null;
           contact_method?: string;
           rank?: string | null;
+          rank_tier?: number | null;
         };
         Relationships: [
           {

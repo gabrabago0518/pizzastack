@@ -43,6 +43,7 @@ export async function createCoachProfile(
   // Dota 2 coaches are qualified by their Steam-verified rank, never a
   // self-reported one — so it's looked up server-side, not taken from the form.
   let rank: string | null = null;
+  let rankTier: number | null = null;
   if (game?.slug === "dota-2") {
     const { data: profile } = await supabase
       .from("profiles")
@@ -56,6 +57,7 @@ export async function createCoachProfile(
       };
     }
     rank = formatDotaRank(profile.dota_rank_tier, profile.dota_leaderboard_rank);
+    rankTier = profile.dota_rank_tier;
   }
 
   const { error } = await supabase.from("coach_profiles").insert({
@@ -66,6 +68,7 @@ export async function createCoachProfile(
     rate_note: rateNote || null,
     contact_method: contactMethod,
     rank,
+    rank_tier: rankTier,
   });
 
   if (error) {

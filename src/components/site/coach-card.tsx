@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { MessageCircle, MapPin, ShieldCheck } from "lucide-react";
+import { MessageCircle, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import type { CoachProfileWithRelations } from "@/lib/supabase/types";
 
 export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
@@ -14,7 +15,7 @@ export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
             <Badge variant="secondary">{coach.games?.name ?? "Unknown game"}</Badge>
             {coach.rank ? (
               <Badge variant="muted">
-                <ShieldCheck /> {coach.rank}
+                <DotaRankIcon rankTier={coach.rank_tier} className="size-3.5" /> {coach.rank}
               </Badge>
             ) : null}
             {coach.rate_note ? <Badge variant="muted">{coach.rate_note}</Badge> : null}

@@ -53,35 +53,40 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
   return (
     <Section className="!pb-24">
-      <div className="mb-8 flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-        <AvatarDisplay url={profile.avatar_url} label={label} />
-        <div className="flex flex-col items-center gap-1.5 sm:items-start">
-          <h1 className="font-display text-3xl">{label}</h1>
-          <p className="text-muted-foreground">@{profile.username}</p>
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
-            {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
-            {viewer && !isOwnProfile ? (
-              <CommendButton
-                profileId={profile.id}
-                initialCommended={viewerHasCommended}
-                initialCount={commendCount}
-              />
-            ) : (
-              <Badge variant="secondary">
-                <Award /> {commendCount} {commendCount === 1 ? "commend" : "commends"}
-              </Badge>
-            )}
+      <div className="mb-8 flex flex-col items-center justify-between gap-6 sm:flex-row">
+        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+          <AvatarDisplay url={profile.avatar_url} label={label} />
+          <div className="flex flex-col items-center gap-1.5 sm:items-start">
+            <h1 className="font-display text-3xl">{label}</h1>
+            <p className="text-muted-foreground">@{profile.username}</p>
+            {profile.region ? (
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+                <Badge variant="muted">{profile.region}</Badge>
+              </div>
+            ) : null}
+            {games.length > 0 ? (
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+                {games.map((game) => (
+                  <Badge key={game.id} variant="secondary">
+                    {game.name}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
           </div>
-          {games.length > 0 ? (
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
-              {games.map((game) => (
-                <Badge key={game.id} variant="secondary">
-                  {game.name}
-                </Badge>
-              ))}
-            </div>
-          ) : null}
         </div>
+
+        {viewer && !isOwnProfile ? (
+          <CommendButton
+            profileId={profile.id}
+            initialCommended={viewerHasCommended}
+            initialCount={commendCount}
+          />
+        ) : (
+          <Badge variant="secondary">
+            <Award /> {commendCount} {commendCount === 1 ? "commend" : "commends"}
+          </Badge>
+        )}
       </div>
 
       {profile.bio ? (

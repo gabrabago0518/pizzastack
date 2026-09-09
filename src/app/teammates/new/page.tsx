@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { LfgForm } from "@/components/site/lfg-form";
+import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getGames, getProfile, getOwnOpenListingId } from "@/lib/queries";
@@ -34,7 +35,10 @@ export default async function NewLfgPostPage() {
             You already have an active listing — close it before posting a new one.
           </p>
           <Button asChild size="lg">
-            <Link href={`/teammates/${ownOpenListingId}`}>View your listing</Link>
+            <Link href={`/teammates/${ownOpenListingId}`}>
+              View your listing
+              <ListingLoadingOverlay />
+            </Link>
           </Button>
         </div>
       </Section>

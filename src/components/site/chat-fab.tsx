@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MessageCircle, X, Bot, Users, Gamepad2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { cn } from "@/lib/utils";
 
 function FabRow({
@@ -72,6 +73,7 @@ export function ChatFab({ activeListingId }: { activeListingId: string | null })
           {activeListingId ? (
             <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>
               <FabRow icon={Gamepad2} label="Current listing" delay={0} />
+              <ListingLoadingOverlay />
             </Link>
           ) : (
             <FabRow

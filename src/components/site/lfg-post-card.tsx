@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
+import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { formatRelativeTime } from "@/lib/utils";
 import type { LfgPostWithRelations, JoinRequestWithRequester } from "@/lib/supabase/types";
 
@@ -35,7 +36,9 @@ export function LfgPostCard({
         href={`/teammates/${post.id}`}
         className="absolute inset-0 rounded-[inherit]"
         aria-label={post.title}
-      />
+      >
+        <ListingLoadingOverlay />
+      </Link>
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">

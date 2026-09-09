@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +14,11 @@ import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
 import { MODES_BY_GAME, FALLBACK_MODES } from "@/lib/modes";
+import { formatDotaRank } from "@/lib/dota-rank";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
+
+const DOTA_2_SLUG = "dota-2";
 
 function RolesPicker({ options, disabled }: { options: string[]; disabled: boolean }) {
   const [selected, setSelected] = React.useState<string[]>([]);
@@ -56,7 +60,15 @@ function RolesPicker({ options, disabled }: { options: string[]; disabled: boole
   );
 }
 
-export function LfgForm({ games }: { games: Game[] }) {
+export function LfgForm({
+  games,
+  dotaRankTier,
+  dotaLeaderboardRank,
+}: {
+  games: Game[];
+  dotaRankTier: number | null;
+  dotaLeaderboardRank: number | null;
+}) {
   const [state, formAction, isPending] = useActionState<LfgFormState, FormData>(
     createLfgPost,
     {},
@@ -64,6 +76,7 @@ export function LfgForm({ games }: { games: Game[] }) {
   const [selectedGameId, setSelectedGameId] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
+  const isDota2 = selectedGame?.slug === DOTA_2_SLUG;
   const modeOptions = selectedGame
     ? (MODES_BY_GAME[selectedGame.slug] ?? FALLBACK_MODES)
     : [];
@@ -73,6 +86,7 @@ export function LfgForm({ games }: { games: Game[] }) {
   const roleOptions = selectedGame
     ? (ROLES_BY_GAME[selectedGame.slug] ?? FALLBACK_ROLES)
     : [];
+  const blockedByUnverifiedRank = isDota2 && !dotaRankTier;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -118,25 +132,48 @@ export function LfgForm({ games }: { games: Game[] }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="rank">Rank</Label>
-          <SelectNative
-            key={selectedGameId}
-            id="rank"
-            name="rank"
-            required
-            disabled={!selectedGame}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              {selectedGame ? "Select a rank" : "Select a game first"}
-            </option>
-            {rankOptions.map((rank) => (
-              <option key={rank} value={rank}>
-                {rank}
+          {isDota2 ? (
+            <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
+              {dotaRankTier ? (
+                <>
+                  <ShieldCheck className="size-4 text-secondary" />
+                  {formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+                </>
+              ) : (
+                <span className="text-muted-foreground">Not verified</span>
+              )}
+            </div>
+          ) : (
+            <SelectNative
+              key={selectedGameId}
+              id="rank"
+              name="rank"
+              required
+              disabled={!selectedGame}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                {selectedGame ? "Select a rank" : "Select a game first"}
               </option>
-            ))}
-          </SelectNative>
+              {rankOptions.map((rank) => (
+                <option key={rank} value={rank}>
+                  {rank}
+                </option>
+              ))}
+            </SelectNative>
+          )}
         </div>
       </div>
+
+      {blockedByUnverifiedRank ? (
+        <p className="rounded-lg bg-muted/40 px-3.5 py-2.5 text-sm text-muted-foreground">
+          Dota 2 rank is pulled from your connected Steam account.{" "}
+          <Link href="/profile/settings" className="font-medium text-primary hover:underline">
+            Connect Steam
+          </Link>{" "}
+          and sync your rank before posting.
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="title">Title</Label>
@@ -197,7 +234,12 @@ export function LfgForm({ games }: { games: Game[] }) {
         </p>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 self-start">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={isPending || blockedByUnverifiedRank}
+        className="mt-1 self-start"
+      >
         {isPending ? <Loader2 className="animate-spin" /> : null}
         Post listing
       </Button>

@@ -1,26 +1,50 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { createCoachProfile, type CoachFormState } from "@/app/coaches/actions";
+import { formatDotaRank } from "@/lib/dota-rank";
 import type { Game } from "@/lib/supabase/types";
 
-export function CoachForm({ games }: { games: Game[] }) {
+const DOTA_2_SLUG = "dota-2";
+
+export function CoachForm({
+  games,
+  dotaRankTier,
+  dotaLeaderboardRank,
+}: {
+  games: Game[];
+  dotaRankTier: number | null;
+  dotaLeaderboardRank: number | null;
+}) {
   const [state, formAction, isPending] = useActionState<CoachFormState, FormData>(
     createCoachProfile,
     {},
   );
+  const [selectedGameId, setSelectedGameId] = React.useState("");
+
+  const selectedGame = games.find((game) => game.id === selectedGameId);
+  const isDota2 = selectedGame?.slug === DOTA_2_SLUG;
+  const blockedByUnverifiedRank = isDota2 && !dotaRankTier;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="gameId">Game</Label>
-        <SelectNative id="gameId" name="gameId" required defaultValue="">
+        <SelectNative
+          id="gameId"
+          name="gameId"
+          required
+          value={selectedGameId}
+          onChange={(event) => setSelectedGameId(event.target.value)}
+        >
           <option value="" disabled>
             Select a game
           </option>
@@ -31,6 +55,38 @@ export function CoachForm({ games }: { games: Game[] }) {
           ))}
         </SelectNative>
       </div>
+
+      {isDota2 ? (
+        <div className="flex flex-col gap-1.5">
+          <Label>Verified rank</Label>
+          <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
+            {dotaRankTier ? (
+              <>
+                <ShieldCheck className="size-4 text-secondary" />
+                {formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+              </>
+            ) : (
+              <span className="text-muted-foreground">Not verified</span>
+            )}
+          </div>
+          {blockedByUnverifiedRank ? (
+            <p className="text-sm text-muted-foreground">
+              Coaching for Dota 2 requires a Steam-verified rank.{" "}
+              <Link
+                href="/profile/settings"
+                className="font-medium text-primary hover:underline"
+              >
+                Connect Steam
+              </Link>{" "}
+              and sync your rank first.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              This is shown on your coach listing so players can see it&apos;s real.
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="headline">Headline</Label>
@@ -75,7 +131,12 @@ export function CoachForm({ games }: { games: Game[] }) {
         </p>
       ) : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="mt-1 self-start">
+      <Button
+        type="submit"
+        size="lg"
+        disabled={isPending || blockedByUnverifiedRank}
+        className="mt-1 self-start"
+      >
         {isPending ? <Loader2 className="animate-spin" /> : null}
         List me as a coach
       </Button>

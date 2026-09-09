@@ -38,6 +38,29 @@ create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
 
+-- Steam / Dota 2 rank verification. steam_id is only ever set after a
+-- verified Steam OpenID login, and the dota_* rank columns only after a
+-- server-side fetch from OpenDota (see src/lib/steam.ts and the
+-- /api/auth/steam/* and /api/steam/refresh-rank routes) — never directly by
+-- the user. Column grants below enforce that: the "authenticated" role
+-- (the user's own session) can only write the columns the app already lets
+-- them self-report; only the service-role key (bypasses RLS/grants
+-- entirely) can write steam_id/dota_rank_tier/dota_leaderboard_rank/
+-- dota_rank_synced_at.
+alter table public.profiles
+  add column if not exists steam_id text unique;
+alter table public.profiles
+  add column if not exists dota_rank_tier smallint;
+alter table public.profiles
+  add column if not exists dota_leaderboard_rank integer;
+alter table public.profiles
+  add column if not exists dota_rank_synced_at timestamptz;
+
+revoke update on public.profiles from authenticated;
+grant update (
+  username, display_name, avatar_url, bio, region, onboarded, is_coach
+) on public.profiles to authenticated;
+
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
 -- Games are picked afterward on the onboarding step (see profile_games and
 -- the onboarded column above), not at signup time.
@@ -293,6 +316,12 @@ create table if not exists public.coach_profiles (
   created_at timestamptz not null default now(),
   unique (profile_id, game_id)
 );
+
+-- rank: a snapshot of the coach's verified rank at signup time, for games
+-- with a data source (currently just Dota 2, via profiles.dota_rank_tier).
+-- Set by the server from verified profile data, never from the form.
+alter table public.coach_profiles
+  add column if not exists rank text;
 
 alter table public.coach_profiles enable row level security;
 

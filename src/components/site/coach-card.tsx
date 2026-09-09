@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle, MapPin } from "lucide-react";
+import { MessageCircle, MapPin, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,11 @@ export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{coach.games?.name ?? "Unknown game"}</Badge>
+            {coach.rank ? (
+              <Badge variant="muted">
+                <ShieldCheck /> {coach.rank}
+              </Badge>
+            ) : null}
             {coach.rate_note ? <Badge variant="muted">{coach.rate_note}</Badge> : null}
           </div>
           <h3 className="font-display text-lg leading-snug">{coach.headline}</h3>

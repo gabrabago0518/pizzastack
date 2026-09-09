@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { DotaRankBadge } from "@/components/site/dota-rank-badge";
 import {
   CommendProvider,
   CommendCount,
@@ -83,6 +84,10 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
                 <CommendCount />
+                <DotaRankBadge
+                  rankTier={profile.dota_rank_tier}
+                  leaderboardRank={profile.dota_leaderboard_rank}
+                />
               </div>
               {games.length > 0 ? (
                 <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">

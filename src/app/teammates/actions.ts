@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { formatDotaRank } from "@/lib/dota-rank";
 
 export interface LfgFormState {
   error?: string;
@@ -25,7 +26,6 @@ export async function createLfgPost(
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const mode = String(formData.get("mode") ?? "").trim();
-  const rank = String(formData.get("rank") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const rolesNeeded = String(formData.get("rolesNeeded") ?? "")
     .split(",")
@@ -33,11 +33,40 @@ export async function createLfgPost(
     .filter(Boolean);
   const playersNeeded = Number(formData.get("playersNeeded"));
 
-  if (!gameId || !title || !mode || !rank) {
-    return { error: "Pick a game, a mode, a rank, and give your listing a title." };
+  if (!gameId || !title || !mode) {
+    return { error: "Pick a game, a mode, and give your listing a title." };
   }
   if (!Number.isInteger(playersNeeded) || playersNeeded < 1 || playersNeeded > 4) {
     return { error: "Choose how many players you need (1-4)." };
+  }
+
+  const { data: game } = await supabase
+    .from("games")
+    .select("slug")
+    .eq("id", gameId)
+    .maybeSingle();
+
+  // Dota 2 rank is never trusted from the form — it's pulled server-side
+  // from the author's Steam-verified rank, so it can't be self-reported.
+  let rank: string;
+  if (game?.slug === "dota-2") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("dota_rank_tier, dota_leaderboard_rank")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.dota_rank_tier) {
+      return {
+        error: "Connect your Steam account and sync your rank before posting a Dota 2 listing.",
+      };
+    }
+    rank = formatDotaRank(profile.dota_rank_tier, profile.dota_leaderboard_rank);
+  } else {
+    rank = String(formData.get("rank") ?? "").trim();
+    if (!rank) {
+      return { error: "Pick a game, a mode, a rank, and give your listing a title." };
+    }
   }
 
   const { error } = await supabase.from("lfg_posts").insert({

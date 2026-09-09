@@ -11,6 +11,10 @@ export interface Database {
           region: string | null;
           is_coach: boolean;
           onboarded: boolean;
+          steam_id: string | null;
+          dota_rank_tier: number | null;
+          dota_leaderboard_rank: number | null;
+          dota_rank_synced_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -22,6 +26,10 @@ export interface Database {
           region?: string | null;
           is_coach?: boolean;
           onboarded?: boolean;
+          steam_id?: string | null;
+          dota_rank_tier?: number | null;
+          dota_leaderboard_rank?: number | null;
+          dota_rank_synced_at?: string | null;
         };
         Update: {
           username?: string;
@@ -31,6 +39,10 @@ export interface Database {
           region?: string | null;
           is_coach?: boolean;
           onboarded?: boolean;
+          steam_id?: string | null;
+          dota_rank_tier?: number | null;
+          dota_leaderboard_rank?: number | null;
+          dota_rank_synced_at?: string | null;
         };
         Relationships: [];
       };
@@ -113,6 +125,7 @@ export interface Database {
           bio: string | null;
           rate_note: string | null;
           contact_method: string;
+          rank: string | null;
           created_at: string;
         };
         Insert: {
@@ -122,12 +135,14 @@ export interface Database {
           bio?: string | null;
           rate_note?: string | null;
           contact_method: string;
+          rank?: string | null;
         };
         Update: {
           headline?: string;
           bio?: string | null;
           rate_note?: string | null;
           contact_method?: string;
+          rank?: string | null;
         };
         Relationships: [
           {

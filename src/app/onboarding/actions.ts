@@ -23,14 +23,16 @@ export async function completeOnboarding(
 
   const gameIds = formData.getAll("gameIds").map(String);
 
-  if (gameIds.length > 0) {
-    const { error: insertError } = await supabase
-      .from("profile_games")
-      .insert(gameIds.map((gameId) => ({ profile_id: user.id, game_id: gameId })));
-    // 23505 = unique_violation (already added) — treat as a no-op success.
-    if (insertError && insertError.code !== "23505") {
-      return { error: insertError.message };
-    }
+  if (gameIds.length === 0) {
+    return { error: "Pick at least one game to continue." };
+  }
+
+  const { error: insertError } = await supabase
+    .from("profile_games")
+    .insert(gameIds.map((gameId) => ({ profile_id: user.id, game_id: gameId })));
+  // 23505 = unique_violation (already added) — treat as a no-op success.
+  if (insertError && insertError.code !== "23505") {
+    return { error: insertError.message };
   }
 
   const { error: updateError } = await supabase

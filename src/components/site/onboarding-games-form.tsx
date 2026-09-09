@@ -41,15 +41,10 @@ export function OnboardingGamesForm({ games }: { games: Game[] }) {
         </p>
       ) : null}
 
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="lg" disabled={isPending}>
-          {isPending ? <Loader2 className="animate-spin" /> : null}
-          Continue
-        </Button>
-        <Button type="submit" variant="ghost" disabled={isPending}>
-          Skip for now
-        </Button>
-      </div>
+      <Button type="submit" size="lg" disabled={isPending} className="self-start">
+        {isPending ? <Loader2 className="animate-spin" /> : null}
+        Continue
+      </Button>
     </form>
   );
 }

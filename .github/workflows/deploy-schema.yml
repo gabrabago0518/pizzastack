@@ -1,0 +1,25 @@
+name: Deploy Supabase Schema
+
+on:
+  push:
+    branches:
+      - main
+      - claude/design-system-components-rkrlst
+    paths:
+      - "supabase/schema.sql"
+  workflow_dispatch: {}
+
+jobs:
+  deploy-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply schema.sql to Supabase
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/schema.sql

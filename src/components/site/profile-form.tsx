@@ -6,7 +6,9 @@ import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectNative } from "@/components/ui/select-native";
 import { updateProfile, type ProfileFormState } from "@/app/profile/actions";
+import { REGIONS } from "@/lib/regions";
 import type { Profile } from "@/lib/supabase/types";
 
 export function ProfileForm({ profile }: { profile: Profile }) {
@@ -46,12 +48,18 @@ export function ProfileForm({ profile }: { profile: Profile }) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="region">Region</Label>
-        <Input
+        <SelectNative
           id="region"
           name="region"
           defaultValue={profile.region ?? ""}
-          placeholder="NA East, EUW, OCE..."
-        />
+        >
+          <option value="">Select a region</option>
+          {REGIONS.map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </SelectNative>
       </div>
 
       {state.error ? (

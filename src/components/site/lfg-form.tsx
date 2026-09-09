@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
+import { REGIONS } from "@/lib/regions";
 import type { Game } from "@/lib/supabase/types";
 
 export function LfgForm({ games }: { games: Game[] }) {
@@ -70,7 +71,14 @@ export function LfgForm({ games }: { games: Game[] }) {
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="region">Region (optional)</Label>
-          <Input id="region" name="region" placeholder="NA East, EUW, OCE..." />
+          <SelectNative id="region" name="region" defaultValue="">
+            <option value="">Select a region</option>
+            {REGIONS.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </SelectNative>
         </div>
       </div>
 

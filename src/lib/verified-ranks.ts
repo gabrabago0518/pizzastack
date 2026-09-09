@@ -2,8 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
+import { formatValorantRank } from "@/lib/valorant-rank";
 
-export const VERIFIED_RANK_GAME_SLUGS = ["dota-2", "cs2"] as const;
+export const VERIFIED_RANK_GAME_SLUGS = ["dota-2", "cs2", "valorant"] as const;
 
 export type VerifiedRankResult =
   | { rank: string; rankTier: number | null }
@@ -11,8 +12,8 @@ export type VerifiedRankResult =
 
 // Looks up the signed-in user's verified rank for a game (from their
 // server-fetched profile data — never trusting client input) and formats
-// it. actionLabel completes "Connect your Steam account and sync your rank
-// before {actionLabel}." — e.g. "posting a Dota 2 listing" or "coaching CS2".
+// it. actionLabel completes the connect-first error message — e.g.
+// "posting a Dota 2 listing" or "coaching CS2".
 export async function resolveVerifiedRank(
   supabase: SupabaseClient<Database>,
   userId: string,
@@ -51,6 +52,22 @@ export async function resolveVerifiedRank(
     };
   }
 
+  if (gameSlug === "valorant") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("valorant_tier, valorant_rr")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!profile?.valorant_tier) {
+      return { error: `Connect your Riot ID and sync your rank before ${actionLabel}.` };
+    }
+    return {
+      rank: formatValorantRank(profile.valorant_tier, profile.valorant_rr),
+      rankTier: null,
+    };
+  }
+
   return { error: "Unsupported game for verified rank." };
 }
 
@@ -59,6 +76,8 @@ export interface FormVerifiedRankInputs {
   dotaLeaderboardRank: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
+  valorantTier: string | null;
+  valorantRr: number | null;
 }
 
 export interface FormVerifiedRank {
@@ -84,6 +103,12 @@ export function getFormVerifiedRank(
     return {
       available: Boolean(inputs.cs2PremierRating || inputs.cs2CompetitiveRank),
       label: formatCs2Rank(inputs.cs2PremierRating, inputs.cs2CompetitiveRank),
+    };
+  }
+  if (gameSlug === "valorant") {
+    return {
+      available: Boolean(inputs.valorantTier),
+      label: formatValorantRank(inputs.valorantTier, inputs.valorantRr),
     };
   }
   return null;

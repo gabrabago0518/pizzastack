@@ -20,12 +20,16 @@ export function CoachForm({
   dotaLeaderboardRank,
   cs2PremierRating,
   cs2CompetitiveRank,
+  valorantTier,
+  valorantRr,
 }: {
   games: Game[];
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
+  valorantTier: string | null;
+  valorantRr: number | null;
 }) {
   const [state, formAction, isPending] = useActionState<CoachFormState, FormData>(
     createCoachProfile,
@@ -39,6 +43,8 @@ export function CoachForm({
     dotaLeaderboardRank,
     cs2PremierRating,
     cs2CompetitiveRank,
+    valorantTier,
+    valorantRr,
   });
   const blockedByUnverifiedRank = verifiedRank !== null && !verifiedRank.available;
 
@@ -81,12 +87,13 @@ export function CoachForm({
           </div>
           {blockedByUnverifiedRank ? (
             <p className="text-sm text-muted-foreground">
-              Coaching for {selectedGame?.name} requires a Steam-verified rank.{" "}
+              Coaching for {selectedGame?.name} requires a{" "}
+              {selectedGame?.slug === "valorant" ? "connected Riot ID" : "Steam-verified rank"}.{" "}
               <Link
                 href="/profile/settings"
                 className="font-medium text-primary hover:underline"
               >
-                Connect Steam
+                {selectedGame?.slug === "valorant" ? "Connect your Riot ID" : "Connect Steam"}
               </Link>{" "}
               and sync your rank first.
             </p>

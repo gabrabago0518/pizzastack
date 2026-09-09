@@ -7,6 +7,7 @@ import { Section } from "@/components/site/section";
 import { AvatarUpload } from "@/components/site/avatar-upload";
 import { ProfileForm } from "@/components/site/profile-form";
 import { SteamConnect } from "@/components/site/steam-connect";
+import { RiotConnect } from "@/components/site/riot-connect";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
@@ -83,6 +84,17 @@ export default async function ProfileSettingsPage({
                 .at(-1) ?? null
             }
             statusParam={steam}
+          />
+        </div>
+
+        <div className="mt-6">
+          <RiotConnect
+            riotName={profile.riot_name}
+            riotTag={profile.riot_tag}
+            riotRegion={profile.riot_region}
+            valorantTier={profile.valorant_tier}
+            valorantRr={profile.valorant_rr}
+            syncedAt={profile.valorant_rank_synced_at}
           />
         </div>
       </div>

@@ -1,15 +1,4 @@
 export const RANKS_BY_GAME: Record<string, string[]> = {
-  valorant: [
-    "Iron",
-    "Bronze",
-    "Silver",
-    "Gold",
-    "Platinum",
-    "Diamond",
-    "Ascendant",
-    "Immortal",
-    "Radiant",
-  ],
   "league-of-legends": [
     "Iron",
     "Bronze",

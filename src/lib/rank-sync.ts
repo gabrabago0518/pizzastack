@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchDotaRankFromOpenDota } from "@/lib/steam";
 import { fetchCs2RankFromLeetify } from "@/lib/leetify";
+import { fetchValorantRank } from "@/lib/henrikdev";
 
 export interface SyncedRanks {
   dotaRankTier: number | null;
@@ -58,4 +59,39 @@ export async function syncRanksForSteamId(
   }
 
   return { dotaRankTier, dotaLeaderboardRank, cs2PremierRating, cs2CompetitiveRank };
+}
+
+export interface SyncedValorantRank {
+  tier: string | null;
+  rr: number | null;
+  elo: number | null;
+  syncedAt: string;
+}
+
+// Valorant isn't tied to the Steam connection — a player enters their own
+// Riot ID (see connectRiotAccount), so this is triggered separately, not
+// as part of syncRanksForSteamId. Throws on failure (unlike the Steam-based
+// sync above) since it's only ever called for one game at a time, so the
+// caller can surface a real error instead of silently doing nothing.
+export async function syncValorantRank(
+  userId: string,
+  name: string,
+  tag: string,
+  region: string,
+): Promise<SyncedValorantRank> {
+  const rank = await fetchValorantRank(name, tag, region);
+  const syncedAt = new Date().toISOString();
+
+  const service = createServiceClient();
+  await service
+    .from("profiles")
+    .update({
+      valorant_tier: rank.tier,
+      valorant_rr: rank.rr,
+      valorant_elo: rank.elo,
+      valorant_rank_synced_at: syncedAt,
+    })
+    .eq("id", userId);
+
+  return { ...rank, syncedAt };
 }

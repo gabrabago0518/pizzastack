@@ -18,6 +18,13 @@ export interface Database {
           cs2_premier_rating: number | null;
           cs2_competitive_rank: number | null;
           cs2_rank_synced_at: string | null;
+          riot_name: string | null;
+          riot_tag: string | null;
+          riot_region: string | null;
+          valorant_tier: string | null;
+          valorant_rr: number | null;
+          valorant_elo: number | null;
+          valorant_rank_synced_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -36,6 +43,13 @@ export interface Database {
           cs2_premier_rating?: number | null;
           cs2_competitive_rank?: number | null;
           cs2_rank_synced_at?: string | null;
+          riot_name?: string | null;
+          riot_tag?: string | null;
+          riot_region?: string | null;
+          valorant_tier?: string | null;
+          valorant_rr?: number | null;
+          valorant_elo?: number | null;
+          valorant_rank_synced_at?: string | null;
         };
         Update: {
           username?: string;
@@ -52,6 +66,13 @@ export interface Database {
           cs2_premier_rating?: number | null;
           cs2_competitive_rank?: number | null;
           cs2_rank_synced_at?: string | null;
+          riot_name?: string | null;
+          riot_tag?: string | null;
+          riot_region?: string | null;
+          valorant_tier?: string | null;
+          valorant_rr?: number | null;
+          valorant_elo?: number | null;
+          valorant_rank_synced_at?: string | null;
         };
         Relationships: [];
       };

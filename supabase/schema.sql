@@ -68,9 +68,32 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists cs2_rank_synced_at timestamptz;
 
+-- Valorant is different from Dota/CS2: there's no Steam-style verified
+-- login (that needs Riot Sign-On OAuth, not set up), so riot_name/riot_tag/
+-- riot_region are self-entered by the player, same trust level as
+-- display_name/bio — hence they're in the authenticated grant below. The
+-- fetched valorant_* rank columns are still service-role-only like every
+-- other rank column: the *value* can't be tampered with once a Riot ID is
+-- entered, even though the *identity* behind that Riot ID isn't verified.
+alter table public.profiles
+  add column if not exists riot_name text;
+alter table public.profiles
+  add column if not exists riot_tag text;
+alter table public.profiles
+  add column if not exists riot_region text;
+alter table public.profiles
+  add column if not exists valorant_tier text;
+alter table public.profiles
+  add column if not exists valorant_rr smallint;
+alter table public.profiles
+  add column if not exists valorant_elo integer;
+alter table public.profiles
+  add column if not exists valorant_rank_synced_at timestamptz;
+
 revoke update on public.profiles from authenticated;
 grant update (
-  username, display_name, avatar_url, bio, region, onboarded, is_coach
+  username, display_name, avatar_url, bio, region, onboarded, is_coach,
+  riot_name, riot_tag, riot_region
 ) on public.profiles to authenticated;
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.

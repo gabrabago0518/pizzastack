@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { syncValorantRank } from "@/lib/rank-sync";
+import { isValorantRegion } from "@/lib/valorant-rank";
 
 export interface ProfileFormState {
   error?: string;
@@ -152,4 +154,57 @@ export async function toggleProfileGame(
   revalidatePath("/profile");
   revalidatePath("/profile/settings");
   return {};
+}
+
+export interface RiotFormState {
+  error?: string;
+  success?: boolean;
+}
+
+// Riot ID isn't verified the way Steam is (no RSO login available) — the
+// name/tag/region are just self-reported, saved like any other profile
+// field. The rank pulled for that Riot ID afterward still can't be
+// tampered with directly (see syncValorantRank), even though the identity
+// behind it isn't proven.
+export async function connectRiotAccount(
+  _prevState: RiotFormState,
+  formData: FormData,
+): Promise<RiotFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to connect your Riot ID." };
+  }
+
+  const name = String(formData.get("riotName") ?? "").trim();
+  const tag = String(formData.get("riotTag") ?? "")
+    .trim()
+    .replace(/^#/, "");
+  const region = String(formData.get("riotRegion") ?? "").trim();
+
+  if (!name || !tag || !isValorantRegion(region)) {
+    return { error: "Enter your Riot ID (name and tag) and pick a region." };
+  }
+
+  const { error: saveError } = await supabase
+    .from("profiles")
+    .update({ riot_name: name, riot_tag: tag, riot_region: region })
+    .eq("id", user.id);
+
+  if (saveError) {
+    return { error: saveError.message };
+  }
+
+  try {
+    await syncValorantRank(user.id, name, tag, region);
+  } catch {
+    // Riot ID saved; rank sync can be retried from the settings page.
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/profile/settings");
+  return { success: true };
 }

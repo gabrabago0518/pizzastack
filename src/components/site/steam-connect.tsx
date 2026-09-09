@@ -101,11 +101,13 @@ export function SteamConnect({
             <RankMedalCard
               game="Dota 2"
               rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+              sourceLabel="Verified via Steam"
               icon={<DotaRankIcon rankTier={dotaRankTier} className="size-10" />}
             />
             <RankMedalCard
               game="Counter-Strike 2"
               rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
+              sourceLabel="Verified via Steam"
             />
           </div>
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">

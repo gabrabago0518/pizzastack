@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MessageCircle, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,9 +15,16 @@ export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
             {coach.rate_note ? <Badge variant="muted">{coach.rate_note}</Badge> : null}
           </div>
           <h3 className="font-display text-lg leading-snug">{coach.headline}</h3>
-          <p className="text-sm text-muted-foreground">
-            @{coach.profiles?.username ?? "unknown"}
-          </p>
+          {coach.profiles?.username ? (
+            <Link
+              href={`/players/${coach.profiles.username}`}
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              @{coach.profiles.username}
+            </Link>
+          ) : (
+            <p className="text-sm text-muted-foreground">unknown</p>
+          )}
         </div>
 
         {coach.bio ? (

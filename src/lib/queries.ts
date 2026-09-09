@@ -62,7 +62,17 @@ export async function getProfile(userId: string) {
   return data;
 }
 
-export async function getMyLfgPosts(userId: string) {
+export async function getProfileByUsername(username: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("username", username)
+    .single();
+  return data;
+}
+
+export async function getLfgPostsByAuthor(userId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lfg_posts")
@@ -73,7 +83,7 @@ export async function getMyLfgPosts(userId: string) {
   return data ?? [];
 }
 
-export async function getMyCoachProfiles(userId: string) {
+export async function getCoachProfilesByAuthor(userId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("coach_profiles")

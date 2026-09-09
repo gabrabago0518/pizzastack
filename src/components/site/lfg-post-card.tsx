@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Users, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,9 +40,19 @@ export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
         ) : null}
 
         <div className="flex items-center gap-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Users className="size-3.5" />@{post.profiles?.username ?? "unknown"}
-          </span>
+          {post.profiles?.username ? (
+            <Link
+              href={`/players/${post.profiles.username}`}
+              className="flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              <Users className="size-3.5" />@{post.profiles.username}
+            </Link>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <Users className="size-3.5" />
+              unknown
+            </span>
+          )}
           {post.region ? (
             <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5" />

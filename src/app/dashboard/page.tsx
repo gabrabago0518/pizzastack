@@ -5,10 +5,10 @@ import { Users, GraduationCap, UserCog, Plus } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { createClient } from "@/lib/supabase/server";
-import { getMyLfgPosts, getMyCoachProfiles, getProfile } from "@/lib/queries";
+import { getLfgPostsByAuthor, getCoachProfilesByAuthor, getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Dashboard — Pizzastack.gg",
@@ -45,8 +45,8 @@ export default async function DashboardPage() {
 
   const [profile, myPosts, myCoachProfiles] = await Promise.all([
     getProfile(user.id),
-    getMyLfgPosts(user.id),
-    getMyCoachProfiles(user.id),
+    getLfgPostsByAuthor(user.id),
+    getCoachProfilesByAuthor(user.id),
   ]);
 
   return (
@@ -85,31 +85,7 @@ export default async function DashboardPage() {
               </Link>
             </Button>
           </div>
-          {myPosts.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-              You haven&apos;t posted a listing yet.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {myPosts.map((post) => (
-                <li key={post.id}>
-                  <Card>
-                    <CardContent className="flex items-center justify-between gap-3">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">{post.title}</span>
-                        <Badge variant="muted" className="w-fit">
-                          {post.games?.name}
-                        </Badge>
-                      </div>
-                      <Badge variant={post.status === "open" ? "accent" : "outline"}>
-                        {post.status}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          )}
+          <LfgPostsList posts={myPosts} emptyText="You haven't posted a listing yet." />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -121,28 +97,10 @@ export default async function DashboardPage() {
               </Link>
             </Button>
           </div>
-          {myCoachProfiles.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground">
-              You&apos;re not listed as a coach yet.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-3">
-              {myCoachProfiles.map((coach) => (
-                <li key={coach.id}>
-                  <Card>
-                    <CardContent className="flex items-center justify-between gap-3">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium">{coach.headline}</span>
-                        <Badge variant="muted" className="w-fit">
-                          {coach.games?.name}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          )}
+          <CoachProfilesList
+            coachProfiles={myCoachProfiles}
+            emptyText="You're not listed as a coach yet."
+          />
         </div>
       </div>
     </Section>

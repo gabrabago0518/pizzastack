@@ -109,6 +109,17 @@ create table if not exists public.lfg_posts (
   created_at timestamptz not null default now()
 );
 
+-- players_needed: added after the initial table. The default backfills any
+-- rows created before this field existed; the app always sends an explicit
+-- value going forward.
+alter table public.lfg_posts
+  add column if not exists players_needed smallint not null default 1;
+
+alter table public.lfg_posts
+  drop constraint if exists lfg_posts_players_needed_check;
+alter table public.lfg_posts
+  add constraint lfg_posts_players_needed_check check (players_needed between 1 and 4);
+
 alter table public.lfg_posts enable row level security;
 
 drop policy if exists "LFG posts are publicly readable" on public.lfg_posts;

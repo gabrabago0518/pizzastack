@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MapPin } from "lucide-react";
+import { Users, MapPin, UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +59,10 @@ export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
               {post.region}
             </span>
           ) : null}
+          <span className="flex items-center gap-1.5">
+            <UserPlus className="size-3.5" />
+            Needs {post.players_needed}
+          </span>
         </div>
       </CardContent>
     </Card>

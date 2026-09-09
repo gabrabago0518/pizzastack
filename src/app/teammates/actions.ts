@@ -30,9 +30,13 @@ export async function createLfgPost(
     .split(",")
     .map((role) => role.trim())
     .filter(Boolean);
+  const playersNeeded = Number(formData.get("playersNeeded"));
 
-  if (!gameId || !title) {
-    return { error: "Pick a game and give your listing a title." };
+  if (!gameId || !title || !rank) {
+    return { error: "Pick a game, a rank, and give your listing a title." };
+  }
+  if (!Number.isInteger(playersNeeded) || playersNeeded < 1 || playersNeeded > 4) {
+    return { error: "Choose how many players you need (1-4)." };
   }
 
   const { error } = await supabase.from("lfg_posts").insert({
@@ -40,9 +44,10 @@ export async function createLfgPost(
     game_id: gameId,
     title,
     description: description || null,
-    rank: rank || null,
+    rank,
     region: region || null,
     roles_needed: rolesNeeded.length ? rolesNeeded : null,
+    players_needed: playersNeeded,
   });
 
   if (error) {

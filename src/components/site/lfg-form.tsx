@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useActionState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
 import { REGIONS } from "@/lib/regions";
+import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import type { Game } from "@/lib/supabase/types";
 
 export function LfgForm({ games }: { games: Game[] }) {
@@ -16,13 +18,25 @@ export function LfgForm({ games }: { games: Game[] }) {
     createLfgPost,
     {},
   );
+  const [selectedGameId, setSelectedGameId] = React.useState("");
+
+  const selectedGame = games.find((game) => game.id === selectedGameId);
+  const rankOptions = selectedGame
+    ? (RANKS_BY_GAME[selectedGame.slug] ?? FALLBACK_RANKS)
+    : [];
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="gameId">Game</Label>
-          <SelectNative id="gameId" name="gameId" required defaultValue="">
+          <SelectNative
+            id="gameId"
+            name="gameId"
+            required
+            value={selectedGameId}
+            onChange={(event) => setSelectedGameId(event.target.value)}
+          >
             <option value="" disabled>
               Select a game
             </option>
@@ -34,8 +48,24 @@ export function LfgForm({ games }: { games: Game[] }) {
           </SelectNative>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rank">Rank (optional)</Label>
-          <Input id="rank" name="rank" placeholder="Gold II, Immortal, top 10%..." />
+          <Label htmlFor="rank">Rank</Label>
+          <SelectNative
+            key={selectedGameId}
+            id="rank"
+            name="rank"
+            required
+            disabled={!selectedGame}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              {selectedGame ? "Select a rank" : "Select a game first"}
+            </option>
+            {rankOptions.map((rank) => (
+              <option key={rank} value={rank}>
+                {rank}
+              </option>
+            ))}
+          </SelectNative>
         </div>
       </div>
 
@@ -70,16 +100,30 @@ export function LfgForm({ games }: { games: Game[] }) {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="region">Region (optional)</Label>
-          <SelectNative id="region" name="region" defaultValue="">
-            <option value="">Select a region</option>
-            {REGIONS.map((region) => (
-              <option key={region} value={region}>
-                {region}
+          <Label htmlFor="playersNeeded">Players needed</Label>
+          <SelectNative id="playersNeeded" name="playersNeeded" required defaultValue="">
+            <option value="" disabled>
+              How many?
+            </option>
+            {PLAYERS_NEEDED_OPTIONS.map((count) => (
+              <option key={count} value={count}>
+                {count}
               </option>
             ))}
           </SelectNative>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="region">Region (optional)</Label>
+        <SelectNative id="region" name="region" defaultValue="">
+          <option value="">Select a region</option>
+          {REGIONS.map((region) => (
+            <option key={region} value={region}>
+              {region}
+            </option>
+          ))}
+        </SelectNative>
       </div>
 
       {state.error ? (

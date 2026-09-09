@@ -4,7 +4,7 @@ import * as React from "react";
 import { Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DotaRankIcon } from "@/components/site/dota-rank-icon";
+import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatRelativeTime } from "@/lib/utils";
 
@@ -80,20 +80,19 @@ export function SteamConnect({
       </div>
 
       {connected ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
-          <div className="flex items-center gap-2.5">
-            <DotaRankIcon rankTier={rankTier} className="size-10" />
-            <div className="text-sm">
-              <p className="font-medium">{formatDotaRank(rankTier, leaderboardRank)}</p>
-              <p className="text-muted-foreground">
-                {syncedAt ? `Synced ${formatRelativeTime(syncedAt)}` : "Not synced yet"}
-              </p>
-            </div>
+        <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
+          <RankMedalCard
+            game="Dota 2"
+            rankTier={rankTier}
+            rankLabel={formatDotaRank(rankTier, leaderboardRank)}
+          />
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>{syncedAt ? `Synced ${formatRelativeTime(syncedAt)}` : "Not synced yet"}</span>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isPending}>
+              {isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+              Refresh rank
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isPending}>
-            {isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-            Refresh rank
-          </Button>
         </div>
       ) : null}
 

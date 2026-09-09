@@ -5,7 +5,7 @@ import { Award, ExternalLink, Settings } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
-import { DotaRankBadge } from "@/components/site/dota-rank-badge";
+import { RankBanner } from "@/components/site/rank-banner";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,10 +59,6 @@ export default async function ProfilePage() {
               <Badge variant="secondary">
                 <Award /> {commendCount} {commendCount === 1 ? "commend" : "commends"}
               </Badge>
-              <DotaRankBadge
-                rankTier={profile.dota_rank_tier}
-                leaderboardRank={profile.dota_leaderboard_rank}
-              />
               <Link
                 href={`/players/${profile.username}`}
                 className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
@@ -88,6 +84,11 @@ export default async function ProfilePage() {
           </Link>
         </Button>
       </div>
+
+      <RankBanner
+        dotaRankTier={profile.dota_rank_tier}
+        dotaLeaderboardRank={profile.dota_leaderboard_rank}
+      />
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-4">

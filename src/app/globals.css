@@ -1,81 +1,43 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
-  --radius: 1rem;
+  --radius: 0.85rem;
 
-  /* Warm, artisanal pizzeria palette */
-  --background: oklch(0.98 0.012 85);
-  --foreground: oklch(0.22 0.03 40);
+  /* Dark, premium esports palette */
+  --background: oklch(0.14 0.019 275);
+  --foreground: oklch(0.96 0.012 275);
 
-  --card: oklch(1 0.008 85);
-  --card-foreground: oklch(0.22 0.03 40);
+  --card: oklch(0.19 0.021 275);
+  --card-foreground: oklch(0.96 0.012 275);
 
-  --popover: oklch(1 0.008 85);
-  --popover-foreground: oklch(0.22 0.03 40);
+  --popover: oklch(0.19 0.021 275);
+  --popover-foreground: oklch(0.96 0.012 275);
 
-  /* Marinara red */
-  --primary: oklch(0.5 0.19 30);
-  --primary-foreground: oklch(0.98 0.01 85);
+  /* Electric violet — brand / primary CTA */
+  --primary: oklch(0.64 0.21 296);
+  --primary-foreground: oklch(0.98 0.012 296);
 
-  /* Basil green */
-  --secondary: oklch(0.32 0.06 150);
-  --secondary-foreground: oklch(0.98 0.01 85);
+  /* Cyan — secondary emphasis (coaching, info) */
+  --secondary: oklch(0.72 0.13 205);
+  --secondary-foreground: oklch(0.15 0.02 205);
 
-  --muted: oklch(0.94 0.02 80);
-  --muted-foreground: oklch(0.46 0.03 50);
+  --muted: oklch(0.24 0.018 275);
+  --muted-foreground: oklch(0.68 0.02 275);
 
-  /* Baked-cheese gold */
-  --accent: oklch(0.78 0.13 80);
-  --accent-foreground: oklch(0.24 0.04 50);
+  /* Lime — success / "open" status */
+  --accent: oklch(0.78 0.18 145);
+  --accent-foreground: oklch(0.16 0.03 145);
 
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0.01 85);
+  --destructive: oklch(0.6 0.21 25);
+  --destructive-foreground: oklch(0.98 0.012 25);
 
-  --border: oklch(0.89 0.02 70);
-  --input: oklch(0.89 0.02 70);
-  --ring: oklch(0.5 0.19 30);
+  --border: oklch(0.29 0.02 275);
+  --input: oklch(0.29 0.02 275);
+  --ring: oklch(0.64 0.21 296);
 
-  --crust: oklch(0.62 0.07 60);
-  --sauce: oklch(0.44 0.17 30);
-
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-jakarta);
-}
-
-.dark {
-  --background: oklch(0.19 0.02 40);
-  --foreground: oklch(0.96 0.01 85);
-
-  --card: oklch(0.23 0.025 40);
-  --card-foreground: oklch(0.96 0.01 85);
-
-  --popover: oklch(0.23 0.025 40);
-  --popover-foreground: oklch(0.96 0.01 85);
-
-  --primary: oklch(0.62 0.19 30);
-  --primary-foreground: oklch(0.14 0.02 40);
-
-  --secondary: oklch(0.42 0.07 150);
-  --secondary-foreground: oklch(0.96 0.01 85);
-
-  --muted: oklch(0.28 0.02 45);
-  --muted-foreground: oklch(0.7 0.02 70);
-
-  --accent: oklch(0.72 0.13 80);
-  --accent-foreground: oklch(0.18 0.03 50);
-
-  --destructive: oklch(0.6 0.2 25);
-  --destructive-foreground: oklch(0.96 0.01 85);
-
-  --border: oklch(0.32 0.025 45);
-  --input: oklch(0.32 0.025 45);
-  --ring: oklch(0.62 0.19 30);
-
-  --crust: oklch(0.5 0.06 60);
-  --sauce: oklch(0.36 0.15 30);
+  --font-display: var(--font-space-grotesk);
+  --font-sans: var(--font-inter);
 }
 
 @theme inline {
@@ -98,19 +60,17 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-crust: var(--crust);
-  --color-sauce: var(--sauce);
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
 
-  --radius-sm: calc(var(--radius) - 0.5rem);
-  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.4rem);
+  --radius-md: calc(var(--radius) - 0.2rem);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.5rem);
 
   --animate-fade-up: fade-up 0.6s ease-out both;
-  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 3s ease-in-out infinite;
 
   @keyframes fade-up {
     from {
@@ -122,9 +82,9 @@
       transform: translateY(0);
     }
   }
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+  @keyframes glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
   }
 }
 
@@ -144,8 +104,23 @@
   .text-balance {
     text-wrap: balance;
   }
-  .bg-noise {
-    background-image: radial-gradient(currentColor 0.5px, transparent 0.5px);
-    background-size: 12px 12px;
+  .bg-grid {
+    background-image: linear-gradient(
+        to right,
+        color-mix(in oklch, var(--border) 60%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--border) 60%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 40px 40px;
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }

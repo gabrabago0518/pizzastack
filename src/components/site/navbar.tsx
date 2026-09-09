@@ -1,26 +1,27 @@
-"use client";
-
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/lib/cart-context";
+import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/lib/supabase/actions";
 
 const links = [
-  { href: "/menu", label: "Menu" },
-  { href: "/#story", label: "Our Story" },
-  { href: "/#locations", label: "Locations" },
+  { href: "/teammates", label: "Find Teammates" },
+  { href: "/coaches", label: "Find Coaches" },
 ];
 
-export function Navbar() {
-  const { count, open } = useCart();
+export async function Navbar() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground font-display text-base">
-            P
+          <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Swords className="size-4" />
           </span>
           <span className="font-display text-lg tracking-tight">Pizzastack</span>
         </Link>
@@ -38,23 +39,30 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-            <Link href="/menu">Order pickup</Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={open}
-            aria-label="Open cart"
-            className="relative"
-          >
-            <ShoppingBag />
-            {count > 0 ? (
-              <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground">
-                {count}
-              </span>
-            ) : null}
-          </Button>
+          {user ? (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/profile">Profile</Link>
+              </Button>
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+              <form action={signOut}>
+                <Button type="submit" variant="outline" size="sm">
+                  Log out
+                </Button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/login">Log in</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link href="/signup">Sign up</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

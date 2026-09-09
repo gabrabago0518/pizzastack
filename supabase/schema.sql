@@ -1,5 +1,6 @@
 -- Pizzastack (gaming community hub) schema
--- Run this once in Supabase Dashboard -> SQL Editor -> New query -> Run.
+-- Safe to re-run: every statement is idempotent.
+-- Run in Supabase Dashboard -> SQL Editor -> New query -> Run.
 
 -- ---------------------------------------------------------------------------
 -- profiles: one row per user, created automatically on signup (see trigger).
@@ -17,14 +18,17 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Profiles are publicly readable" on public.profiles;
 create policy "Profiles are publicly readable"
   on public.profiles for select
   using (true);
 
+drop policy if exists "Users can insert their own profile" on public.profiles;
 create policy "Users can insert their own profile"
   on public.profiles for insert
   with check (auth.uid() = id);
 
+drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
@@ -62,6 +66,7 @@ create table if not exists public.games (
 
 alter table public.games enable row level security;
 
+drop policy if exists "Games are publicly readable" on public.games;
 create policy "Games are publicly readable"
   on public.games for select
   using (true);
@@ -95,18 +100,22 @@ create table if not exists public.lfg_posts (
 
 alter table public.lfg_posts enable row level security;
 
+drop policy if exists "LFG posts are publicly readable" on public.lfg_posts;
 create policy "LFG posts are publicly readable"
   on public.lfg_posts for select
   using (true);
 
+drop policy if exists "Users can create their own LFG posts" on public.lfg_posts;
 create policy "Users can create their own LFG posts"
   on public.lfg_posts for insert
   with check (auth.uid() = author_id);
 
+drop policy if exists "Users can update their own LFG posts" on public.lfg_posts;
 create policy "Users can update their own LFG posts"
   on public.lfg_posts for update
   using (auth.uid() = author_id);
 
+drop policy if exists "Users can delete their own LFG posts" on public.lfg_posts;
 create policy "Users can delete their own LFG posts"
   on public.lfg_posts for delete
   using (auth.uid() = author_id);
@@ -128,18 +137,22 @@ create table if not exists public.coach_profiles (
 
 alter table public.coach_profiles enable row level security;
 
+drop policy if exists "Coach profiles are publicly readable" on public.coach_profiles;
 create policy "Coach profiles are publicly readable"
   on public.coach_profiles for select
   using (true);
 
+drop policy if exists "Users can create their own coach profiles" on public.coach_profiles;
 create policy "Users can create their own coach profiles"
   on public.coach_profiles for insert
   with check (auth.uid() = profile_id);
 
+drop policy if exists "Users can update their own coach profiles" on public.coach_profiles;
 create policy "Users can update their own coach profiles"
   on public.coach_profiles for update
   using (auth.uid() = profile_id);
 
+drop policy if exists "Users can delete their own coach profiles" on public.coach_profiles;
 create policy "Users can delete their own coach profiles"
   on public.coach_profiles for delete
   using (auth.uid() = profile_id);

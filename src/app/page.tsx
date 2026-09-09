@@ -66,7 +66,7 @@ export default async function Home() {
             className="animate-fade-up max-w-xl text-balance text-lg leading-relaxed text-muted-foreground"
             style={{ animationDelay: "0.1s" }}
           >
-            Pizzastack is a community hub for gamers — post what you&apos;re
+            Pizzastack.gg is a community hub for gamers — post what you&apos;re
             looking for, browse coaches who know your game, and squad up
             faster.
           </p>

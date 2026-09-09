@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { getGames, getLfgPosts } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Find Teammates — Pizzastack",
+  title: "Find Teammates — Pizzastack.gg",
 };
 
 export default async function TeammatesPage({

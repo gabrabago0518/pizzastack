@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pizzastack — Find teammates. Find coaches.",
+  title: "Pizzastack.gg — Find teammates. Find coaches.",
   description:
     "A community hub for gamers to squad up for their next match and connect with coaches who can level up their game.",
 };

@@ -5,7 +5,7 @@ import { AuthForm } from "@/components/site/auth-form";
 import { signIn } from "@/lib/supabase/actions";
 
 export const metadata: Metadata = {
-  title: "Log in — Pizzastack",
+  title: "Log in — Pizzastack.gg",
 };
 
 export default function LoginPage() {

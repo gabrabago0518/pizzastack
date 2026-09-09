@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyLfgPosts, getMyCoachProfiles, getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Pizzastack",
+  title: "Dashboard — Pizzastack.gg",
 };
 
 const actions = [

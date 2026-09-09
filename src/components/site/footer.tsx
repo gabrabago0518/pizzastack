@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { Logo } from "@/components/site/logo";
 import { Separator } from "@/components/ui/separator";
 
 export function Footer() {
@@ -7,12 +7,7 @@ export function Footer() {
     <footer className="border-t border-border/60 bg-muted/20">
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-3 lg:col-span-2">
-          <div className="flex items-center gap-2">
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Swords className="size-4" />
-            </span>
-            <span className="font-display text-lg">Pizzastack</span>
-          </div>
+          <Logo id="footer" className="h-8 w-auto" />
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
             The hub for squading up. Post what you&apos;re looking for, find
             players who play your way, and connect with coaches to close the
@@ -44,7 +39,7 @@ export function Footer() {
       <Separator />
 
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>&copy; {new Date().getFullYear()} Pizzastack. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Pizzastack.gg. All rights reserved.</p>
         <p>Squad up. Level up.</p>
       </div>
     </footer>

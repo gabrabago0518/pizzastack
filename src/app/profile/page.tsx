@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Your profile — Pizzastack",
+  title: "Your profile — Pizzastack.gg",
 };
 
 export default async function ProfilePage() {

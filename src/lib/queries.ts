@@ -39,6 +39,17 @@ export async function getLfgPosts(gameSlug?: string) {
   return data ?? [];
 }
 
+export async function getLfgPostById(id: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_posts")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<LfgPostWithRelations>();
+  return data;
+}
+
 export async function getCoachProfiles(gameSlug?: string) {
   const supabase = await createClient();
   const gameId = await resolveGameId(gameSlug);

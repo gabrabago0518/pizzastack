@@ -34,7 +34,14 @@ export function LfgPostCard({
               {post.mode ? <Badge variant="outline">{post.mode}</Badge> : null}
               {post.rank ? <Badge variant="muted">{post.rank}</Badge> : null}
             </div>
-            <h3 className="font-display text-lg leading-snug">{post.title}</h3>
+            <h3 className="font-display text-lg leading-snug">
+              <Link
+                href={`/teammates/${post.id}`}
+                className="transition-colors hover:text-primary"
+              >
+                {post.title}
+              </Link>
+            </h3>
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatRelativeTime(post.created_at)}

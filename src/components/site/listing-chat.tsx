@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -87,24 +88,44 @@ export function ListingChat({
             }
 
             const isMine = message.sender_id === viewerId;
+            const hasProfile = Boolean(message.profiles?.username);
             const username = message.profiles?.username ?? "unknown";
             return (
               <div
                 key={message.id}
                 className={cn("flex items-end gap-2", isMine && "flex-row-reverse")}
               >
-                <AvatarDisplay
-                  url={message.profiles?.avatar_url ?? null}
-                  label={username}
-                  className="size-7"
-                  textClassName="text-xs"
-                />
+                {hasProfile ? (
+                  <Link href={`/players/${username}`} className="shrink-0">
+                    <AvatarDisplay
+                      url={message.profiles?.avatar_url ?? null}
+                      label={username}
+                      className="size-7"
+                      textClassName="text-xs"
+                    />
+                  </Link>
+                ) : (
+                  <AvatarDisplay
+                    url={message.profiles?.avatar_url ?? null}
+                    label={username}
+                    className="size-7"
+                    textClassName="text-xs"
+                  />
+                )}
                 <div
                   className={cn("flex flex-col", isMine ? "items-end" : "items-start")}
                 >
                   <span className="text-xs text-muted-foreground">
-                    {isMine ? "You" : `@${username}`} &middot;{" "}
-                    {formatRelativeTime(message.created_at)}
+                    {hasProfile ? (
+                      <Link href={`/players/${username}`} className="hover:text-foreground">
+                        {isMine ? "You" : `@${username}`}
+                      </Link>
+                    ) : isMine ? (
+                      "You"
+                    ) : (
+                      `@${username}`
+                    )}{" "}
+                    &middot; {formatRelativeTime(message.created_at)}
                   </span>
                   <p
                     className={cn(

@@ -16,7 +16,7 @@ export function GameFilter({
       <Link
         href={basePath}
         className={cn(
-          "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+          "rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]",
           !active
             ? "border-transparent bg-primary text-primary-foreground"
             : "border-border text-muted-foreground hover:text-foreground",
@@ -29,7 +29,7 @@ export function GameFilter({
           key={game.id}
           href={`${basePath}?game=${game.slug}`}
           className={cn(
-            "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+            "rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-150 hover:scale-[1.04] active:scale-[0.97]",
             active === game.slug
               ? "border-transparent bg-primary text-primary-foreground"
               : "border-border text-muted-foreground hover:text-foreground",

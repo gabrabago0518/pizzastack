@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section, SectionHeading } from "@/components/site/section";
+import { Reveal } from "@/components/site/reveal";
 import { createClient } from "@/lib/supabase/server";
 
 const features = [
@@ -108,24 +109,26 @@ export default async function Home() {
           align="center"
         />
         <div className="grid gap-6 sm:grid-cols-3">
-          {features.map((feature) => (
-            <Card key={feature.title}>
-              <CardContent className="flex flex-col gap-3">
-                <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <feature.icon className="size-5" />
-                </span>
-                <h3 className="font-display text-lg">{feature.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
+          {features.map((feature, i) => (
+            <Reveal key={feature.title} delay={i * 100}>
+              <Card className="h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+                <CardContent className="flex flex-col gap-3">
+                  <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <feature.icon className="size-5" />
+                  </span>
+                  <h3 className="font-display text-lg">{feature.title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {feature.description}
+                  </p>
+                </CardContent>
+              </Card>
+            </Reveal>
           ))}
         </div>
       </Section>
 
       <Section className="bg-muted/20">
-        <div className="flex flex-col items-center gap-5 text-center">
+        <Reveal className="flex flex-col items-center gap-5 text-center">
           <h2 className="text-balance font-display text-3xl sm:text-4xl">
             Ready to find your squad?
           </h2>
@@ -138,7 +141,7 @@ export default async function Home() {
               Get started <ArrowRight />
             </Link>
           </Button>
-        </div>
+        </Reveal>
       </Section>
     </>
   );

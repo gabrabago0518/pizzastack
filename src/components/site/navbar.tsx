@@ -19,7 +19,10 @@ export async function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center">
+        <Link
+          href="/"
+          className="flex items-center transition-opacity hover:opacity-80"
+        >
           <Logo id="nav" className="h-9 w-auto" />
         </Link>
 

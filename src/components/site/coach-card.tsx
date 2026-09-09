@@ -6,7 +6,7 @@ import type { CoachProfileWithRelations } from "@/lib/supabase/types";
 
 export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
   return (
-    <Card className="transition-colors hover:border-secondary/50">
+    <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-secondary/50 hover:shadow-lg">
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">

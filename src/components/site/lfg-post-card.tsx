@@ -7,7 +7,7 @@ import type { LfgPostWithRelations } from "@/lib/supabase/types";
 
 export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
   return (
-    <Card className="transition-colors hover:border-primary/40">
+    <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-1">

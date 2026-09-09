@@ -62,7 +62,7 @@ export default async function DashboardPage() {
       <div className="mb-12 grid gap-5 sm:grid-cols-3">
         {actions.map((action) => (
           <Link key={action.href} href={action.href}>
-            <Card className="h-full transition-colors hover:border-primary/40">
+            <Card className="h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
               <CardContent className="flex flex-col gap-3">
                 <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <action.icon className="size-5" />

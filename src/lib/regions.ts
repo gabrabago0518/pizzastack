@@ -1,1 +1,1 @@
-export const REGIONS = ["North America", "Europe", "South East Asia"] as const;
+export const REGIONS = ["NA", "EMEA", "SEA"] as const;

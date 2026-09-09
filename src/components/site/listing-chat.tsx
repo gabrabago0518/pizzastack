@@ -65,12 +65,12 @@ export function ListingChat({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <p className="text-sm font-medium">Squad chat</p>
+      <p className="text-sm font-medium">Party chat</p>
 
       <div ref={listRef} className="flex max-h-72 flex-col gap-2 overflow-y-auto">
         {messages.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            No messages yet — say hi to your squad.
+            No messages yet — say hi to your party.
           </p>
         ) : (
           messages.map((message) => {

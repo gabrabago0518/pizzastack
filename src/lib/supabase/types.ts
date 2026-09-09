@@ -10,6 +10,7 @@ export interface Database {
           bio: string | null;
           region: string | null;
           is_coach: boolean;
+          onboarded: boolean;
           created_at: string;
         };
         Insert: {
@@ -20,6 +21,7 @@ export interface Database {
           bio?: string | null;
           region?: string | null;
           is_coach?: boolean;
+          onboarded?: boolean;
         };
         Update: {
           username?: string;
@@ -28,6 +30,7 @@ export interface Database {
           bio?: string | null;
           region?: string | null;
           is_coach?: boolean;
+          onboarded?: boolean;
         };
         Relationships: [];
       };

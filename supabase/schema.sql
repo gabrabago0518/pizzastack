@@ -16,6 +16,11 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- onboarded: flips to true once a player has been through the post-signup
+-- "what do you play?" step, so the dashboard only asks once.
+alter table public.profiles
+  add column if not exists onboarded boolean not null default false;
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "Profiles are publicly readable" on public.profiles;
@@ -34,9 +39,8 @@ create policy "Users can update their own profile"
   using (auth.uid() = id);
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
--- Also seeds profile_games from a `game_ids` array passed in signup metadata
--- (options.data.game_ids), so games picked on the signup form are saved even
--- when email confirmation means there's no session yet to insert them with.
+-- Games are picked afterward on the onboarding step (see profile_games and
+-- the onboarded column above), not at signup time.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -49,13 +53,6 @@ begin
     coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)) || '_' || substr(new.id::text, 1, 4),
     coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1))
   );
-
-  if jsonb_typeof(new.raw_user_meta_data -> 'game_ids') = 'array' then
-    insert into public.profile_games (profile_id, game_id)
-    select new.id, value::uuid
-    from jsonb_array_elements_text(new.raw_user_meta_data -> 'game_ids') as value
-    on conflict do nothing;
-  end if;
 
   return new;
 end;

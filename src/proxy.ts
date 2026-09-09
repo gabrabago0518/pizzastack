@@ -36,6 +36,7 @@ export async function proxy(request: NextRequest) {
     "/dashboard",
     "/teammates/new",
     "/coaches/new",
+    "/onboarding",
   ];
   const isProtectedRoute = protectedPrefixes.some((prefix) =>
     request.nextUrl.pathname.startsWith(prefix),

@@ -43,8 +43,10 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const [profile, myPosts, myCoachProfiles] = await Promise.all([
-    getProfile(user.id),
+  const profile = await getProfile(user.id);
+  if (profile && !profile.onboarded) redirect("/onboarding/games");
+
+  const [myPosts, myCoachProfiles] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
   ]);

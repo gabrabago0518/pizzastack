@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
-        {activeListingId ? <ChatFab postId={activeListingId} /> : null}
+        <ChatFab activeListingId={activeListingId} />
       </body>
     </html>
   );

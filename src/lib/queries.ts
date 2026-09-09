@@ -93,3 +93,53 @@ export async function getCoachProfilesByAuthor(userId: string) {
     .returns<CoachProfileWithRelations[]>();
   return data ?? [];
 }
+
+// PostgREST's `.or()` treats "," and "()" as filter-list syntax, so strip
+// them from user input rather than let a stray character reshape the query.
+function sanitizeSearchTerm(query: string) {
+  return query.replace(/[,()]/g, "").trim();
+}
+
+export async function searchProfiles(query: string, limit = 12) {
+  const term = sanitizeSearchTerm(query);
+  if (!term) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .or(`username.ilike.%${term}%,display_name.ilike.%${term}%`)
+    .limit(limit);
+  return data ?? [];
+}
+
+export async function searchLfgPosts(query: string, limit = 12) {
+  const term = sanitizeSearchTerm(query);
+  if (!term) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_posts")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "open")
+    .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+    .returns<LfgPostWithRelations[]>();
+  return data ?? [];
+}
+
+export async function searchCoachProfiles(query: string, limit = 12) {
+  const term = sanitizeSearchTerm(query);
+  if (!term) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_profiles")
+    .select("*, profiles(username, region), games(name, slug)")
+    .or(`headline.ilike.%${term}%,bio.ilike.%${term}%`)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+    .returns<CoachProfileWithRelations[]>();
+  return data ?? [];
+}

@@ -4,7 +4,6 @@ import * as React from "react";
 import { Loader2, UserPlus, Check, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { requestToJoin } from "@/app/teammates/actions";
 
 type JoinStatus = "none" | "pending" | "accepted" | "declined";
 
@@ -24,7 +23,8 @@ export function JoinRequestButton({
     setError(null);
 
     startTransition(async () => {
-      const result = await requestToJoin(postId);
+      const response = await fetch(`/api/listings/${postId}/join`, { method: "POST" });
+      const result = (await response.json()) as { error?: string };
       if (result.error) {
         setStatus("none");
         setError(result.error);

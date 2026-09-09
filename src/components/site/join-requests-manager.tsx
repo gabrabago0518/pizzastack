@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Check, X, Loader2 } from "lucide-react";
 
-import { respondToJoinRequest } from "@/app/teammates/actions";
 import type { JoinRequestWithRequester } from "@/lib/supabase/types";
 
 export function JoinRequestsManager({
@@ -20,7 +19,11 @@ export function JoinRequestsManager({
   function handleRespond(requestId: string, accept: boolean) {
     setDecided((prev) => new Set(prev).add(requestId));
     startTransition(async () => {
-      await respondToJoinRequest(requestId, accept);
+      await fetch(`/api/join-requests/${requestId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accept }),
+      });
     });
   }
 

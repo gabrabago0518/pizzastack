@@ -4,7 +4,6 @@ import * as React from "react";
 import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { sendMessage, getListingMessages } from "@/app/teammates/actions";
 import { formatRelativeTime } from "@/lib/utils";
 import type { LfgMessageWithSender } from "@/lib/supabase/types";
 
@@ -26,7 +25,10 @@ export function ListingChat({
   const listRef = React.useRef<HTMLDivElement>(null);
 
   const refresh = React.useCallback(async () => {
-    const latest = await getListingMessages(postId);
+    const response = await fetch(`/api/listings/${postId}/messages`);
+    const { messages: latest } = (await response.json()) as {
+      messages: LfgMessageWithSender[];
+    };
     setMessages(latest);
   }, [postId]);
 
@@ -46,7 +48,12 @@ export function ListingChat({
 
     setError(null);
     startTransition(async () => {
-      const result = await sendMessage(postId, text);
+      const response = await fetch(`/api/listings/${postId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      const result = (await response.json()) as { error?: string };
       if (result.error) {
         setError(result.error);
         return;

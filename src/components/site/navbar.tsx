@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Users, GraduationCap, Shield, CircleUserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/site/logo";
@@ -7,9 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
 
 const links = [
-  { href: "/teammates", label: "Find Teammates" },
-  { href: "/coaches", label: "Find Coaches" },
+  { href: "/teammates", label: "Find Teammates", icon: Users },
+  { href: "/coaches", label: "Find Coaches", icon: GraduationCap },
 ];
+
+const iconLinkClassName =
+  "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
 
 export async function Navbar() {
   const supabase = await createClient();
@@ -41,31 +44,40 @@ export async function Navbar() {
           />
         </form>
 
-        <nav className="hidden shrink-0 items-center gap-8 lg:flex">
+        <nav className="hidden shrink-0 items-center gap-1 lg:flex">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={link.label}
+              title={link.label}
+              className={iconLinkClassName}
             >
-              {link.label}
+              <link.icon className="size-[18px]" />
             </Link>
           ))}
+          <span
+            aria-label="Find Guild — coming soon"
+            title="Find Guild — coming soon"
+            className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/40"
+          >
+            <Shield className="size-[18px]" />
+          </span>
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
           <Link
             href="/search"
             aria-label="Search"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+            className={`${iconLinkClassName} md:hidden`}
           >
             <Search className="size-4" />
           </Link>
           {user ? (
             <>
-              <Button asChild variant="ghost" size="sm" className="px-2.5 sm:px-4">
-                <Link href="/profile">Profile</Link>
-              </Button>
+              <Link href="/profile" aria-label="Profile" title="Profile" className={iconLinkClassName}>
+                <CircleUserRound className="size-[18px]" />
+              </Link>
               <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>

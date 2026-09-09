@@ -272,3 +272,13 @@ drop policy if exists "Users can remove their own commend" on public.commendatio
 create policy "Users can remove their own commend"
   on public.commendations for delete
   using (auth.uid() = commender_id);
+
+-- Backfill: the onboarding "what do you play?" step only exists to collect
+-- profile_games from players who don't have any yet. Accounts that already
+-- picked games (via the old signup-time picker) shouldn't be asked again.
+update public.profiles p
+set onboarded = true
+where p.onboarded = false
+  and exists (
+    select 1 from public.profile_games pg where pg.profile_id = p.id
+  );

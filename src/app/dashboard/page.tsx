@@ -8,7 +8,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { createClient } from "@/lib/supabase/server";
-import { getLfgPostsByAuthor, getCoachProfilesByAuthor, getProfile } from "@/lib/queries";
+import {
+  getLfgPostsByAuthor,
+  getCoachProfilesByAuthor,
+  getProfile,
+  getGamesForProfile,
+} from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Dashboard — Pizzastack.gg",
@@ -44,7 +49,16 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const profile = await getProfile(user.id);
-  if (profile && !profile.onboarded) redirect("/onboarding/games");
+  if (profile && !profile.onboarded) {
+    // Accounts that already picked games (e.g. via the old signup-time
+    // picker) shouldn't be asked again — heal the flag and let them through.
+    const existingGames = await getGamesForProfile(user.id);
+    if (existingGames.length > 0) {
+      await supabase.from("profiles").update({ onboarded: true }).eq("id", user.id);
+    } else {
+      redirect("/onboarding/games");
+    }
+  }
 
   const [myPosts, myCoachProfiles] = await Promise.all([
     getLfgPostsByAuthor(user.id),

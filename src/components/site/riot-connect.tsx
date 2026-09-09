@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { RankMedalCard } from "@/components/site/rank-medal-card";
+import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
 import { connectRiotAccount, type RiotFormState } from "@/app/profile/actions";
 import { formatValorantRank, VALORANT_REGIONS } from "@/lib/valorant-rank";
 import { formatRelativeTime } from "@/lib/utils";
@@ -18,6 +19,7 @@ interface RiotConnectProps {
   riotTag: string | null;
   riotRegion: string | null;
   valorantTier: string | null;
+  valorantTierIcon: string | null;
   valorantRr: number | null;
   syncedAt: string | null;
 }
@@ -27,6 +29,7 @@ export function RiotConnect({
   riotTag,
   riotRegion,
   valorantTier: initialTier,
+  valorantTierIcon: initialTierIcon,
   valorantRr: initialRr,
   syncedAt: initialSyncedAt,
 }: RiotConnectProps) {
@@ -35,6 +38,7 @@ export function RiotConnect({
     {},
   );
   const [tier, setTier] = React.useState(initialTier);
+  const [tierIcon, setTierIcon] = React.useState(initialTierIcon);
   const [rr, setRr] = React.useState(initialRr);
   const [syncedAt, setSyncedAt] = React.useState(initialSyncedAt);
   const [refreshError, setRefreshError] = React.useState<string | null>(null);
@@ -49,6 +53,7 @@ export function RiotConnect({
       const result = (await response.json()) as {
         error?: string;
         tier?: string | null;
+        tierIcon?: string | null;
         rr?: number | null;
         syncedAt?: string;
       };
@@ -57,6 +62,7 @@ export function RiotConnect({
         return;
       }
       setTier(result.tier ?? null);
+      setTierIcon(result.tierIcon ?? null);
       setRr(result.rr ?? null);
       setSyncedAt(result.syncedAt ?? null);
     });
@@ -129,6 +135,7 @@ export function RiotConnect({
             game="Valorant"
             rankLabel={formatValorantRank(tier, rr)}
             sourceLabel="Via Riot ID"
+            icon={<ValorantRankIcon iconUrl={tierIcon} className="size-10" />}
           />
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>{syncedAt ? `Synced ${formatRelativeTime(syncedAt)}` : "Not synced yet"}</span>

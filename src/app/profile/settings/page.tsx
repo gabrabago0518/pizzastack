@@ -93,6 +93,7 @@ export default async function ProfileSettingsPage({
             riotTag={profile.riot_tag}
             riotRegion={profile.riot_region}
             valorantTier={profile.valorant_tier}
+            valorantTierIcon={profile.valorant_tier_icon}
             valorantRr={profile.valorant_rr}
             syncedAt={profile.valorant_rank_synced_at}
           />

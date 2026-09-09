@@ -84,6 +84,8 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists valorant_tier text;
 alter table public.profiles
+  add column if not exists valorant_tier_icon text;
+alter table public.profiles
   add column if not exists valorant_rr smallint;
 alter table public.profiles
   add column if not exists valorant_elo integer;

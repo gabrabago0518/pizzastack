@@ -113,6 +113,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         cs2PremierRating={profile.cs2_premier_rating}
         cs2CompetitiveRank={profile.cs2_competitive_rank}
         valorantTier={profile.valorant_tier}
+        valorantTierIcon={profile.valorant_tier_icon}
         valorantRr={profile.valorant_rr}
       />
 

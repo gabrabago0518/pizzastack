@@ -1,11 +1,13 @@
 export interface ValorantRankResult {
-  tier: string | null;
+  tierId: number | null;
+  tierName: string | null;
   rr: number | null;
   elo: number | null;
 }
 
 interface HenrikMmrCurrent {
-  tier?: { name?: string };
+  tier?: { id?: number; name?: string };
+  currenttier?: number;
   currenttierpatched?: string;
   rr?: number;
   ranking_in_tier?: number;
@@ -23,8 +25,8 @@ interface HenrikMmrResponse {
 // stats API — Riot doesn't grant public rank/match data access without an
 // approved RSO integration, so there's no official alternative here. The
 // response shape has shifted across their API versions (v2's current_data
-// vs v3's current, currenttierpatched vs tier.name, ranking_in_tier vs rr),
-// so both are checked defensively.
+// vs v3's current, currenttierpatched/currenttier vs tier.name/tier.id,
+// ranking_in_tier vs rr), so both are checked defensively.
 export async function fetchValorantRank(
   name: string,
   tag: string,
@@ -41,7 +43,9 @@ export async function fetchValorantRank(
   });
 
   if (!response.ok) {
-    if (response.status === 404) return { tier: null, rr: null, elo: null };
+    if (response.status === 404) {
+      return { tierId: null, tierName: null, rr: null, elo: null };
+    }
     throw new Error(`HenrikDev request failed (${response.status})`);
   }
 
@@ -49,7 +53,8 @@ export async function fetchValorantRank(
   const current = data.data?.current ?? data.data?.current_data ?? {};
 
   return {
-    tier: current.tier?.name ?? current.currenttierpatched ?? null,
+    tierId: current.tier?.id ?? current.currenttier ?? null,
+    tierName: current.tier?.name ?? current.currenttierpatched ?? null,
     rr: current.rr ?? current.ranking_in_tier ?? null,
     elo: current.elo ?? null,
   };

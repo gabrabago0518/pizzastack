@@ -22,6 +22,7 @@ export interface Database {
           riot_tag: string | null;
           riot_region: string | null;
           valorant_tier: string | null;
+          valorant_tier_icon: string | null;
           valorant_rr: number | null;
           valorant_elo: number | null;
           valorant_rank_synced_at: string | null;
@@ -47,6 +48,7 @@ export interface Database {
           riot_tag?: string | null;
           riot_region?: string | null;
           valorant_tier?: string | null;
+          valorant_tier_icon?: string | null;
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;
@@ -70,6 +72,7 @@ export interface Database {
           riot_tag?: string | null;
           riot_region?: string | null;
           valorant_tier?: string | null;
+          valorant_tier_icon?: string | null;
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;

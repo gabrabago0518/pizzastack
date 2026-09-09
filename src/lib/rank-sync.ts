@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { fetchDotaRankFromOpenDota } from "@/lib/steam";
 import { fetchCs2RankFromLeetify } from "@/lib/leetify";
 import { fetchValorantRank } from "@/lib/henrikdev";
+import { fetchValorantTierIcon } from "@/lib/valorant-content";
 
 export interface SyncedRanks {
   dotaRankTier: number | null;
@@ -63,6 +64,7 @@ export async function syncRanksForSteamId(
 
 export interface SyncedValorantRank {
   tier: string | null;
+  tierIcon: string | null;
   rr: number | null;
   elo: number | null;
   syncedAt: string;
@@ -82,16 +84,26 @@ export async function syncValorantRank(
   const rank = await fetchValorantRank(name, tag, region);
   const syncedAt = new Date().toISOString();
 
+  // Icon resolution is best-effort — a failure here shouldn't lose the
+  // rank data itself, since the icon can simply be re-resolved next sync.
+  let tierIcon: string | null = null;
+  try {
+    tierIcon = await fetchValorantTierIcon(rank.tierId);
+  } catch (err) {
+    console.error("[rank-sync] valorant-api.com icon fetch failed:", err);
+  }
+
   const service = createServiceClient();
   await service
     .from("profiles")
     .update({
-      valorant_tier: rank.tier,
+      valorant_tier: rank.tierName,
+      valorant_tier_icon: tierIcon,
       valorant_rr: rank.rr,
       valorant_elo: rank.elo,
       valorant_rank_synced_at: syncedAt,
     })
     .eq("id", userId);
 
-  return { ...rank, syncedAt };
+  return { tier: rank.tierName, tierIcon, rr: rank.rr, elo: rank.elo, syncedAt };
 }

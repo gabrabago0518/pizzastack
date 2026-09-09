@@ -1,5 +1,6 @@
 import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
+import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
 import { formatValorantRank } from "@/lib/valorant-rank";
@@ -13,6 +14,7 @@ export function RankBanner({
   cs2PremierRating,
   cs2CompetitiveRank,
   valorantTier,
+  valorantTierIcon,
   valorantRr,
 }: {
   dotaRankTier: number | null;
@@ -20,6 +22,7 @@ export function RankBanner({
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
   valorantTier: string | null;
+  valorantTierIcon: string | null;
   valorantRr: number | null;
 }) {
   const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
@@ -51,6 +54,7 @@ export function RankBanner({
             game="Valorant"
             rankLabel={formatValorantRank(valorantTier, valorantRr)}
             sourceLabel="Via Riot ID"
+            icon={<ValorantRankIcon iconUrl={valorantTierIcon} className="size-16 shrink-0 drop-shadow-md" />}
           />
         ) : null}
       </div>

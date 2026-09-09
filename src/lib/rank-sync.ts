@@ -35,8 +35,8 @@ export async function syncRanksForSteamId(
         dota_rank_synced_at: syncedAt,
       })
       .eq("id", userId);
-  } catch {
-    // Retryable from the settings page.
+  } catch (err) {
+    console.error("[rank-sync] OpenDota fetch failed:", err);
   }
 
   let cs2PremierRating: number | null = null;
@@ -53,8 +53,8 @@ export async function syncRanksForSteamId(
         cs2_rank_synced_at: syncedAt,
       })
       .eq("id", userId);
-  } catch {
-    // Retryable from the settings page.
+  } catch (err) {
+    console.error("[rank-sync] Leetify fetch failed:", err);
   }
 
   return { dotaRankTier, dotaLeaderboardRank, cs2PremierRating, cs2CompetitiveRank };

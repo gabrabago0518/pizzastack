@@ -12,6 +12,7 @@ import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
 import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
+import { MODES_BY_GAME, FALLBACK_MODES } from "@/lib/modes";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
 
@@ -63,6 +64,9 @@ export function LfgForm({ games }: { games: Game[] }) {
   const [selectedGameId, setSelectedGameId] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
+  const modeOptions = selectedGame
+    ? (MODES_BY_GAME[selectedGame.slug] ?? FALLBACK_MODES)
+    : [];
   const rankOptions = selectedGame
     ? (RANKS_BY_GAME[selectedGame.slug] ?? FALLBACK_RANKS)
     : [];
@@ -72,7 +76,7 @@ export function LfgForm({ games }: { games: Game[] }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="gameId">Game</Label>
           <SelectNative
@@ -88,6 +92,26 @@ export function LfgForm({ games }: { games: Game[] }) {
             {games.map((game) => (
               <option key={game.id} value={game.id}>
                 {game.name}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="mode">Mode</Label>
+          <SelectNative
+            key={selectedGameId}
+            id="mode"
+            name="mode"
+            required
+            disabled={!selectedGame}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              {selectedGame ? "Select a mode" : "Select a game first"}
+            </option>
+            {modeOptions.map((mode) => (
+              <option key={mode} value={mode}>
+                {mode}
               </option>
             ))}
           </SelectNative>

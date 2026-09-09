@@ -117,6 +117,11 @@ alter table public.lfg_posts
 alter table public.lfg_posts
   add constraint lfg_posts_players_needed_check check (players_needed between 1 and 4);
 
+-- mode: game mode the listing is for (Unranked, Ranked, Turbo for Dota 2,
+-- etc. — see src/lib/modes.ts). Options depend on the selected game.
+alter table public.lfg_posts
+  add column if not exists mode text;
+
 alter table public.lfg_posts enable row level security;
 
 drop policy if exists "LFG posts are publicly readable" on public.lfg_posts;

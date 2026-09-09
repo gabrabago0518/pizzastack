@@ -61,6 +61,7 @@ export interface Database {
           region: string | null;
           roles_needed: string[] | null;
           players_needed: number;
+          mode: string | null;
           status: "open" | "closed";
           created_at: string;
         };
@@ -73,6 +74,7 @@ export interface Database {
           region?: string | null;
           roles_needed?: string[] | null;
           players_needed?: number;
+          mode?: string | null;
           status?: "open" | "closed";
         };
         Update: {
@@ -82,6 +84,7 @@ export interface Database {
           region?: string | null;
           roles_needed?: string[] | null;
           players_needed?: number;
+          mode?: string | null;
           status?: "open" | "closed";
         };
         Relationships: [

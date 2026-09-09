@@ -14,6 +14,7 @@ export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{post.games?.name ?? "Unknown game"}</Badge>
+              {post.mode ? <Badge variant="outline">{post.mode}</Badge> : null}
               {post.rank ? <Badge variant="muted">{post.rank}</Badge> : null}
             </div>
             <h3 className="font-display text-lg leading-snug">{post.title}</h3>

@@ -24,6 +24,7 @@ export async function createLfgPost(
   const gameId = String(formData.get("gameId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const mode = String(formData.get("mode") ?? "").trim();
   const rank = String(formData.get("rank") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const rolesNeeded = String(formData.get("rolesNeeded") ?? "")
@@ -32,8 +33,8 @@ export async function createLfgPost(
     .filter(Boolean);
   const playersNeeded = Number(formData.get("playersNeeded"));
 
-  if (!gameId || !title || !rank) {
-    return { error: "Pick a game, a rank, and give your listing a title." };
+  if (!gameId || !title || !mode || !rank) {
+    return { error: "Pick a game, a mode, a rank, and give your listing a title." };
   }
   if (!Number.isInteger(playersNeeded) || playersNeeded < 1 || playersNeeded > 4) {
     return { error: "Choose how many players you need (1-4)." };
@@ -44,6 +45,7 @@ export async function createLfgPost(
     game_id: gameId,
     title,
     description: description || null,
+    mode,
     rank,
     region: region || null,
     roles_needed: rolesNeeded.length ? rolesNeeded : null,

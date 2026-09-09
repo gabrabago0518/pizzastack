@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface AuthFormState {
   error?: string;
+  info?: string;
 }
 
 export async function signUp(
@@ -29,7 +30,7 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { username } },
@@ -37,6 +38,14 @@ export async function signUp(
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (!data.session) {
+    // Email confirmation is required — no session yet, don't redirect
+    // into a protected route (proxy.ts would just bounce back to /login).
+    return {
+      info: "Check your inbox to confirm your email, then log in.",
+    };
   }
 
   revalidatePath("/", "layout");
@@ -58,7 +67,12 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: "Incorrect email or password." };
+    if (error.code === "email_not_confirmed") {
+      return {
+        error: "Confirm your email first — check your inbox for the link.",
+      };
+    }
+    return { error: error.message };
   }
 
   revalidatePath("/", "layout");

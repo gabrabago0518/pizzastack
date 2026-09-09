@@ -66,6 +66,11 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           {state.error}
         </p>
       ) : null}
+      {state.info ? (
+        <p className="rounded-lg bg-secondary/10 px-3 py-2 text-sm text-secondary">
+          {state.info}
+        </p>
+      ) : null}
 
       <Button type="submit" size="lg" disabled={isPending} className="mt-1">
         {isPending ? <Loader2 className="animate-spin" /> : null}

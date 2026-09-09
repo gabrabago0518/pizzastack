@@ -59,3 +59,68 @@ export async function createLfgPost(
   revalidatePath("/teammates");
   redirect("/teammates");
 }
+
+export interface JoinRequestState {
+  error?: string;
+}
+
+export async function requestToJoin(postId: string): Promise<JoinRequestState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to request to join." };
+  }
+
+  const { data: post } = await supabase
+    .from("lfg_posts")
+    .select("author_id")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (!post) {
+    return { error: "That listing no longer exists." };
+  }
+  if (post.author_id === user.id) {
+    return { error: "You can't request to join your own listing." };
+  }
+
+  const { error } = await supabase
+    .from("lfg_join_requests")
+    .insert({ post_id: postId, requester_id: user.id });
+  // 23505 = unique_violation (already requested) — treat as a no-op success.
+  if (error && error.code !== "23505") {
+    return { error: error.message };
+  }
+
+  revalidatePath("/teammates");
+  return {};
+}
+
+export async function respondToJoinRequest(
+  requestId: string,
+  accept: boolean,
+): Promise<JoinRequestState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("lfg_join_requests")
+    .update({ status: accept ? "accepted" : "declined" })
+    .eq("id", requestId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/teammates");
+  return {};
+}

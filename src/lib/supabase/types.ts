@@ -177,6 +177,39 @@ export interface Database {
           },
         ];
       };
+      lfg_join_requests: {
+        Row: {
+          id: string;
+          post_id: string;
+          requester_id: string;
+          status: "pending" | "accepted" | "declined";
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          requester_id: string;
+          status?: "pending" | "accepted" | "declined";
+        };
+        Update: {
+          status?: "pending" | "accepted" | "declined";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lfg_join_requests_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "lfg_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lfg_join_requests_requester_id_fkey";
+            columns: ["requester_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       commendations: {
         Row: {
           profile_id: string;
@@ -220,10 +253,15 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Game = Database["public"]["Tables"]["games"]["Row"];
 export type LfgPost = Database["public"]["Tables"]["lfg_posts"]["Row"];
 export type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"];
+export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
   games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type JoinRequestWithRequester = JoinRequest & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 
 export type CoachProfileWithRelations = CoachProfile & {

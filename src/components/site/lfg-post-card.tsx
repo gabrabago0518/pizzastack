@@ -2,11 +2,28 @@ import Link from "next/link";
 import { Users, MapPin, UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { JoinRequestButton } from "@/components/site/join-request-button";
+import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { formatRelativeTime } from "@/lib/utils";
-import type { LfgPostWithRelations } from "@/lib/supabase/types";
+import type { LfgPostWithRelations, JoinRequestWithRequester } from "@/lib/supabase/types";
 
-export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
+type JoinStatus = "none" | "pending" | "accepted" | "declined";
+
+export function LfgPostCard({
+  post,
+  viewerId,
+  myRequestStatus = "none",
+  pendingRequests = [],
+}: {
+  post: LfgPostWithRelations;
+  viewerId?: string;
+  myRequestStatus?: JoinStatus;
+  pendingRequests?: JoinRequestWithRequester[];
+}) {
+  const isOwner = viewerId === post.author_id;
+
   return (
     <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
       <CardContent className="flex flex-col gap-4">
@@ -65,6 +82,22 @@ export function LfgPostCard({ post }: { post: LfgPostWithRelations }) {
             Needs {post.players_needed}
           </span>
         </div>
+
+        {isOwner ? (
+          <JoinRequestsManager requests={pendingRequests} />
+        ) : (
+          <div className="flex justify-end">
+            {viewerId ? (
+              <JoinRequestButton postId={post.id} initialStatus={myRequestStatus} />
+            ) : (
+              <Button asChild size="sm" variant="outline">
+                <Link href="/login">
+                  <UserPlus /> Request to join
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

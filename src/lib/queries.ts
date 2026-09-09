@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   CoachProfileWithRelations,
   LfgPostWithRelations,
+  JoinRequestWithRequester,
   Game,
 } from "@/lib/supabase/types";
 
@@ -163,6 +164,22 @@ export async function hasCommended(profileId: string, commenderId: string) {
     .eq("commender_id", commenderId)
     .maybeSingle();
   return data !== null;
+}
+
+// RLS scopes this to rows the viewer is allowed to see: their own join
+// requests (as requester), plus requests on posts they own — so callers can
+// bucket the result into "my request status" vs "requests to manage"
+// without any extra filtering.
+export async function getJoinRequestsForPosts(postIds: string[]) {
+  if (postIds.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_join_requests")
+    .select("*, profiles(username, avatar_url)")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: true })
+    .returns<JoinRequestWithRequester[]>();
+  return data ?? [];
 }
 
 export async function getGamesForProfile(profileId: string) {

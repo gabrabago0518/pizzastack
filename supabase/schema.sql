@@ -145,6 +145,47 @@ create policy "Users can delete their own LFG posts"
   using (auth.uid() = author_id);
 
 -- ---------------------------------------------------------------------------
+-- lfg_join_requests: a player requesting to join someone else's listing.
+-- The post's author decides to accept or decline.
+-- ---------------------------------------------------------------------------
+create table if not exists public.lfg_join_requests (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.lfg_posts (id) on delete cascade,
+  requester_id uuid not null references public.profiles (id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
+  unique (post_id, requester_id)
+);
+
+alter table public.lfg_join_requests enable row level security;
+
+drop policy if exists "Requesters and post owners can view join requests" on public.lfg_join_requests;
+create policy "Requesters and post owners can view join requests"
+  on public.lfg_join_requests for select
+  using (
+    auth.uid() = requester_id
+    or auth.uid() = (select author_id from public.lfg_posts where id = post_id)
+  );
+
+drop policy if exists "Users can request to join a listing" on public.lfg_join_requests;
+create policy "Users can request to join a listing"
+  on public.lfg_join_requests for insert
+  with check (
+    auth.uid() = requester_id
+    and auth.uid() <> (select author_id from public.lfg_posts where id = post_id)
+  );
+
+drop policy if exists "Post owners can respond to join requests" on public.lfg_join_requests;
+create policy "Post owners can respond to join requests"
+  on public.lfg_join_requests for update
+  using (auth.uid() = (select author_id from public.lfg_posts where id = post_id));
+
+drop policy if exists "Requesters can cancel their own pending request" on public.lfg_join_requests;
+create policy "Requesters can cancel their own pending request"
+  on public.lfg_join_requests for delete
+  using (auth.uid() = requester_id);
+
+-- ---------------------------------------------------------------------------
 -- coach_profiles: one row per (coach, game) they offer coaching for.
 -- ---------------------------------------------------------------------------
 create table if not exists public.coach_profiles (

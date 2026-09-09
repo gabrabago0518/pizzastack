@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ExternalLink, Settings } from "lucide-react";
+import { Award, ExternalLink, Settings } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
@@ -14,6 +14,7 @@ import {
   getLfgPostsByAuthor,
   getCoachProfilesByAuthor,
   getGamesForProfile,
+  getCommendCount,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -31,10 +32,11 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles, games] = await Promise.all([
+  const [posts, coachProfiles, games, commendCount] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
     getGamesForProfile(user.id),
+    getCommendCount(user.id),
   ]);
 
   return (
@@ -52,6 +54,9 @@ export default async function ProfilePage() {
             <p className="text-muted-foreground">@{profile.username}</p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
               {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
+              <Badge variant="secondary">
+                <Award /> {commendCount} {commendCount === 1 ? "commend" : "commends"}
+              </Badge>
               <Link
                 href={`/players/${profile.username}`}
                 className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"

@@ -145,6 +145,26 @@ export async function searchCoachProfiles(query: string, limit = 12) {
   return data ?? [];
 }
 
+export async function getCommendCount(profileId: string) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("commendations")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", profileId);
+  return count ?? 0;
+}
+
+export async function hasCommended(profileId: string, commenderId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("commendations")
+    .select("profile_id")
+    .eq("profile_id", profileId)
+    .eq("commender_id", commenderId)
+    .maybeSingle();
+  return data !== null;
+}
+
 export async function getGamesForProfile(profileId: string) {
   const supabase = await createClient();
   const { data } = await supabase

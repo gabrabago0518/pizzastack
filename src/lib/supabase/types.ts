@@ -168,6 +168,37 @@ export interface Database {
           },
         ];
       };
+      commendations: {
+        Row: {
+          profile_id: string;
+          commender_id: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          commender_id: string;
+        };
+        Update: {
+          profile_id?: string;
+          commender_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "commendations_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "commendations_commender_id_fkey";
+            columns: ["commender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

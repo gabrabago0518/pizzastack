@@ -1,15 +1,20 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { Award } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { CommendButton } from "@/components/site/commend-button";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Badge } from "@/components/ui/badge";
+import { createClient } from "@/lib/supabase/server";
 import {
   getProfileByUsername,
   getLfgPostsByAuthor,
   getCoachProfilesByAuthor,
   getGamesForProfile,
+  getCommendCount,
+  hasCommended,
 } from "@/lib/queries";
 
 interface PlayerPageProps {
@@ -28,11 +33,21 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
   const profile = await getProfileByUsername(username);
   if (!profile) notFound();
 
-  const [posts, coachProfiles, games] = await Promise.all([
-    getLfgPostsByAuthor(profile.id),
-    getCoachProfilesByAuthor(profile.id),
-    getGamesForProfile(profile.id),
-  ]);
+  const supabase = await createClient();
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+
+  const isOwnProfile = viewer?.id === profile.id;
+
+  const [posts, coachProfiles, games, commendCount, viewerHasCommended] =
+    await Promise.all([
+      getLfgPostsByAuthor(profile.id),
+      getCoachProfilesByAuthor(profile.id),
+      getGamesForProfile(profile.id),
+      getCommendCount(profile.id),
+      viewer && !isOwnProfile ? hasCommended(profile.id, viewer.id) : false,
+    ]);
 
   const label = profile.display_name || profile.username;
 
@@ -43,7 +58,20 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         <div className="flex flex-col items-center gap-1.5 sm:items-start">
           <h1 className="font-display text-3xl">{label}</h1>
           <p className="text-muted-foreground">@{profile.username}</p>
-          {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+            {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
+            {viewer && !isOwnProfile ? (
+              <CommendButton
+                profileId={profile.id}
+                initialCommended={viewerHasCommended}
+                initialCount={commendCount}
+              />
+            ) : (
+              <Badge variant="secondary">
+                <Award /> {commendCount} {commendCount === 1 ? "commend" : "commends"}
+              </Badge>
+            )}
+          </div>
           {games.length > 0 ? (
             <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
               {games.map((game) => (

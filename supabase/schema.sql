@@ -231,3 +231,31 @@ drop policy if exists "Users can remove their own profile games" on public.profi
 create policy "Users can remove their own profile games"
   on public.profile_games for delete
   using (auth.uid() = profile_id);
+
+-- ---------------------------------------------------------------------------
+-- commendations: players can commend another player's profile once.
+-- ---------------------------------------------------------------------------
+create table if not exists public.commendations (
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  commender_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (profile_id, commender_id),
+  constraint commendations_no_self_commend check (profile_id <> commender_id)
+);
+
+alter table public.commendations enable row level security;
+
+drop policy if exists "Commendations are publicly readable" on public.commendations;
+create policy "Commendations are publicly readable"
+  on public.commendations for select
+  using (true);
+
+drop policy if exists "Users can commend other players" on public.commendations;
+create policy "Users can commend other players"
+  on public.commendations for insert
+  with check (auth.uid() = commender_id);
+
+drop policy if exists "Users can remove their own commend" on public.commendations;
+create policy "Users can remove their own commend"
+  on public.commendations for delete
+  using (auth.uid() = commender_id);

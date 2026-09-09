@@ -72,9 +72,16 @@ export default async function ProfileSettingsPage({
         <div className="mt-6">
           <SteamConnect
             connected={Boolean(profile.steam_id)}
-            rankTier={profile.dota_rank_tier}
-            leaderboardRank={profile.dota_leaderboard_rank}
-            syncedAt={profile.dota_rank_synced_at}
+            dotaRankTier={profile.dota_rank_tier}
+            dotaLeaderboardRank={profile.dota_leaderboard_rank}
+            cs2PremierRating={profile.cs2_premier_rating}
+            cs2CompetitiveRank={profile.cs2_competitive_rank}
+            syncedAt={
+              [profile.dota_rank_synced_at, profile.cs2_rank_synced_at]
+                .filter((date): date is string => Boolean(date))
+                .sort()
+                .at(-1) ?? null
+            }
             statusParam={steam}
           />
         </div>

@@ -15,6 +15,9 @@ export interface Database {
           dota_rank_tier: number | null;
           dota_leaderboard_rank: number | null;
           dota_rank_synced_at: string | null;
+          cs2_premier_rating: number | null;
+          cs2_competitive_rank: number | null;
+          cs2_rank_synced_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -30,6 +33,9 @@ export interface Database {
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;
+          cs2_premier_rating?: number | null;
+          cs2_competitive_rank?: number | null;
+          cs2_rank_synced_at?: string | null;
         };
         Update: {
           username?: string;
@@ -43,6 +49,9 @@ export interface Database {
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;
+          cs2_premier_rating?: number | null;
+          cs2_competitive_rank?: number | null;
+          cs2_rank_synced_at?: string | null;
         };
         Relationships: [];
       };

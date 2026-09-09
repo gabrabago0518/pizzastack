@@ -1,22 +1,21 @@
-import { DotaRankIcon } from "@/components/site/dota-rank-icon";
+import type { ReactNode } from "react";
 
 // One "achievement card" in a rank banner — a game's verified rank, shown
-// big enough to actually read the medal. Icon lookup is Dota-specific for
-// now (the only game with a verification source); when a second game gets
-// one, this either grows a `game` discriminator or the icon prop becomes a
-// plain image URL instead of routing through DotaRankIcon.
+// big enough to actually read. `icon` is optional since not every game has
+// icon artwork wired up yet (e.g. CS2 shows text-only for now) — pass
+// nothing rather than a placeholder; the card still reads fine without one.
 export function RankMedalCard({
   game,
   rankLabel,
-  rankTier,
+  icon,
 }: {
   game: string;
   rankLabel: string;
-  rankTier: number | null;
+  icon?: ReactNode;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary/10 px-5 py-4 transition-colors hover:border-secondary/50">
-      <DotaRankIcon rankTier={rankTier} className="size-16 shrink-0 drop-shadow-md" />
+      {icon}
       <div>
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {game}

@@ -11,19 +11,21 @@ import { Label } from "@/components/ui/label";
 import { SelectNative } from "@/components/ui/select-native";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { createCoachProfile, type CoachFormState } from "@/app/coaches/actions";
-import { formatDotaRank } from "@/lib/dota-rank";
+import { getFormVerifiedRank } from "@/lib/verified-ranks";
 import type { Game } from "@/lib/supabase/types";
-
-const DOTA_2_SLUG = "dota-2";
 
 export function CoachForm({
   games,
   dotaRankTier,
   dotaLeaderboardRank,
+  cs2PremierRating,
+  cs2CompetitiveRank,
 }: {
   games: Game[];
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
+  cs2PremierRating: number | null;
+  cs2CompetitiveRank: number | null;
 }) {
   const [state, formAction, isPending] = useActionState<CoachFormState, FormData>(
     createCoachProfile,
@@ -32,8 +34,13 @@ export function CoachForm({
   const [selectedGameId, setSelectedGameId] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
-  const isDota2 = selectedGame?.slug === DOTA_2_SLUG;
-  const blockedByUnverifiedRank = isDota2 && !dotaRankTier;
+  const verifiedRank = getFormVerifiedRank(selectedGame?.slug, {
+    dotaRankTier,
+    dotaLeaderboardRank,
+    cs2PremierRating,
+    cs2CompetitiveRank,
+  });
+  const blockedByUnverifiedRank = verifiedRank !== null && !verifiedRank.available;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -57,14 +64,16 @@ export function CoachForm({
         </SelectNative>
       </div>
 
-      {isDota2 ? (
+      {verifiedRank ? (
         <div className="flex flex-col gap-1.5">
           <Label>Verified rank</Label>
           <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
-            {dotaRankTier ? (
+            {verifiedRank.available ? (
               <>
-                <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
-                {formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+                {selectedGame?.slug === "dota-2" ? (
+                  <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
+                ) : null}
+                {verifiedRank.label}
               </>
             ) : (
               <span className="text-muted-foreground">Not verified</span>
@@ -72,7 +81,7 @@ export function CoachForm({
           </div>
           {blockedByUnverifiedRank ? (
             <p className="text-sm text-muted-foreground">
-              Coaching for Dota 2 requires a Steam-verified rank.{" "}
+              Coaching for {selectedGame?.name} requires a Steam-verified rank.{" "}
               <Link
                 href="/profile/settings"
                 className="font-medium text-primary hover:underline"

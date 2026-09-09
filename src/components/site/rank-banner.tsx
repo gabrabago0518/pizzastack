@@ -1,18 +1,24 @@
 import { RankMedalCard } from "@/components/site/rank-medal-card";
+import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
+import { formatCs2Rank } from "@/lib/cs2-rank";
 
-// A showcase strip of a player's verified ranks across games. Only Dota 2
-// has a verification source today, so this renders at most one card — but
-// it's built as a list so adding the next game (League, Valorant, ...) is
-// just another entry, not a redesign.
+// A showcase strip of a player's verified ranks across games. Built as a
+// list so adding the next game's rank later is just another entry here,
+// not a redesign.
 export function RankBanner({
   dotaRankTier,
   dotaLeaderboardRank,
+  cs2PremierRating,
+  cs2CompetitiveRank,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
+  cs2PremierRating: number | null;
+  cs2CompetitiveRank: number | null;
 }) {
-  if (!dotaRankTier) return null;
+  const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
+  if (!dotaRankTier && !hasCs2Rank) return null;
 
   return (
     <div className="mb-10 flex flex-col gap-3">
@@ -20,11 +26,19 @@ export function RankBanner({
         Verified ranks
       </h2>
       <div className="flex flex-wrap gap-3">
-        <RankMedalCard
-          game="Dota 2"
-          rankTier={dotaRankTier}
-          rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
-        />
+        {dotaRankTier ? (
+          <RankMedalCard
+            game="Dota 2"
+            rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+            icon={<DotaRankIcon rankTier={dotaRankTier} className="size-16 shrink-0 drop-shadow-md" />}
+          />
+        ) : null}
+        {hasCs2Rank ? (
+          <RankMedalCard
+            game="Counter-Strike 2"
+            rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -15,11 +15,9 @@ import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
 import { MODES_BY_GAME, FALLBACK_MODES } from "@/lib/modes";
-import { formatDotaRank } from "@/lib/dota-rank";
+import { getFormVerifiedRank } from "@/lib/verified-ranks";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
-
-const DOTA_2_SLUG = "dota-2";
 
 function RolesPicker({ options, disabled }: { options: string[]; disabled: boolean }) {
   const [selected, setSelected] = React.useState<string[]>([]);
@@ -65,10 +63,14 @@ export function LfgForm({
   games,
   dotaRankTier,
   dotaLeaderboardRank,
+  cs2PremierRating,
+  cs2CompetitiveRank,
 }: {
   games: Game[];
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
+  cs2PremierRating: number | null;
+  cs2CompetitiveRank: number | null;
 }) {
   const [state, formAction, isPending] = useActionState<LfgFormState, FormData>(
     createLfgPost,
@@ -77,7 +79,12 @@ export function LfgForm({
   const [selectedGameId, setSelectedGameId] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
-  const isDota2 = selectedGame?.slug === DOTA_2_SLUG;
+  const verifiedRank = getFormVerifiedRank(selectedGame?.slug, {
+    dotaRankTier,
+    dotaLeaderboardRank,
+    cs2PremierRating,
+    cs2CompetitiveRank,
+  });
   const modeOptions = selectedGame
     ? (MODES_BY_GAME[selectedGame.slug] ?? FALLBACK_MODES)
     : [];
@@ -87,7 +94,7 @@ export function LfgForm({
   const roleOptions = selectedGame
     ? (ROLES_BY_GAME[selectedGame.slug] ?? FALLBACK_ROLES)
     : [];
-  const blockedByUnverifiedRank = isDota2 && !dotaRankTier;
+  const blockedByUnverifiedRank = verifiedRank !== null && !verifiedRank.available;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -133,12 +140,14 @@ export function LfgForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="rank">Rank</Label>
-          {isDota2 ? (
+          {verifiedRank ? (
             <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
-              {dotaRankTier ? (
+              {verifiedRank.available ? (
                 <>
-                  <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
-                  {formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+                  {selectedGame?.slug === "dota-2" ? (
+                    <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
+                  ) : null}
+                  {verifiedRank.label}
                 </>
               ) : (
                 <span className="text-muted-foreground">Not verified</span>
@@ -168,7 +177,7 @@ export function LfgForm({
 
       {blockedByUnverifiedRank ? (
         <p className="rounded-lg bg-muted/40 px-3.5 py-2.5 text-sm text-muted-foreground">
-          Dota 2 rank is pulled from your connected Steam account.{" "}
+          {selectedGame?.name} rank is pulled from your connected Steam account.{" "}
           <Link href="/profile/settings" className="font-medium text-primary hover:underline">
             Connect Steam
           </Link>{" "}

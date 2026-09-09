@@ -110,6 +110,8 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
       <RankBanner
         dotaRankTier={profile.dota_rank_tier}
         dotaLeaderboardRank={profile.dota_leaderboard_rank}
+        cs2PremierRating={profile.cs2_premier_rating}
+        cs2CompetitiveRank={profile.cs2_competitive_rank}
       />
 
       <div className="grid gap-8 lg:grid-cols-2">

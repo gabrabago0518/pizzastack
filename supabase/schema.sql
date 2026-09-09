@@ -38,15 +38,15 @@ create policy "Users can update their own profile"
   on public.profiles for update
   using (auth.uid() = id);
 
--- Steam / Dota 2 rank verification. steam_id is only ever set after a
--- verified Steam OpenID login, and the dota_* rank columns only after a
--- server-side fetch from OpenDota (see src/lib/steam.ts and the
--- /api/auth/steam/* and /api/steam/refresh-rank routes) — never directly by
--- the user. Column grants below enforce that: the "authenticated" role
--- (the user's own session) can only write the columns the app already lets
--- them self-report; only the service-role key (bypasses RLS/grants
--- entirely) can write steam_id/dota_rank_tier/dota_leaderboard_rank/
--- dota_rank_synced_at.
+-- Steam / verified game rank. steam_id is only ever set after a verified
+-- Steam OpenID login, and the per-game rank columns only after a
+-- server-side fetch (Dota 2 via OpenDota, CS2 via Leetify — see
+-- src/lib/steam.ts, src/lib/leetify.ts, and the /api/auth/steam/* and
+-- /api/steam/refresh-rank routes) — never directly by the user. Column
+-- grants below enforce that: the "authenticated" role (the user's own
+-- session) can only write the columns the app already lets them
+-- self-report; only the service-role key (bypasses RLS/grants entirely)
+-- can write steam_id or any rank column.
 alter table public.profiles
   add column if not exists steam_id text unique;
 alter table public.profiles
@@ -55,6 +55,18 @@ alter table public.profiles
   add column if not exists dota_leaderboard_rank integer;
 alter table public.profiles
   add column if not exists dota_rank_synced_at timestamptz;
+
+-- cs2_premier_rating: Valve's real numeric CS Rating (Leetify's ranks.premier,
+-- parsed from actual match data, not a third-party score). cs2_competitive_rank:
+-- the classic 1-18 Silver/Gold Nova/.../Global Elite skill group, used as a
+-- fallback when a player has no Premier rating (Leetify's ranks.competitive,
+-- highest across maps).
+alter table public.profiles
+  add column if not exists cs2_premier_rating integer;
+alter table public.profiles
+  add column if not exists cs2_competitive_rank smallint;
+alter table public.profiles
+  add column if not exists cs2_rank_synced_at timestamptz;
 
 revoke update on public.profiles from authenticated;
 grant update (

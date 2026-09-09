@@ -5,11 +5,13 @@ import { Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RankMedalCard } from "@/components/site/rank-medal-card";
+import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
+import { formatCs2Rank } from "@/lib/cs2-rank";
 import { formatRelativeTime } from "@/lib/utils";
 
 const STATUS_MESSAGES: Record<string, { text: string; error?: boolean }> = {
-  connected: { text: "Steam connected — your Dota 2 rank is synced." },
+  connected: { text: "Steam connected — syncing your ranks." },
   invalid: { text: "Steam sign-in couldn't be verified. Try again.", error: true },
   taken: { text: "That Steam account is already linked to another profile.", error: true },
   error: { text: "Something went wrong connecting Steam. Try again.", error: true },
@@ -17,21 +19,31 @@ const STATUS_MESSAGES: Record<string, { text: string; error?: boolean }> = {
 
 interface SteamConnectProps {
   connected: boolean;
-  rankTier: number | null;
-  leaderboardRank: number | null;
+  dotaRankTier: number | null;
+  dotaLeaderboardRank: number | null;
+  cs2PremierRating: number | null;
+  cs2CompetitiveRank: number | null;
   syncedAt: string | null;
   statusParam?: string;
 }
 
 export function SteamConnect({
   connected,
-  rankTier: initialRankTier,
-  leaderboardRank: initialLeaderboardRank,
+  dotaRankTier: initialDotaRankTier,
+  dotaLeaderboardRank: initialDotaLeaderboardRank,
+  cs2PremierRating: initialCs2PremierRating,
+  cs2CompetitiveRank: initialCs2CompetitiveRank,
   syncedAt: initialSyncedAt,
   statusParam,
 }: SteamConnectProps) {
-  const [rankTier, setRankTier] = React.useState(initialRankTier);
-  const [leaderboardRank, setLeaderboardRank] = React.useState(initialLeaderboardRank);
+  const [dotaRankTier, setDotaRankTier] = React.useState(initialDotaRankTier);
+  const [dotaLeaderboardRank, setDotaLeaderboardRank] = React.useState(
+    initialDotaLeaderboardRank,
+  );
+  const [cs2PremierRating, setCs2PremierRating] = React.useState(initialCs2PremierRating);
+  const [cs2CompetitiveRank, setCs2CompetitiveRank] = React.useState(
+    initialCs2CompetitiveRank,
+  );
   const [syncedAt, setSyncedAt] = React.useState(initialSyncedAt);
   const [error, setError] = React.useState<string | null>(null);
   const [isPending, startTransition] = React.useTransition();
@@ -44,16 +56,20 @@ export function SteamConnect({
       const response = await fetch("/api/steam/refresh-rank", { method: "POST" });
       const result = (await response.json()) as {
         error?: string;
-        rankTier?: number | null;
-        leaderboardRank?: number | null;
+        dotaRankTier?: number | null;
+        dotaLeaderboardRank?: number | null;
+        cs2PremierRating?: number | null;
+        cs2CompetitiveRank?: number | null;
         syncedAt?: string;
       };
       if (result.error) {
         setError(result.error);
         return;
       }
-      setRankTier(result.rankTier ?? null);
-      setLeaderboardRank(result.leaderboardRank ?? null);
+      setDotaRankTier(result.dotaRankTier ?? null);
+      setDotaLeaderboardRank(result.dotaLeaderboardRank ?? null);
+      setCs2PremierRating(result.cs2PremierRating ?? null);
+      setCs2CompetitiveRank(result.cs2CompetitiveRank ?? null);
       setSyncedAt(result.syncedAt ?? null);
     });
   }
@@ -64,8 +80,8 @@ export function SteamConnect({
         <div>
           <p className="text-sm font-medium">Steam account</p>
           <p className="text-sm text-muted-foreground">
-            Connect Steam to verify your Dota 2 rank — used on your listings and to
-            qualify as a coach.
+            Connect Steam to verify your Dota 2 and CS2 ranks — used on your
+            listings and to qualify as a coach.
           </p>
         </div>
         {connected ? (
@@ -81,16 +97,22 @@ export function SteamConnect({
 
       {connected ? (
         <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
-          <RankMedalCard
-            game="Dota 2"
-            rankTier={rankTier}
-            rankLabel={formatDotaRank(rankTier, leaderboardRank)}
-          />
+          <div className="flex flex-wrap gap-3">
+            <RankMedalCard
+              game="Dota 2"
+              rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
+              icon={<DotaRankIcon rankTier={dotaRankTier} className="size-10" />}
+            />
+            <RankMedalCard
+              game="Counter-Strike 2"
+              rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
+            />
+          </div>
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>{syncedAt ? `Synced ${formatRelativeTime(syncedAt)}` : "Not synced yet"}</span>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isPending}>
               {isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Refresh rank
+              Refresh ranks
             </Button>
           </div>
         </div>

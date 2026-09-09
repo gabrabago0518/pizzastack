@@ -22,14 +22,6 @@ export const RANKS_BY_GAME: Record<string, string[]> = {
     "Grandmaster",
     "Challenger",
   ],
-  cs2: [
-    "Silver",
-    "Gold Nova",
-    "Master Guardian",
-    "Legendary Eagle",
-    "Supreme Master First Class",
-    "Global Elite",
-  ],
   "overwatch-2": [
     "Bronze",
     "Silver",
@@ -69,16 +61,6 @@ export const RANKS_BY_GAME: Record<string, string[]> = {
     "Elite",
     "Champion",
     "Unreal",
-  ],
-  "dota-2": [
-    "Herald",
-    "Guardian",
-    "Crusader",
-    "Archon",
-    "Legend",
-    "Ancient",
-    "Divine",
-    "Immortal",
   ],
 };
 

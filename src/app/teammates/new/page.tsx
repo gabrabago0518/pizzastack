@@ -32,6 +32,8 @@ export default async function NewLfgPostPage() {
           games={games}
           dotaRankTier={profile?.dota_rank_tier ?? null}
           dotaLeaderboardRank={profile?.dota_leaderboard_rank ?? null}
+          cs2PremierRating={profile?.cs2_premier_rating ?? null}
+          cs2CompetitiveRank={profile?.cs2_competitive_rank ?? null}
         />
       </div>
     </Section>

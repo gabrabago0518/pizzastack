@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { formatDotaRank } from "@/lib/dota-rank";
+import { VERIFIED_RANK_GAME_SLUGS, resolveVerifiedRank } from "@/lib/verified-ranks";
 
 export interface LfgFormState {
   error?: string;
@@ -42,26 +42,25 @@ export async function createLfgPost(
 
   const { data: game } = await supabase
     .from("games")
-    .select("slug")
+    .select("name, slug")
     .eq("id", gameId)
     .maybeSingle();
 
-  // Dota 2 rank is never trusted from the form — it's pulled server-side
-  // from the author's Steam-verified rank, so it can't be self-reported.
+  // Verified games' rank is never trusted from the form — it's pulled
+  // server-side from the author's Steam-verified rank, so it can't be
+  // self-reported.
   let rank: string;
-  if (game?.slug === "dota-2") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("dota_rank_tier, dota_leaderboard_rank")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (!profile?.dota_rank_tier) {
-      return {
-        error: "Connect your Steam account and sync your rank before posting a Dota 2 listing.",
-      };
+  if (game && (VERIFIED_RANK_GAME_SLUGS as readonly string[]).includes(game.slug)) {
+    const result = await resolveVerifiedRank(
+      supabase,
+      user.id,
+      game.slug,
+      `posting a ${game.name} listing`,
+    );
+    if ("error" in result) {
+      return { error: result.error };
     }
-    rank = formatDotaRank(profile.dota_rank_tier, profile.dota_leaderboard_rank);
+    rank = result.rank;
   } else {
     rank = String(formData.get("rank") ?? "").trim();
     if (!rank) {

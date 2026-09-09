@@ -212,6 +212,22 @@ export async function getMessagesForPost(postId: string) {
   return data ?? [];
 }
 
+// The player's own open listing, if any — used to gate the "post a
+// listing" page, since only one open listing per author is allowed
+// (lfg_posts_one_open_per_author). Unlike getActiveListingIdForUser below,
+// this deliberately ignores parties they've merely joined — those don't
+// block posting a new listing of their own.
+export async function getOwnOpenListingId(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_posts")
+    .select("id")
+    .eq("author_id", userId)
+    .eq("status", "open")
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 // The listing to point the floating chat button at: the player's own open
 // listing takes priority, otherwise the most recent open party they're an
 // accepted member of. Returns null if neither applies.

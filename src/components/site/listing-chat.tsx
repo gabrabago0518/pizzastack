@@ -4,7 +4,8 @@ import * as React from "react";
 import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { formatRelativeTime } from "@/lib/utils";
+import { AvatarDisplay } from "@/components/site/avatar-display";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import type { LfgMessageWithSender } from "@/lib/supabase/types";
 
 const POLL_INTERVAL_MS = 4000;
@@ -86,24 +87,36 @@ export function ListingChat({
             }
 
             const isMine = message.sender_id === viewerId;
+            const username = message.profiles?.username ?? "unknown";
             return (
               <div
                 key={message.id}
-                className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
+                className={cn("flex items-end gap-2", isMine && "flex-row-reverse")}
               >
-                <span className="text-xs text-muted-foreground">
-                  {isMine ? "You" : `@${message.profiles?.username ?? "unknown"}`}{" "}
-                  &middot; {formatRelativeTime(message.created_at)}
-                </span>
-                <p
-                  className={`max-w-[85%] rounded-lg px-3 py-1.5 text-sm break-words ${
-                    isMine
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-foreground"
-                  }`}
+                <AvatarDisplay
+                  url={message.profiles?.avatar_url ?? null}
+                  label={username}
+                  className="size-7"
+                  textClassName="text-xs"
+                />
+                <div
+                  className={cn("flex flex-col", isMine ? "items-end" : "items-start")}
                 >
-                  {message.body}
-                </p>
+                  <span className="text-xs text-muted-foreground">
+                    {isMine ? "You" : `@${username}`} &middot;{" "}
+                    {formatRelativeTime(message.created_at)}
+                  </span>
+                  <p
+                    className={cn(
+                      "max-w-[85%] rounded-lg px-3 py-1.5 text-sm break-words",
+                      isMine
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-foreground",
+                    )}
+                  >
+                    {message.body}
+                  </p>
+                </div>
               </div>
             );
           })

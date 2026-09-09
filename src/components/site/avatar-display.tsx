@@ -2,10 +2,12 @@ export function AvatarDisplay({
   url,
   label,
   className = "size-28",
+  textClassName = "text-3xl",
 }: {
   url: string | null;
   label: string;
   className?: string;
+  textClassName?: string;
 }) {
   const initial = label.charAt(0).toUpperCase() || "?";
 
@@ -17,7 +19,7 @@ export function AvatarDisplay({
         // eslint-disable-next-line @next/next/no-img-element -- external Supabase Storage URL
         <img src={url} alt="" className="size-full object-cover" />
       ) : (
-        <span className="font-display text-3xl text-muted-foreground">
+        <span className={`font-display text-muted-foreground ${textClassName}`}>
           {initial}
         </span>
       )}

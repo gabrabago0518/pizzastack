@@ -3,6 +3,7 @@ import type {
   CoachProfileWithRelations,
   LfgPostWithRelations,
   JoinRequestWithRequester,
+  LfgMessageWithSender,
   Game,
 } from "@/lib/supabase/types";
 
@@ -190,6 +191,19 @@ export async function getJoinRequestsForPosts(postIds: string[]) {
     .in("post_id", postIds)
     .order("created_at", { ascending: true })
     .returns<JoinRequestWithRequester[]>();
+  return data ?? [];
+}
+
+// RLS scopes this to the post's owner and any accepted requester, so it
+// naturally returns nothing (rather than an error) for anyone else.
+export async function getMessagesForPost(postId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_messages")
+    .select("*, profiles(username, avatar_url)")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true })
+    .returns<LfgMessageWithSender[]>();
   return data ?? [];
 }
 

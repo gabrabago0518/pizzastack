@@ -186,6 +186,49 @@ create policy "Requesters can cancel their own pending request"
   using (auth.uid() = requester_id);
 
 -- ---------------------------------------------------------------------------
+-- lfg_messages: one shared chat per listing, unlocked for the post's owner
+-- and any player whose join request was accepted.
+-- ---------------------------------------------------------------------------
+create table if not exists public.lfg_messages (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.lfg_posts (id) on delete cascade,
+  sender_id uuid not null references public.profiles (id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 1000),
+  created_at timestamptz not null default now()
+);
+
+alter table public.lfg_messages enable row level security;
+
+drop policy if exists "Owner and accepted players can read listing chat" on public.lfg_messages;
+create policy "Owner and accepted players can read listing chat"
+  on public.lfg_messages for select
+  using (
+    auth.uid() = (select author_id from public.lfg_posts where id = post_id)
+    or exists (
+      select 1 from public.lfg_join_requests
+      where lfg_join_requests.post_id = lfg_messages.post_id
+        and lfg_join_requests.requester_id = auth.uid()
+        and lfg_join_requests.status = 'accepted'
+    )
+  );
+
+drop policy if exists "Owner and accepted players can send listing chat" on public.lfg_messages;
+create policy "Owner and accepted players can send listing chat"
+  on public.lfg_messages for insert
+  with check (
+    sender_id = auth.uid()
+    and (
+      auth.uid() = (select author_id from public.lfg_posts where id = post_id)
+      or exists (
+        select 1 from public.lfg_join_requests
+        where lfg_join_requests.post_id = lfg_messages.post_id
+          and lfg_join_requests.requester_id = auth.uid()
+          and lfg_join_requests.status = 'accepted'
+      )
+    )
+  );
+
+-- ---------------------------------------------------------------------------
 -- coach_profiles: one row per (coach, game) they offer coaching for.
 -- ---------------------------------------------------------------------------
 create table if not exists public.coach_profiles (

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getMessagesForPost } from "@/lib/queries";
 
 export interface LfgFormState {
   error?: string;
@@ -123,4 +124,49 @@ export async function respondToJoinRequest(
 
   revalidatePath("/teammates");
   return {};
+}
+
+export interface SendMessageState {
+  error?: string;
+}
+
+export async function sendMessage(
+  postId: string,
+  body: string,
+): Promise<SendMessageState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to chat." };
+  }
+
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return { error: "Message can't be empty." };
+  }
+  if (trimmed.length > 1000) {
+    return { error: "Message is too long (max 1000 characters)." };
+  }
+
+  const { error } = await supabase
+    .from("lfg_messages")
+    .insert({ post_id: postId, sender_id: user.id, body: trimmed });
+
+  // RLS silently rejects rows that fail the policy check instead of erroring,
+  // so a chat that hasn't unlocked yet (no accepted request) surfaces as a
+  // generic insert failure here — treat it as "you can't chat here yet".
+  if (error) {
+    return { error: "You don't have access to this chat." };
+  }
+
+  return {};
+}
+
+// Thin server-action wrapper so the client-side polling in ListingChat can
+// call it directly (getMessagesForPost itself isn't a server action).
+export async function getListingMessages(postId: string) {
+  return getMessagesForPost(postId);
 }

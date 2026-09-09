@@ -210,6 +210,39 @@ export interface Database {
           },
         ];
       };
+      lfg_messages: {
+        Row: {
+          id: string;
+          post_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          sender_id: string;
+          body: string;
+        };
+        Update: {
+          body?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lfg_messages_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "lfg_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lfg_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       commendations: {
         Row: {
           profile_id: string;
@@ -254,6 +287,7 @@ export type Game = Database["public"]["Tables"]["games"]["Row"];
 export type LfgPost = Database["public"]["Tables"]["lfg_posts"]["Row"];
 export type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"];
 export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row"];
+export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -261,6 +295,10 @@ export type LfgPostWithRelations = LfgPost & {
 };
 
 export type JoinRequestWithRequester = JoinRequest & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type LfgMessageWithSender = LfgMessage & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 

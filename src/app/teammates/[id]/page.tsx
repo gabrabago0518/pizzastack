@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { JoinRequestsManager } from "@/components/site/join-requests-manager";
+import { ListingChat } from "@/components/site/listing-chat";
 import { createClient } from "@/lib/supabase/server";
-import { getLfgPostById, getJoinRequestsForPosts } from "@/lib/queries";
+import {
+  getLfgPostById,
+  getJoinRequestsForPosts,
+  getMessagesForPost,
+} from "@/lib/queries";
 import { formatRelativeTime } from "@/lib/utils";
 
 interface ListingPageProps {
@@ -42,6 +47,9 @@ export default async function ListingPage({ params }: ListingPageProps) {
     joinRequests.find((request) => request.requester_id === viewer?.id)?.status ??
     "none";
   const pendingRequests = joinRequests.filter((request) => request.status === "pending");
+
+  const chatUnlocked = Boolean(viewer) && (isOwner || myRequestStatus === "accepted");
+  const messages = chatUnlocked ? await getMessagesForPost(post.id) : [];
 
   return (
     <Section className="!pb-24">
@@ -132,6 +140,18 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 )}
               </div>
             )}
+
+            {chatUnlocked && viewer ? (
+              <ListingChat
+                postId={post.id}
+                viewerId={viewer.id}
+                initialMessages={messages}
+              />
+            ) : myRequestStatus === "pending" ? (
+              <p className="text-center text-sm text-muted-foreground">
+                Chat unlocks once the owner accepts your request.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       </div>

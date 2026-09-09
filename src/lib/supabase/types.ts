@@ -214,14 +214,16 @@ export interface Database {
         Row: {
           id: string;
           post_id: string;
-          sender_id: string;
+          sender_id: string | null;
           body: string;
+          kind: "user" | "system";
           created_at: string;
         };
         Insert: {
           post_id: string;
-          sender_id: string;
+          sender_id?: string | null;
           body: string;
+          kind?: "user" | "system";
         };
         Update: {
           body?: string;

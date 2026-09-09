@@ -74,6 +74,17 @@ export function ListingChat({
           </p>
         ) : (
           messages.map((message) => {
+            if (message.kind === "system") {
+              return (
+                <p
+                  key={message.id}
+                  className="py-1 text-center text-xs text-muted-foreground"
+                >
+                  {message.body}
+                </p>
+              );
+            }
+
             const isMine = message.sender_id === viewerId;
             return (
               <div

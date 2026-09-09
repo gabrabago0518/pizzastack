@@ -18,13 +18,31 @@ export async function POST(
     return NextResponse.json({ error: "You need to be logged in." }, { status: 401 });
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("lfg_join_requests")
     .update({ status: accept ? "accepted" : "declined" })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .select("post_id, requester_id")
+    .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (accept) {
+    const { data: requester } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", updated.requester_id)
+      .maybeSingle();
+
+    if (requester) {
+      await supabase.from("lfg_messages").insert({
+        post_id: updated.post_id,
+        kind: "system",
+        body: `@${requester.username} entered the party`,
+      });
+    }
   }
 
   revalidatePath("/teammates");

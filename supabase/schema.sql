@@ -192,10 +192,21 @@ create policy "Requesters can cancel their own pending request"
 create table if not exists public.lfg_messages (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.lfg_posts (id) on delete cascade,
-  sender_id uuid not null references public.profiles (id) on delete cascade,
+  sender_id uuid references public.profiles (id) on delete cascade,
   body text not null check (char_length(body) between 1 and 1000),
   created_at timestamptz not null default now()
 );
+
+-- sender_id/kind: system messages (e.g. "@username entered the party" when a
+-- join request is accepted) have no sender and aren't authored live by the
+-- signed-in user, so sender_id had to become nullable.
+alter table public.lfg_messages alter column sender_id drop not null;
+alter table public.lfg_messages
+  add column if not exists kind text not null default 'user';
+alter table public.lfg_messages
+  drop constraint if exists lfg_messages_kind_check;
+alter table public.lfg_messages
+  add constraint lfg_messages_kind_check check (kind in ('user', 'system'));
 
 alter table public.lfg_messages enable row level security;
 
@@ -216,15 +227,25 @@ drop policy if exists "Owner and accepted players can send listing chat" on publ
 create policy "Owner and accepted players can send listing chat"
   on public.lfg_messages for insert
   with check (
-    sender_id = auth.uid()
-    and (
-      auth.uid() = (select author_id from public.lfg_posts where id = post_id)
-      or exists (
-        select 1 from public.lfg_join_requests
-        where lfg_join_requests.post_id = lfg_messages.post_id
-          and lfg_join_requests.requester_id = auth.uid()
-          and lfg_join_requests.status = 'accepted'
+    (
+      kind = 'user'
+      and sender_id = auth.uid()
+      and (
+        auth.uid() = (select author_id from public.lfg_posts where id = post_id)
+        or exists (
+          select 1 from public.lfg_join_requests
+          where lfg_join_requests.post_id = lfg_messages.post_id
+            and lfg_join_requests.requester_id = auth.uid()
+            and lfg_join_requests.status = 'accepted'
+        )
       )
+    )
+    or (
+      -- The post owner posts the "@username entered the party" system
+      -- message when accepting a request — not authored by a live sender.
+      kind = 'system'
+      and sender_id is null
+      and auth.uid() = (select author_id from public.lfg_posts where id = post_id)
     )
   );
 

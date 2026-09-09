@@ -11,7 +11,49 @@ import { SelectNative } from "@/components/ui/select-native";
 import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
 import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
+import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
+import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
+
+function RolesPicker({ options, disabled }: { options: string[]; disabled: boolean }) {
+  const [selected, setSelected] = React.useState<string[]>([]);
+
+  function toggleRole(role: string) {
+    setSelected((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <input type="hidden" name="rolesNeeded" value={selected.join(",")} />
+      {options.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Select a game first</p>
+      ) : (
+        options.map((role) => {
+          const active = selected.includes(role);
+          return (
+            <button
+              key={role}
+              type="button"
+              onClick={() => toggleRole(role)}
+              disabled={disabled}
+              aria-pressed={active}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all duration-150 hover:scale-[1.04] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60",
+                active
+                  ? "border-transparent bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {role}
+            </button>
+          );
+        })
+      )}
+    </div>
+  );
+}
 
 export function LfgForm({ games }: { games: Game[] }) {
   const [state, formAction, isPending] = useActionState<LfgFormState, FormData>(
@@ -23,6 +65,9 @@ export function LfgForm({ games }: { games: Game[] }) {
   const selectedGame = games.find((game) => game.id === selectedGameId);
   const rankOptions = selectedGame
     ? (RANKS_BY_GAME[selectedGame.slug] ?? FALLBACK_RANKS)
+    : [];
+  const roleOptions = selectedGame
+    ? (ROLES_BY_GAME[selectedGame.slug] ?? FALLBACK_ROLES)
     : [];
 
   return (
@@ -90,15 +135,12 @@ export function LfgForm({ games }: { games: Game[] }) {
         />
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label>Roles needed (optional)</Label>
+        <RolesPicker key={selectedGameId} options={roleOptions} disabled={!selectedGame} />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rolesNeeded">Roles needed (optional)</Label>
-          <Input
-            id="rolesNeeded"
-            name="rolesNeeded"
-            placeholder="Support, IGL, Flex (comma separated)"
-          />
-        </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="playersNeeded">Players needed</Label>
           <SelectNative id="playersNeeded" name="playersNeeded" required defaultValue="">
@@ -112,18 +154,17 @@ export function LfgForm({ games }: { games: Game[] }) {
             ))}
           </SelectNative>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="region">Region (optional)</Label>
-        <SelectNative id="region" name="region" defaultValue="">
-          <option value="">Select a region</option>
-          {REGIONS.map((region) => (
-            <option key={region} value={region}>
-              {region}
-            </option>
-          ))}
-        </SelectNative>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="region">Region (optional)</Label>
+          <SelectNative id="region" name="region" defaultValue="">
+            <option value="">Select a region</option>
+            {REGIONS.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
       </div>
 
       {state.error ? (

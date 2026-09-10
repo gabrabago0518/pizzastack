@@ -12,12 +12,14 @@ function FabRow({
   icon: Icon,
   label,
   badge,
+  badgeVariant = "muted",
   disabled,
   delay,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   badge?: string;
+  badgeVariant?: React.ComponentProps<typeof Badge>["variant"];
   disabled?: boolean;
   delay: number;
 }) {
@@ -39,7 +41,7 @@ function FabRow({
       </span>
       {label}
       {badge ? (
-        <Badge variant="muted" className="ml-auto">
+        <Badge variant={badgeVariant} className="ml-auto">
           {badge}
         </Badge>
       ) : null}
@@ -47,9 +49,16 @@ function FabRow({
   );
 }
 
-export function ChatFab({ activeListingId }: { activeListingId: string | null }) {
+export function ChatFab({
+  activeListingId,
+  pendingRequestCount = 0,
+}: {
+  activeListingId: string | null;
+  pendingRequestCount?: number;
+}) {
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const hasPendingRequests = pendingRequestCount > 0;
 
   React.useEffect(() => {
     if (!open) return;
@@ -72,7 +81,13 @@ export function ChatFab({ activeListingId }: { activeListingId: string | null })
           <FabRow icon={Users} label="Guild chat" badge="Coming soon" disabled delay={0.05} />
           {activeListingId ? (
             <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>
-              <FabRow icon={Gamepad2} label="Current listing" delay={0} />
+              <FabRow
+                icon={Gamepad2}
+                label="Current listing"
+                badge={hasPendingRequests ? `${pendingRequestCount} new` : undefined}
+                badgeVariant="default"
+                delay={0}
+              />
               <ListingLoadingOverlay />
             </Link>
           ) : (
@@ -90,11 +105,22 @@ export function ChatFab({ activeListingId }: { activeListingId: string | null })
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        aria-label={open ? "Close chat menu" : "Open chat menu"}
+        aria-label={
+          open
+            ? "Close chat menu"
+            : hasPendingRequests
+              ? `Open chat menu, ${pendingRequestCount} pending join ${pendingRequestCount === 1 ? "request" : "requests"}`
+              : "Open chat menu"
+        }
         aria-expanded={open}
-        className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 active:scale-95"
+        className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 active:scale-95"
       >
         {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
+        {!open && hasPendingRequests ? (
+          <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-[10px] font-bold text-destructive-foreground">
+            {pendingRequestCount > 9 ? "9+" : pendingRequestCount}
+          </span>
+        ) : null}
       </button>
     </div>
   );

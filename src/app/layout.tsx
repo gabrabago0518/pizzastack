@@ -7,7 +7,7 @@ import { ChatFab } from "@/components/site/chat-fab";
 import { CookieConsent } from "@/components/site/cookie-consent";
 import { PresenceHeartbeat } from "@/components/site/presence-heartbeat";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveListingIdForUser } from "@/lib/queries";
+import { getActiveListingIdForUser, getPendingJoinRequestCountForUser } from "@/lib/queries";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -63,6 +63,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     data: { user },
   } = await supabase.auth.getUser();
   const activeListingId = user ? await getActiveListingIdForUser(user.id) : null;
+  const pendingRequestCount = user ? await getPendingJoinRequestCountForUser(user.id) : 0;
 
   return (
     <html
@@ -73,7 +74,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
-        <ChatFab activeListingId={activeListingId} />
+        <ChatFab activeListingId={activeListingId} pendingRequestCount={pendingRequestCount} />
         <CookieConsent />
         {user ? <PresenceHeartbeat /> : null}
       </body>

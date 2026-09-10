@@ -274,6 +274,22 @@ export async function getOwnOpenListingId(userId: string) {
   return data?.id ?? null;
 }
 
+// How many players are waiting on a decision on the listing the user
+// currently owns — surfaced as a notification badge on the chat FAB (see
+// ChatFab) so an owner notices a new request without having to open the
+// listing. Scoped to their open listing only: pending requests on a
+// listing they've since closed aren't actionable anymore.
+export async function getPendingJoinRequestCountForUser(userId: string) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("lfg_join_requests")
+    .select("id, lfg_posts!inner(author_id, status)", { count: "exact", head: true })
+    .eq("status", "pending")
+    .eq("lfg_posts.author_id", userId)
+    .eq("lfg_posts.status", "open");
+  return count ?? 0;
+}
+
 // The listing to point the floating chat button at: the player's own open
 // listing takes priority, otherwise the most recent open party they're an
 // accepted member of. Returns null if neither applies.

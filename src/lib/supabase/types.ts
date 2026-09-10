@@ -904,6 +904,48 @@ export interface Database {
           },
         ];
       };
+      scrimmages: {
+        Row: {
+          id: string;
+          author_id: string;
+          game_id: string;
+          region: string | null;
+          scheduled_at: string;
+          description: string | null;
+          status: "open" | "closed";
+          created_at: string;
+        };
+        Insert: {
+          author_id: string;
+          game_id: string;
+          region?: string | null;
+          scheduled_at: string;
+          description?: string | null;
+          status?: "open" | "closed";
+        };
+        Update: {
+          region?: string | null;
+          scheduled_at?: string;
+          description?: string | null;
+          status?: "open" | "closed";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "scrimmages_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "scrimmages_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -929,6 +971,7 @@ export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"];
 export type TournamentTeam = Database["public"]["Tables"]["tournament_teams"]["Row"];
 export type TournamentTeamMember = Database["public"]["Tables"]["tournament_team_members"]["Row"];
 export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
+export type Scrimmage = Database["public"]["Tables"]["scrimmages"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -982,4 +1025,9 @@ export type TournamentTeamWithRelations = TournamentTeam & {
 
 export type TournamentTeamMemberWithProfile = TournamentTeamMember & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type ScrimmageWithRelations = Scrimmage & {
+  profiles: Pick<Profile, "username" | "region"> | null;
+  games: Pick<Game, "name" | "slug"> | null;
 };

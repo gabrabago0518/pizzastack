@@ -7,6 +7,7 @@ import {
   MessageCircleQuestion,
   Shield,
   Trophy,
+  Swords,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,13 @@ const features = [
     description:
       "Create teams, generate a bracket automatically, and report results as you go — single elimination.",
     href: "/tournaments",
+  },
+  {
+    icon: Swords,
+    title: "Find a scrimmage",
+    description:
+      "Post your game, region, and when you're free to play — or browse open slots and reach out directly.",
+    href: "/scrims",
   },
   {
     icon: Gamepad2,

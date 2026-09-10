@@ -1478,3 +1478,44 @@ drop trigger if exists tournaments_notify_started on public.tournaments;
 create trigger tournaments_notify_started
   after update on public.tournaments
   for each row execute function public.notify_tournament_started();
+
+-- ---------------------------------------------------------------------------
+-- scrimmages: "looking for a scrim" — a player posts their game, region,
+-- and when they want to play, and another team reaches out directly. Same
+-- direct-contact model as coaching_requests: no accept/confirm flow, no
+-- chat — just a browsable board. Unlike lfg_posts/coaching_requests, a
+-- player can have more than one open at a time (they may be free to scrim
+-- at several different times), so there's no one-open-per-author constraint.
+-- ---------------------------------------------------------------------------
+create table if not exists public.scrimmages (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references public.profiles (id) on delete cascade,
+  game_id uuid not null references public.games (id),
+  region text,
+  scheduled_at timestamptz not null,
+  description text,
+  status text not null default 'open' check (status in ('open', 'closed')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.scrimmages enable row level security;
+
+drop policy if exists "Scrimmages are publicly readable" on public.scrimmages;
+create policy "Scrimmages are publicly readable"
+  on public.scrimmages for select
+  using (true);
+
+drop policy if exists "Users can post their own scrimmages" on public.scrimmages;
+create policy "Users can post their own scrimmages"
+  on public.scrimmages for insert
+  with check (auth.uid() = author_id);
+
+drop policy if exists "Users can update their own scrimmages" on public.scrimmages;
+create policy "Users can update their own scrimmages"
+  on public.scrimmages for update
+  using (auth.uid() = author_id);
+
+drop policy if exists "Users can delete their own scrimmages" on public.scrimmages;
+create policy "Users can delete their own scrimmages"
+  on public.scrimmages for delete
+  using (auth.uid() = author_id);

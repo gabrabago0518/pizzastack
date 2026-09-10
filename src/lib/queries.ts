@@ -19,6 +19,7 @@ import type {
   TournamentWithRelations,
   TournamentTeamWithRelations,
   TournamentTeamMemberWithProfile,
+  ScrimmageWithRelations,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -709,5 +710,28 @@ export async function getTournamentMatches(tournamentId: string) {
     .order("round", { ascending: true })
     .order("match_number", { ascending: true })
     .returns<TournamentMatch[]>();
+  return data ?? [];
+}
+
+export interface ScrimmageFilters {
+  region?: string;
+}
+
+// Soonest-scheduled first — a scrim board reads naturally chronologically,
+// unlike the other boards (newest-posted first).
+export async function getScrimmages(gameSlug?: string, filters: ScrimmageFilters = {}) {
+  const supabase = await createClient();
+  const gameId = await resolveGameId(gameSlug);
+
+  let builder = supabase
+    .from("scrimmages")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "open")
+    .order("scheduled_at", { ascending: true });
+
+  if (gameId) builder = builder.eq("game_id", gameId);
+  if (filters.region) builder = builder.eq("region", filters.region);
+
+  const { data } = await builder.returns<ScrimmageWithRelations[]>();
   return data ?? [];
 }

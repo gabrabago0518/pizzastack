@@ -8,20 +8,57 @@ import type {
   Game,
 } from "@/lib/supabase/types";
 
-const MATCH_HISTORY_DISPLAY_LIMIT = 10;
+export interface TopHero {
+  gameSlug: string;
+  characterName: string;
+  characterIconUrl: string | null;
+  gamesPlayed: number;
+  wins: number;
+}
 
-// Most recent synced matches across all games — see rank-sync.ts for how
-// these get populated. Publicly readable, same as the rank badges this
-// sits alongside on a profile.
-export async function getMatchHistoryForProfile(profileId: string) {
+// The most-played hero/agent per game, with win rate — derived from the
+// synced match_history rows (see rank-sync.ts) rather than a single
+// "favorite hero" field, since it grows more accurate as more matches get
+// synced over time instead of being fixed at whatever a one-time fetch
+// returned. Grouping/aggregation happens here rather than in SQL since
+// Supabase's query builder doesn't do GROUP BY.
+export async function getTopHeroesForProfile(profileId: string): Promise<TopHero[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("match_history")
-    .select("*")
+    .select("game_slug, character_name, character_icon_url, won")
     .eq("profile_id", profileId)
-    .order("played_at", { ascending: false })
-    .limit(MATCH_HISTORY_DISPLAY_LIMIT);
-  return data ?? [];
+    .not("character_name", "is", null);
+
+  const byCharacter = new Map<string, TopHero>();
+  for (const row of data ?? []) {
+    if (!row.character_name) continue;
+    const key = `${row.game_slug}:${row.character_name}`;
+    const existing = byCharacter.get(key);
+    if (existing) {
+      existing.gamesPlayed += 1;
+      if (row.won) existing.wins += 1;
+      existing.characterIconUrl ??= row.character_icon_url;
+    } else {
+      byCharacter.set(key, {
+        gameSlug: row.game_slug,
+        characterName: row.character_name,
+        characterIconUrl: row.character_icon_url,
+        gamesPlayed: 1,
+        wins: row.won ? 1 : 0,
+      });
+    }
+  }
+
+  const topByGame = new Map<string, TopHero>();
+  for (const entry of byCharacter.values()) {
+    const current = topByGame.get(entry.gameSlug);
+    if (!current || entry.gamesPlayed > current.gamesPlayed) {
+      topByGame.set(entry.gameSlug, entry);
+    }
+  }
+
+  return Array.from(topByGame.values());
 }
 
 export async function getGames() {

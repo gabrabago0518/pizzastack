@@ -6,7 +6,7 @@ import { Award, ExternalLink, Settings, ShieldCheck } from "lucide-react";
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { RankBanner } from "@/components/site/rank-banner";
-import { MatchHistoryList } from "@/components/site/match-history-list";
+import { MostPlayedList } from "@/components/site/most-played-list";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import {
   getCoachProfilesByAuthor,
   getGamesForProfile,
   getCommendCount,
-  getMatchHistoryForProfile,
+  getTopHeroesForProfile,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -36,12 +36,12 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles, games, commendCount, matches] = await Promise.all([
+  const [posts, coachProfiles, games, commendCount, topHeroes] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
     getGamesForProfile(user.id),
     getCommendCount(user.id),
-    getMatchHistoryForProfile(user.id),
+    getTopHeroesForProfile(user.id),
   ]);
 
   return (
@@ -108,10 +108,10 @@ export default async function ProfilePage() {
       />
 
       <div className="mb-10 flex flex-col gap-4">
-        <h2 className="font-display text-xl">Recent matches</h2>
-        <MatchHistoryList
-          matches={matches}
-          emptyText="No synced matches yet — connect Steam or a Riot ID and sync your rank to see recent matches here."
+        <h2 className="font-display text-xl">Most played</h2>
+        <MostPlayedList
+          topHeroes={topHeroes}
+          emptyText="No synced matches yet — connect Steam or a Riot ID and sync your rank to see your most-played hero here."
         />
       </div>
 

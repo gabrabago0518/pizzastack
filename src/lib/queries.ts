@@ -16,49 +16,26 @@ export interface TopHero {
   wins: number;
 }
 
-// The most-played hero/agent per game, with win rate — derived from the
-// synced match_history rows (see rank-sync.ts) rather than a single
-// "favorite hero" field, since it grows more accurate as more matches get
-// synced over time instead of being fixed at whatever a one-time fetch
-// returned. Grouping/aggregation happens here rather than in SQL since
-// Supabase's query builder doesn't do GROUP BY.
+// The most-played hero/agent per game, with win rate. Synced into
+// top_hero_stats directly (see rank-sync.ts) rather than aggregated here
+// from raw match rows — for Dota 2 that sync pulls OpenDota's own all-time
+// per-hero totals, so this stays accurate for accounts with a long match
+// history instead of skewing toward whatever handful of recent matches
+// happened to be sampled.
 export async function getTopHeroesForProfile(profileId: string): Promise<TopHero[]> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("match_history")
-    .select("game_slug, character_name, character_icon_url, won")
-    .eq("profile_id", profileId)
-    .not("character_name", "is", null);
+    .from("top_hero_stats")
+    .select("game_slug, character_name, character_icon_url, games_played, wins")
+    .eq("profile_id", profileId);
 
-  const byCharacter = new Map<string, TopHero>();
-  for (const row of data ?? []) {
-    if (!row.character_name) continue;
-    const key = `${row.game_slug}:${row.character_name}`;
-    const existing = byCharacter.get(key);
-    if (existing) {
-      existing.gamesPlayed += 1;
-      if (row.won) existing.wins += 1;
-      existing.characterIconUrl ??= row.character_icon_url;
-    } else {
-      byCharacter.set(key, {
-        gameSlug: row.game_slug,
-        characterName: row.character_name,
-        characterIconUrl: row.character_icon_url,
-        gamesPlayed: 1,
-        wins: row.won ? 1 : 0,
-      });
-    }
-  }
-
-  const topByGame = new Map<string, TopHero>();
-  for (const entry of byCharacter.values()) {
-    const current = topByGame.get(entry.gameSlug);
-    if (!current || entry.gamesPlayed > current.gamesPlayed) {
-      topByGame.set(entry.gameSlug, entry);
-    }
-  }
-
-  return Array.from(topByGame.values());
+  return (data ?? []).map((row) => ({
+    gameSlug: row.game_slug,
+    characterName: row.character_name,
+    characterIconUrl: row.character_icon_url,
+    gamesPlayed: row.games_played,
+    wins: row.wins,
+  }));
 }
 
 export async function getGames() {

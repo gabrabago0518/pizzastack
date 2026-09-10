@@ -1,24 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchDotaRankFromOpenDota, fetchDotaMatches } from "@/lib/steam";
+import { fetchDotaRankFromOpenDota, fetchDotaHeroStats } from "@/lib/steam";
 import { fetchCs2RankFromLeetify } from "@/lib/leetify";
 import { fetchValorantRank, fetchValorantMatches } from "@/lib/henrikdev";
 import { fetchValorantTierIcon, fetchValorantAgentIcon } from "@/lib/valorant-content";
 import { fetchDotaHeroInfo } from "@/lib/dota-heroes";
 import type { Database } from "@/lib/supabase/types";
 
-const MATCH_HISTORY_LIMIT = 10;
+// How many of the player's most recent Valorant matches to sample when
+// picking their most-played agent — HenrikDev has no all-time per-agent
+// aggregate endpoint (unlike OpenDota's /heroes for Dota), so this is a
+// recent-form approximation rather than a true all-time count.
+const VALORANT_AGENT_SAMPLE_SIZE = 20;
 
-type MatchHistoryInsert = Database["public"]["Tables"]["match_history"]["Insert"];
+type TopHeroStatsInsert = Database["public"]["Tables"]["top_hero_stats"]["Insert"];
 
-async function upsertMatchHistory(
+async function upsertTopHeroStat(
   service: SupabaseClient<Database>,
-  rows: MatchHistoryInsert[],
+  row: TopHeroStatsInsert,
 ) {
-  if (rows.length === 0) return;
   await service
-    .from("match_history")
-    .upsert(rows, { onConflict: "profile_id,game_slug,external_match_id" });
+    .from("top_hero_stats")
+    .upsert(row, { onConflict: "profile_id,game_slug" });
 }
 
 export interface SyncedRanks {
@@ -58,32 +61,33 @@ export async function syncRanksForSteamId(
     console.error("[rank-sync] OpenDota fetch failed:", err);
   }
 
-  // Recent match history — a separate OpenDota endpoint from the rank
-  // fetch above, so it's wrapped independently: a failure here shouldn't
-  // discard the rank data that already succeeded.
+  // Most-played hero — a separate OpenDota endpoint from the rank fetch
+  // above, so it's wrapped independently: a failure here shouldn't discard
+  // the rank data that already succeeded. Uses OpenDota's own all-time
+  // per-hero totals rather than a sample of recent matches, so it stays
+  // accurate for accounts with a long match history.
   try {
-    const matches = await fetchDotaMatches(steamId64, MATCH_HISTORY_LIMIT);
-    const rows = await Promise.all(
-      matches.map(async (match): Promise<MatchHistoryInsert> => {
-        const hero = await fetchDotaHeroInfo(match.heroId).catch(() => null);
-        return {
+    const heroStats = await fetchDotaHeroStats(steamId64);
+    const topHero = heroStats.reduce<(typeof heroStats)[number] | null>(
+      (best, entry) => (!best || entry.games > best.games ? entry : best),
+      null,
+    );
+    if (topHero && topHero.games > 0) {
+      const hero = await fetchDotaHeroInfo(topHero.heroId).catch(() => null);
+      if (hero) {
+        await upsertTopHeroStat(service, {
           profile_id: userId,
           game_slug: "dota-2",
-          external_match_id: match.matchId,
-          played_at: new Date(match.startTime * 1000).toISOString(),
-          won: match.won,
-          character_name: hero?.name ?? null,
-          character_icon_url: hero?.iconUrl ?? null,
-          kills: match.kills,
-          deaths: match.deaths,
-          assists: match.assists,
-          duration_seconds: match.duration,
-        };
-      }),
-    );
-    await upsertMatchHistory(service, rows);
+          character_name: hero.name,
+          character_icon_url: hero.iconUrl,
+          games_played: topHero.games,
+          wins: topHero.wins,
+          synced_at: syncedAt,
+        });
+      }
+    }
   } catch (err) {
-    console.error("[rank-sync] OpenDota match history fetch failed:", err);
+    console.error("[rank-sync] OpenDota hero stats fetch failed:", err);
   }
 
   let cs2PremierRating: number | null = null;
@@ -150,27 +154,40 @@ export async function syncValorantRank(
     })
     .eq("id", userId);
 
-  // Recent match history, same best-effort treatment as the icon above —
-  // a failure here shouldn't fail the whole "connect Riot ID" action.
+  // Most-played agent, same best-effort treatment as the icon above — a
+  // failure here shouldn't fail the whole "connect Riot ID" action.
+  // HenrikDev has no all-time per-agent aggregate endpoint, so this is
+  // derived from a sample of recently played matches rather than true
+  // lifetime totals.
   try {
-    const matches = await fetchValorantMatches(name, tag, region, MATCH_HISTORY_LIMIT);
-    const rows = await Promise.all(
-      matches.map(async (match): Promise<MatchHistoryInsert> => ({
+    const matches = await fetchValorantMatches(name, tag, region, VALORANT_AGENT_SAMPLE_SIZE);
+    const byAgent = new Map<string, { games: number; wins: number }>();
+    for (const match of matches) {
+      if (!match.agentName) continue;
+      const entry = byAgent.get(match.agentName) ?? { games: 0, wins: 0 };
+      entry.games += 1;
+      if (match.won) entry.wins += 1;
+      byAgent.set(match.agentName, entry);
+    }
+
+    let topAgent: { name: string; games: number; wins: number } | null = null;
+    for (const [agentName, stat] of byAgent) {
+      if (!topAgent || stat.games > topAgent.games) {
+        topAgent = { name: agentName, ...stat };
+      }
+    }
+
+    if (topAgent) {
+      await upsertTopHeroStat(service, {
         profile_id: userId,
         game_slug: "valorant",
-        external_match_id: match.matchId,
-        played_at: match.playedAt,
-        won: match.won,
-        character_name: match.agentName,
-        character_icon_url: await fetchValorantAgentIcon(match.agentName).catch(() => null),
-        kills: match.kills,
-        deaths: match.deaths,
-        assists: match.assists,
-        map_name: match.mapName,
-        mode: match.mode,
-      })),
-    );
-    await upsertMatchHistory(service, rows);
+        character_name: topAgent.name,
+        character_icon_url: await fetchValorantAgentIcon(topAgent.name).catch(() => null),
+        games_played: topAgent.games,
+        wins: topAgent.wins,
+        synced_at: syncedAt,
+      });
+    }
   } catch (err) {
     console.error("[rank-sync] HenrikDev match history fetch failed:", err);
   }

@@ -390,6 +390,43 @@ export interface Database {
           },
         ];
       };
+      top_hero_stats: {
+        Row: {
+          id: string;
+          profile_id: string;
+          game_slug: string;
+          character_name: string;
+          character_icon_url: string | null;
+          games_played: number;
+          wins: number;
+          synced_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          game_slug: string;
+          character_name: string;
+          character_icon_url?: string | null;
+          games_played: number;
+          wins: number;
+          synced_at?: string;
+        };
+        Update: {
+          character_name?: string;
+          character_icon_url?: string | null;
+          games_played?: number;
+          wins?: number;
+          synced_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "top_hero_stats_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -404,7 +441,7 @@ export type LfgPost = Database["public"]["Tables"]["lfg_posts"]["Row"];
 export type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"];
 export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row"];
 export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
-export type MatchHistoryEntry = Database["public"]["Tables"]["match_history"]["Row"];
+export type TopHeroStat = Database["public"]["Tables"]["top_hero_stats"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;

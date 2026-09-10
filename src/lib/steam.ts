@@ -74,52 +74,35 @@ export async function fetchDotaRankFromOpenDota(steamId64: string): Promise<Dota
   };
 }
 
-export interface DotaMatchResult {
-  matchId: string;
-  won: boolean;
+export interface DotaHeroStat {
   heroId: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  duration: number;
-  startTime: number;
+  games: number;
+  wins: number;
 }
 
-// player_slot 0-127 is Radiant, 128+ is Dire — the win/loss comes from
-// comparing that against radiant_win rather than a dedicated field.
-export async function fetchDotaMatches(
-  steamId64: string,
-  limit = 10,
-): Promise<DotaMatchResult[]> {
+// All-time per-hero totals, aggregated by OpenDota itself from the
+// player's full match history — this is what "most played hero" should
+// actually be based on, since a small recent-N sample skews wildly for
+// accounts with thousands of matches.
+export async function fetchDotaHeroStats(steamId64: string): Promise<DotaHeroStat[]> {
   const accountId = steamId64ToDotaAccountId(steamId64);
   const response = await fetch(
-    `https://api.opendota.com/api/players/${accountId}/matches?limit=${limit}`,
+    `https://api.opendota.com/api/players/${accountId}/heroes`,
     { headers: { Accept: "application/json" } },
   );
   if (!response.ok) {
-    throw new Error(`OpenDota matches request failed (${response.status})`);
+    throw new Error(`OpenDota hero stats request failed (${response.status})`);
   }
 
   const data = (await response.json()) as Array<{
-    match_id: number;
-    player_slot: number;
-    radiant_win: boolean;
     hero_id: number;
-    kills: number;
-    deaths: number;
-    assists: number;
-    duration: number;
-    start_time: number;
+    games: number;
+    win: number;
   }>;
 
-  return data.map((match) => ({
-    matchId: String(match.match_id),
-    won: match.player_slot < 128 === match.radiant_win,
-    heroId: match.hero_id,
-    kills: match.kills,
-    deaths: match.deaths,
-    assists: match.assists,
-    duration: match.duration,
-    startTime: match.start_time,
+  return data.map((entry) => ({
+    heroId: entry.hero_id,
+    games: entry.games,
+    wins: entry.win,
   }));
 }

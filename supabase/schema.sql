@@ -583,6 +583,36 @@ create policy "Match history is publicly readable"
   on public.match_history for select
   using (true);
 
+-- ---------------------------------------------------------------------------
+-- top_hero_stats: the single most-played hero/agent per game for a profile,
+-- with all-time games/win counts. For Dota 2 this is synced from OpenDota's
+-- own all-time per-hero aggregation (/players/{id}/heroes) rather than
+-- derived from match_history, since match_history only ever holds a
+-- player's most recent handful of games and produced inaccurate "most
+-- played" results for accounts with a long match history. Valorant still
+-- derives it from recently synced matches (HenrikDev has no all-time
+-- per-agent endpoint). Same service-role-only write trust boundary as
+-- match_history — see rank-sync.ts.
+-- ---------------------------------------------------------------------------
+create table if not exists public.top_hero_stats (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  game_slug text not null,
+  character_name text not null,
+  character_icon_url text,
+  games_played integer not null,
+  wins integer not null,
+  synced_at timestamptz not null default now(),
+  unique (profile_id, game_slug)
+);
+
+alter table public.top_hero_stats enable row level security;
+
+drop policy if exists "Top hero stats are publicly readable" on public.top_hero_stats;
+create policy "Top hero stats are publicly readable"
+  on public.top_hero_stats for select
+  using (true);
+
 -- Backfill: the onboarding "what do you play?" step only exists to collect
 -- profile_games from players who don't have any yet. Accounts that already
 -- picked games (via the old signup-time picker) shouldn't be asked again.

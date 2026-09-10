@@ -15,7 +15,7 @@ export default function NotFound() {
       </p>
       <div className="mt-2 flex flex-wrap justify-center gap-3">
         <Button asChild size="lg" variant="outline">
-          <Link href="/teammates">Find teammates</Link>
+          <Link href="/teammates">Teammates</Link>
         </Button>
         <Button asChild size="lg">
           <Link href="/">Go home</Link>

@@ -7,9 +7,9 @@ export interface NavLink {
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { href: "/teammates", label: "Find Teammates", icon: Users },
-  { href: "/coaches", label: "Find Coaches", icon: GraduationCap },
-  { href: "/guilds", label: "Find Guild", icon: Shield },
+  { href: "/teammates", label: "Teammates", icon: Users },
+  { href: "/coaches", label: "Coaches", icon: GraduationCap },
+  { href: "/guilds", label: "Guilds", icon: Shield },
   { href: "/tournaments", label: "Tournaments", icon: Trophy },
-  { href: "/scrims", label: "Find a Scrim", icon: Swords },
+  { href: "/scrims", label: "Scrimmages", icon: Swords },
 ];

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { getGames, getCoachProfiles } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Find Coaches",
+  title: "Coaches",
   description:
     "Browse players who coach your game and reach out directly — no fees, no booking system.",
   alternates: { canonical: "/coaches" },
@@ -42,7 +42,7 @@ export default async function CoachesPage({
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Level up"
-          title="Find coaches"
+          title="Coaches"
           description="Connect directly with players who coach — no fees, just reach out."
           className="mb-0"
         />

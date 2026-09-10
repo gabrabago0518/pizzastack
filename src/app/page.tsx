@@ -27,7 +27,7 @@ const features = [
   },
   {
     icon: GraduationCap,
-    title: "Find a coach",
+    title: "Browse coaches",
     description:
       "Browse players who coach your game and reach out directly. No fees, no booking system.",
     href: "/coaches",
@@ -55,7 +55,7 @@ const features = [
   },
   {
     icon: Swords,
-    title: "Find a scrimmage",
+    title: "Schedule a scrim",
     description:
       "Post your game, region, and when you're free to play — or browse open slots and reach out directly.",
     href: "/scrims",

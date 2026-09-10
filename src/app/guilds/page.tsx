@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { getGames, getGuilds } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Find a Guild",
+  title: "Guilds",
   description:
     "Browse player-run guilds and communities on Pizzastack.gg, or start your own.",
   alternates: { canonical: "/guilds" },
@@ -28,7 +28,7 @@ export default async function GuildsPage({
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Squad up, long term"
-          title="Find a guild"
+          title="Guilds"
           description="Join a player-run community, or start your own."
           className="mb-0"
         />

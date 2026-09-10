@@ -39,7 +39,7 @@ const OPTIONS: VisibilityOption[] = [
   {
     field: "show_listings",
     label: "Listings",
-    description: "Your open Find Teammates posts.",
+    description: "Your open teammate listings.",
   },
   {
     field: "show_coaching",

@@ -18,10 +18,10 @@ export function Footer() {
         <div className="flex flex-col gap-3 text-sm">
           <h4 className="font-display text-base">Explore</h4>
           <Link href="/teammates" className="text-muted-foreground transition-colors hover:text-foreground">
-            Find Teammates
+            Teammates
           </Link>
           <Link href="/coaches" className="text-muted-foreground transition-colors hover:text-foreground">
-            Find Coaches
+            Coaches
           </Link>
         </div>
 

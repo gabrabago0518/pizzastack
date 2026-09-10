@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGames, getScrimmages } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Find a Scrimmage",
+  title: "Scrimmages",
   description:
     "Post your game, region, and when you want to scrim — or browse open scrim slots and reach out directly.",
   alternates: { canonical: "/scrims" },
@@ -38,7 +38,7 @@ export default async function ScrimsPage({
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Practice"
-          title="Find a scrimmage"
+          title="Scrimmages"
           description="Post when you're free to scrim, or browse open slots and reach out directly."
           className="mb-0"
         />

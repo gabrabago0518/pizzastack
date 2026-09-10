@@ -12,7 +12,7 @@ import { getGames, getLfgPosts, getJoinRequestsForPosts } from "@/lib/queries";
 import type { JoinRequestWithRequester } from "@/lib/supabase/types";
 
 export const metadata: Metadata = {
-  title: "Find Teammates",
+  title: "Teammates",
   description:
     "Browse open LFG listings from players looking for a squad, a duo, or a fifth. Pick a game and filter by rank, role, or mode.",
   alternates: { canonical: "/teammates" },
@@ -78,7 +78,7 @@ export default async function TeammatesPage({
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Squad up"
-          title="Find teammates"
+          title="Teammates"
           description="Pick a game, then browse open listings from players looking for a squad, a duo, or a fifth."
           className="mb-0"
         />

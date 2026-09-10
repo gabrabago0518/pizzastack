@@ -24,13 +24,13 @@ const actions = [
   {
     href: "/teammates",
     icon: Users,
-    title: "Find teammates",
+    title: "Teammates",
     description: "Browse open listings from other players.",
   },
   {
     href: "/coaches",
     icon: GraduationCap,
-    title: "Find coaches",
+    title: "Coaches",
     description: "Connect with players who coach your game.",
   },
   {

@@ -747,6 +747,52 @@ create trigger coach_reviews_notify
   for each row execute function public.notify_coach_review_received();
 
 -- ---------------------------------------------------------------------------
+-- coaching_requests: the reverse of coach_profiles — a player posting what
+-- they're looking for in a coach (game, rank, region, and why) instead of a
+-- coach listing themselves. Same direct-contact model as the rest of
+-- /coaches: browsable, no booking/request flow — an interested coach reaches
+-- out via the poster's public profile.
+-- ---------------------------------------------------------------------------
+create table if not exists public.coaching_requests (
+  id uuid primary key default gen_random_uuid(),
+  author_id uuid not null references public.profiles (id) on delete cascade,
+  game_id uuid not null references public.games (id),
+  rank text,
+  region text,
+  description text not null,
+  status text not null default 'open' check (status in ('open', 'closed')),
+  created_at timestamptz not null default now()
+);
+
+-- One open "looking for a coach" post per player at a time, same rule as
+-- lfg_posts_one_open_per_author.
+create unique index if not exists coaching_requests_one_open_per_author
+  on public.coaching_requests (author_id)
+  where status = 'open';
+
+alter table public.coaching_requests enable row level security;
+
+drop policy if exists "Coaching requests are publicly readable" on public.coaching_requests;
+create policy "Coaching requests are publicly readable"
+  on public.coaching_requests for select
+  using (true);
+
+drop policy if exists "Users can create their own coaching requests" on public.coaching_requests;
+create policy "Users can create their own coaching requests"
+  on public.coaching_requests for insert
+  with check (auth.uid() = author_id);
+
+drop policy if exists "Users can update their own coaching requests" on public.coaching_requests;
+create policy "Users can update their own coaching requests"
+  on public.coaching_requests for update
+  using (auth.uid() = author_id);
+
+drop policy if exists "Users can delete their own coaching requests" on public.coaching_requests;
+create policy "Users can delete their own coaching requests"
+  on public.coaching_requests for delete
+  using (auth.uid() = author_id);
+
+-- ---------------------------------------------------------------------------
 -- Storage: avatars bucket. Files are stored at "{user_id}/avatar.<ext>" so
 -- ownership can be checked from the path alone.
 -- ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { Section, SectionHeading } from "@/components/site/section";
 import { GameFilter } from "@/components/site/game-filter";
@@ -46,11 +46,18 @@ export default async function CoachesPage({
           description="Connect directly with players who coach — no fees, just reach out."
           className="mb-0"
         />
-        <Button asChild variant="secondary">
-          <Link href="/coaches/new">
-            <Plus /> Become a coach
-          </Link>
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button asChild variant="outline">
+            <Link href="/coaches/looking-for-coach">
+              <Search /> Looking for a coach?
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/coaches/new">
+              <Plus /> Become a coach
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mb-5">

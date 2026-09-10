@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   CoachProfileWithRelations,
   CoachReviewWithReviewer,
+  CoachingRequestWithRelations,
   LfgPostWithRelations,
   JoinRequestWithRequester,
   LfgMessageWithSender,
@@ -263,6 +264,47 @@ export async function getCoachProfilesByAuthor(userId: string) {
     .order("created_at", { ascending: false })
     .returns<CoachProfileWithRelations[]>();
   return data ?? [];
+}
+
+export interface CoachingRequestFilters {
+  rank?: string;
+  region?: string;
+}
+
+// The reverse of getCoachProfiles — players posting what they're looking
+// for in a coach, browsable the same way on /coaches/looking-for-coach.
+export async function getCoachingRequests(
+  gameSlug?: string,
+  filters: CoachingRequestFilters = {},
+) {
+  const supabase = await createClient();
+  const gameId = await resolveGameId(gameSlug);
+
+  let builder = supabase
+    .from("coaching_requests")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+
+  if (gameId) builder = builder.eq("game_id", gameId);
+  if (filters.rank) builder = builder.eq("rank", filters.rank);
+  if (filters.region) builder = builder.eq("region", filters.region);
+
+  const { data } = await builder.returns<CoachingRequestWithRelations[]>();
+  return data ?? [];
+}
+
+// Mirrors getOwnOpenListingId — only one open "looking for a coach" post
+// per player at a time (coaching_requests_one_open_per_author).
+export async function getOwnOpenCoachingRequestId(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coaching_requests")
+    .select("id")
+    .eq("author_id", userId)
+    .eq("status", "open")
+    .maybeSingle();
+  return data?.id ?? null;
 }
 
 // PostgREST's `.or()` treats "," and "()" as filter-list syntax, so strip

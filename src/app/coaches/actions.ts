@@ -83,6 +83,86 @@ export async function createCoachProfile(
   redirect("/coaches");
 }
 
+export interface CoachingRequestFormState {
+  error?: string;
+}
+
+// The reverse of createCoachProfile — a player posting what they're looking
+// for in a coach. Same direct-contact model as coach_profiles (see
+// CoachingRequestCard): no request/accept flow, an interested coach reaches
+// out via the poster's public profile.
+export async function createCoachingRequest(
+  _prevState: CoachingRequestFormState,
+  formData: FormData,
+): Promise<CoachingRequestFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to post a listing." };
+  }
+
+  const gameId = String(formData.get("gameId") ?? "");
+  const rank = String(formData.get("rank") ?? "").trim();
+  const region = String(formData.get("region") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!gameId || !description) {
+    return { error: "Pick a game and describe what you're looking for." };
+  }
+
+  const { error } = await supabase.from("coaching_requests").insert({
+    author_id: user.id,
+    game_id: gameId,
+    rank: rank || null,
+    region: region || null,
+    description,
+  });
+
+  if (error) {
+    return {
+      error: error.code === "23505"
+        ? "You already have an open listing — close it before posting another."
+        : error.message,
+    };
+  }
+
+  revalidatePath("/coaches/looking-for-coach");
+  redirect("/coaches/looking-for-coach");
+}
+
+export interface CoachingRequestActionResult {
+  error?: string;
+}
+
+export async function closeCoachingRequest(
+  requestId: string,
+): Promise<CoachingRequestActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("coaching_requests")
+    .update({ status: "closed" })
+    .eq("id", requestId)
+    .eq("author_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/coaches/looking-for-coach");
+  return {};
+}
+
 export interface CoachReviewResult {
   error?: string;
 }

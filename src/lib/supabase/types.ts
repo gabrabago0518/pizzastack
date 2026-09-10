@@ -665,6 +665,48 @@ export interface Database {
           },
         ];
       };
+      coaching_requests: {
+        Row: {
+          id: string;
+          author_id: string;
+          game_id: string;
+          rank: string | null;
+          region: string | null;
+          description: string;
+          status: "open" | "closed";
+          created_at: string;
+        };
+        Insert: {
+          author_id: string;
+          game_id: string;
+          rank?: string | null;
+          region?: string | null;
+          description: string;
+          status?: "open" | "closed";
+        };
+        Update: {
+          rank?: string | null;
+          region?: string | null;
+          description?: string;
+          status?: "open" | "closed";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coaching_requests_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "coaching_requests_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -685,6 +727,7 @@ export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Guild = Database["public"]["Tables"]["guilds"]["Row"];
 export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
+export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -718,4 +761,9 @@ export type GuildMemberWithProfile = GuildMember & {
 
 export type GuildMessageWithSender = GuildMessage & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type CoachingRequestWithRelations = CoachingRequest & {
+  profiles: Pick<Profile, "username" | "region"> | null;
+  games: Pick<Game, "name" | "slug"> | null;
 };

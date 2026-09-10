@@ -715,7 +715,8 @@ export interface Database {
           organizer_id: string;
           description: string | null;
           region: string | null;
-          max_participants: number | null;
+          team_size: number;
+          max_teams: number | null;
           status: "open" | "in_progress" | "completed" | "cancelled";
           created_at: string;
         };
@@ -725,14 +726,16 @@ export interface Database {
           organizer_id: string;
           description?: string | null;
           region?: string | null;
-          max_participants?: number | null;
+          team_size?: number;
+          max_teams?: number | null;
           status?: "open" | "in_progress" | "completed" | "cancelled";
         };
         Update: {
           name?: string;
           description?: string | null;
           region?: string | null;
-          max_participants?: number | null;
+          team_size?: number;
+          max_teams?: number | null;
           status?: "open" | "in_progress" | "completed" | "cancelled";
         };
         Relationships: [
@@ -752,32 +755,73 @@ export interface Database {
           },
         ];
       };
-      tournament_participants: {
+      tournament_teams: {
         Row: {
           id: string;
           tournament_id: string;
-          profile_id: string;
+          name: string;
+          captain_id: string;
           seed: number | null;
           created_at: string;
         };
         Insert: {
           tournament_id: string;
-          profile_id: string;
+          name: string;
+          captain_id: string;
           seed?: number | null;
         };
         Update: {
+          name?: string;
           seed?: number | null;
         };
         Relationships: [
           {
-            foreignKeyName: "tournament_participants_tournament_id_fkey";
+            foreignKeyName: "tournament_teams_tournament_id_fkey";
             columns: ["tournament_id"];
             isOneToOne: false;
             referencedRelation: "tournaments";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "tournament_participants_profile_id_fkey";
+            foreignKeyName: "tournament_teams_captain_id_fkey";
+            columns: ["captain_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tournament_team_members: {
+        Row: {
+          id: string;
+          team_id: string;
+          tournament_id: string;
+          profile_id: string;
+          created_at: string;
+        };
+        Insert: {
+          team_id: string;
+          tournament_id: string;
+          profile_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "tournament_team_members_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "tournament_teams";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_team_members_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_team_members_profile_id_fkey";
             columns: ["profile_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -834,21 +878,21 @@ export interface Database {
             foreignKeyName: "tournament_matches_participant1_id_fkey";
             columns: ["participant1_id"];
             isOneToOne: false;
-            referencedRelation: "tournament_participants";
+            referencedRelation: "tournament_teams";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "tournament_matches_participant2_id_fkey";
             columns: ["participant2_id"];
             isOneToOne: false;
-            referencedRelation: "tournament_participants";
+            referencedRelation: "tournament_teams";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "tournament_matches_winner_id_fkey";
             columns: ["winner_id"];
             isOneToOne: false;
-            referencedRelation: "tournament_participants";
+            referencedRelation: "tournament_teams";
             referencedColumns: ["id"];
           },
           {
@@ -882,7 +926,8 @@ export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
 export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
 export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"];
-export type TournamentParticipant = Database["public"]["Tables"]["tournament_participants"]["Row"];
+export type TournamentTeam = Database["public"]["Tables"]["tournament_teams"]["Row"];
+export type TournamentTeamMember = Database["public"]["Tables"]["tournament_team_members"]["Row"];
 export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
@@ -927,9 +972,14 @@ export type CoachingRequestWithRelations = CoachingRequest & {
 export type TournamentWithRelations = Tournament & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
   games: Pick<Game, "name" | "slug"> | null;
-  tournament_participants: { count: number }[];
+  tournament_teams: { count: number }[];
 };
 
-export type TournamentParticipantWithProfile = TournamentParticipant & {
+export type TournamentTeamWithRelations = TournamentTeam & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+  tournament_team_members: { count: number }[];
+};
+
+export type TournamentTeamMemberWithProfile = TournamentTeamMember & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

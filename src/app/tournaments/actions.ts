@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getTournamentParticipants } from "@/lib/queries";
+import { getTournamentTeams } from "@/lib/queries";
 import { generateBracket } from "@/lib/bracket";
 
 export interface TournamentActionResult {
@@ -31,17 +31,23 @@ export async function createTournament(
   const gameId = String(formData.get("gameId") ?? "");
   const description = String(formData.get("description") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
-  const maxParticipantsRaw = String(formData.get("maxParticipants") ?? "").trim();
+  const teamSizeRaw = String(formData.get("teamSize") ?? "");
+  const maxTeamsRaw = String(formData.get("maxTeams") ?? "").trim();
 
-  if (!name || !gameId) {
-    return { error: "Give your tournament a name and pick a game." };
+  if (!name || !gameId || !teamSizeRaw) {
+    return { error: "Give your tournament a name, pick a game, and pick a format." };
   }
 
-  let maxParticipants: number | null = null;
-  if (maxParticipantsRaw) {
-    maxParticipants = Number(maxParticipantsRaw);
-    if (!Number.isInteger(maxParticipants) || maxParticipants < 2) {
-      return { error: "Max participants must be a whole number of 2 or more." };
+  const teamSize = Number(teamSizeRaw);
+  if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 10) {
+    return { error: "Pick a valid team format." };
+  }
+
+  let maxTeams: number | null = null;
+  if (maxTeamsRaw) {
+    maxTeams = Number(maxTeamsRaw);
+    if (!Number.isInteger(maxTeams) || maxTeams < 2) {
+      return { error: "Max teams must be a whole number of 2 or more." };
     }
   }
 
@@ -53,7 +59,8 @@ export async function createTournament(
       organizer_id: user.id,
       description: description || null,
       region: region || null,
-      max_participants: maxParticipants,
+      team_size: teamSize,
+      max_teams: maxTeams,
     })
     .select("id")
     .single();
@@ -66,19 +73,34 @@ export async function createTournament(
   redirect(`/tournaments/${tournament.id}`);
 }
 
-export async function joinTournament(tournamentId: string): Promise<TournamentActionResult> {
+export interface TeamActionResult {
+  error?: string;
+  teamId?: string;
+}
+
+// Creates a team and registers its creator as captain and first member in
+// one action — a team never exists without at least its captain on it.
+export async function createTeam(
+  tournamentId: string,
+  name: string,
+): Promise<TeamActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "You need to be logged in to join." };
+    return { error: "You need to be logged in to create a team." };
+  }
+
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    return { error: "Give your team a name." };
   }
 
   const { data: tournament } = await supabase
     .from("tournaments")
-    .select("status, max_participants")
+    .select("status, max_teams")
     .eq("id", tournamentId)
     .maybeSingle();
 
@@ -88,23 +110,96 @@ export async function joinTournament(tournamentId: string): Promise<TournamentAc
   if (tournament.status !== "open") {
     return { error: "Registration for this tournament is closed." };
   }
-  if (tournament.max_participants) {
+  if (tournament.max_teams) {
     const { count } = await supabase
-      .from("tournament_participants")
+      .from("tournament_teams")
       .select("*", { count: "exact", head: true })
       .eq("tournament_id", tournamentId);
-    if ((count ?? 0) >= tournament.max_participants) {
-      return { error: "This tournament is full." };
+    if ((count ?? 0) >= tournament.max_teams) {
+      return { error: "This tournament already has its max number of teams." };
     }
   }
 
-  const { error } = await supabase
-    .from("tournament_participants")
-    .insert({ tournament_id: tournamentId, profile_id: user.id });
+  const { data: team, error } = await supabase
+    .from("tournament_teams")
+    .insert({ tournament_id: tournamentId, name: trimmedName, captain_id: user.id })
+    .select("id")
+    .single();
+
+  if (error || !team) {
+    return {
+      error:
+        error?.code === "23505"
+          ? "A team with that name already exists in this tournament."
+          : (error?.message ?? "Couldn't create the team."),
+    };
+  }
+
+  const { error: memberError } = await supabase.from("tournament_team_members").insert({
+    team_id: team.id,
+    tournament_id: tournamentId,
+    profile_id: user.id,
+  });
+
+  if (memberError) {
+    // Roll back the now-captain-less team rather than leave an orphan.
+    await supabase.from("tournament_teams").delete().eq("id", team.id);
+    return {
+      error:
+        memberError.code === "23505"
+          ? "You're already on a team in this tournament."
+          : memberError.message,
+    };
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}`);
+  return { teamId: team.id };
+}
+
+export async function joinTeam(
+  tournamentId: string,
+  teamId: string,
+): Promise<TournamentActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to join a team." };
+  }
+
+  const { data: tournament } = await supabase
+    .from("tournaments")
+    .select("status, team_size")
+    .eq("id", tournamentId)
+    .maybeSingle();
+
+  if (!tournament) {
+    return { error: "That tournament no longer exists." };
+  }
+  if (tournament.status !== "open") {
+    return { error: "Registration for this tournament is closed." };
+  }
+
+  const { count } = await supabase
+    .from("tournament_team_members")
+    .select("*", { count: "exact", head: true })
+    .eq("team_id", teamId);
+  if ((count ?? 0) >= tournament.team_size) {
+    return { error: "This team is already full." };
+  }
+
+  const { error } = await supabase.from("tournament_team_members").insert({
+    team_id: teamId,
+    tournament_id: tournamentId,
+    profile_id: user.id,
+  });
 
   if (error) {
     return {
-      error: error.code === "23505" ? "You're already registered." : error.message,
+      error:
+        error.code === "23505" ? "You're already on a team in this tournament." : error.message,
     };
   }
 
@@ -112,10 +207,13 @@ export async function joinTournament(tournamentId: string): Promise<TournamentAc
   return {};
 }
 
-// Self-withdrawal — RLS only allows this while the tournament is still
-// "open" (see the "Players can withdraw, organizers can remove anyone"
-// policy), so a player can't drop out mid-bracket this way.
-export async function leaveTournament(tournamentId: string): Promise<TournamentActionResult> {
+// Self-leave — blocked for a captain with teammates still on the roster
+// (see disbandTeam for that case), same "can't abandon what you're
+// responsible for" rule guilds use for their leader.
+export async function leaveTeam(
+  tournamentId: string,
+  teamId: string,
+): Promise<TournamentActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -125,10 +223,33 @@ export async function leaveTournament(tournamentId: string): Promise<TournamentA
     return { error: "You need to be logged in." };
   }
 
+  const { data: team } = await supabase
+    .from("tournament_teams")
+    .select("captain_id")
+    .eq("id", teamId)
+    .maybeSingle();
+
+  if (team?.captain_id === user.id) {
+    const { count } = await supabase
+      .from("tournament_team_members")
+      .select("*", { count: "exact", head: true })
+      .eq("team_id", teamId);
+    if ((count ?? 0) > 1) {
+      return {
+        error: "You're the captain — disband the team instead of leaving it with teammates on it.",
+      };
+    }
+    // Sole member and captain: leaving is the same as disbanding.
+    const { error } = await supabase.from("tournament_teams").delete().eq("id", teamId);
+    if (error) return { error: error.message };
+    revalidatePath(`/tournaments/${tournamentId}`);
+    return {};
+  }
+
   const { error } = await supabase
-    .from("tournament_participants")
+    .from("tournament_team_members")
     .delete()
-    .eq("tournament_id", tournamentId)
+    .eq("team_id", teamId)
     .eq("profile_id", user.id);
 
   if (error) {
@@ -139,11 +260,11 @@ export async function leaveTournament(tournamentId: string): Promise<TournamentA
   return {};
 }
 
-// Organizer removing a specific participant (no-show, DQ, etc.) — allowed
-// at any point per the same RLS policy leaveTournament relies on.
-export async function kickParticipant(
+// Captain-only: removes the whole team (and every membership row with it,
+// via cascade).
+export async function disbandTeam(
   tournamentId: string,
-  participantId: string,
+  teamId: string,
 ): Promise<TournamentActionResult> {
   const supabase = await createClient();
   const {
@@ -155,9 +276,10 @@ export async function kickParticipant(
   }
 
   const { error } = await supabase
-    .from("tournament_participants")
+    .from("tournament_teams")
     .delete()
-    .eq("id", participantId);
+    .eq("id", teamId)
+    .eq("captain_id", user.id);
 
   if (error) {
     return { error: error.message };
@@ -167,9 +289,36 @@ export async function kickParticipant(
   return {};
 }
 
-export async function setParticipantSeed(
+// Captain or organizer removing a specific teammate (no-show, DQ, etc.).
+export async function kickTeamMember(
   tournamentId: string,
-  participantId: string,
+  memberId: string,
+): Promise<TournamentActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("tournament_team_members")
+    .delete()
+    .eq("id", memberId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}`);
+  return {};
+}
+
+export async function setTeamSeed(
+  tournamentId: string,
+  teamId: string,
   seed: number | null,
 ): Promise<TournamentActionResult> {
   const supabase = await createClient();
@@ -182,9 +331,9 @@ export async function setParticipantSeed(
   }
 
   const { error } = await supabase
-    .from("tournament_participants")
+    .from("tournament_teams")
     .update({ seed })
-    .eq("id", participantId);
+    .eq("id", teamId);
 
   if (error) {
     return { error: error.message };
@@ -194,7 +343,7 @@ export async function setParticipantSeed(
   return {};
 }
 
-// Assigns every registered participant a random seed — a quick way for an
+// Assigns every registered team a random seed — a quick way for an
 // organizer who doesn't care about manual seeding to still get a fair
 // draw instead of a bracket ordered by registration time.
 export async function randomizeSeeds(tournamentId: string): Promise<TournamentActionResult> {
@@ -207,19 +356,16 @@ export async function randomizeSeeds(tournamentId: string): Promise<TournamentAc
     return { error: "You need to be logged in." };
   }
 
-  const participants = await getTournamentParticipants(tournamentId);
-  const shuffled = [...participants];
+  const teams = await getTournamentTeams(tournamentId);
+  const shuffled = [...teams];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
   const results = await Promise.all(
-    shuffled.map((participant, index) =>
-      supabase
-        .from("tournament_participants")
-        .update({ seed: index + 1 })
-        .eq("id", participant.id),
+    shuffled.map((team, index) =>
+      supabase.from("tournament_teams").update({ seed: index + 1 }).eq("id", team.id),
     ),
   );
   const failed = results.find((r) => r.error);
@@ -234,7 +380,7 @@ export async function randomizeSeeds(tournamentId: string): Promise<TournamentAc
 // Locks registration and generates the full bracket in one shot (see
 // generateBracket in src/lib/bracket.ts) — inserted last round first, so
 // each earlier round's rows can point next_match_id at the real database
-// id of the match their winner advances into.
+// id of the match their winner advances into. Each bracket slot is a team.
 export async function startTournament(tournamentId: string): Promise<TournamentActionResult> {
   const supabase = await createClient();
   const {
@@ -261,12 +407,12 @@ export async function startTournament(tournamentId: string): Promise<TournamentA
     return { error: "This tournament has already started." };
   }
 
-  const participants = await getTournamentParticipants(tournamentId);
-  if (participants.length < 2) {
-    return { error: "You need at least 2 registered players to start." };
+  const teams = await getTournamentTeams(tournamentId);
+  if (teams.length < 2) {
+    return { error: "You need at least 2 registered teams to start." };
   }
 
-  const rounds = generateBracket(participants.map((p) => ({ id: p.id })));
+  const rounds = generateBracket(teams.map((team) => ({ id: team.id })));
 
   let nextRoundIds = new Map<number, string>();
   for (let r = rounds.length - 1; r >= 0; r--) {
@@ -309,14 +455,14 @@ export async function startTournament(tournamentId: string): Promise<TournamentA
 }
 
 // Reports a winner (and optional score) for a ready match, then advances
-// the winner into the next match's open slot — flipping that match to
-// "ready" once both its slots are filled, which is what fires the
+// the winning team into the next match's open slot — flipping that match
+// to "ready" once both its slots are filled, which is what fires the
 // "match ready" notification (see notify_tournament_match_ready in
 // schema.sql). Reporting the final match closes out the tournament.
-// Only ever reportable once: a "ready" match with both participants known,
-// not already "completed" — correcting a mistake after the bracket has
-// moved on would mean unwinding everything downstream of it, which this
-// doesn't attempt.
+// Only ever reportable once: a "ready" match with both teams known, not
+// already "completed" — correcting a mistake after the bracket has moved
+// on would mean unwinding everything downstream of it, which this doesn't
+// attempt.
 export async function reportMatchResult(
   tournamentId: string,
   matchId: string,
@@ -359,7 +505,7 @@ export async function reportMatchResult(
     return { error: "This match isn't ready yet — it's still waiting on an earlier result." };
   }
   if (winnerId !== match.participant1_id && winnerId !== match.participant2_id) {
-    return { error: "Pick the winner from the two players in this match." };
+    return { error: "Pick the winner from the two teams in this match." };
   }
 
   const { error: updateError } = await supabase

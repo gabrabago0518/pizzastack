@@ -1169,8 +1169,15 @@ create policy "Admins can update report status"
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
 
+-- Superseded by tournament_teams/tournament_team_members below — the
+-- tournament feature switched from individual to team registration in the
+-- same working session it shipped in, before any real tournament existed,
+-- so this drops the short-lived individual-registration table rather than
+-- leaving dead weight around.
+drop table if exists public.tournament_participants cascade;
+
 -- ---------------------------------------------------------------------------
--- tournaments: an organizer posts a bracket-based tournament, players
+-- tournaments: an organizer posts a bracket-based tournament, teams
 -- register while it's 'open', the organizer locks registration and
 -- generates the bracket (status -> 'in_progress'), then reports results
 -- until the final match closes it out (status -> 'completed'). Single
@@ -1192,6 +1199,24 @@ create table if not exists public.tournaments (
   constraint tournaments_max_participants_check check (max_participants is null or max_participants >= 2)
 );
 
+-- team_size: how many players make up one side ("5v5" -> 5). max_teams
+-- replaces the old individual-registration max_participants (still on the
+-- table above, unused, left in place rather than dropped — no destructive
+-- renames on a column that might already have a value in a live row).
+alter table public.tournaments
+  add column if not exists team_size smallint not null default 5;
+alter table public.tournaments
+  drop constraint if exists tournaments_team_size_check;
+alter table public.tournaments
+  add constraint tournaments_team_size_check check (team_size between 1 and 10);
+
+alter table public.tournaments
+  add column if not exists max_teams smallint;
+alter table public.tournaments
+  drop constraint if exists tournaments_max_teams_check;
+alter table public.tournaments
+  add constraint tournaments_max_teams_check check (max_teams is null or max_teams >= 2);
+
 alter table public.tournaments enable row level security;
 
 drop policy if exists "Tournaments are publicly readable" on public.tournaments;
@@ -1210,63 +1235,122 @@ create policy "Organizers can update their own tournaments"
   using (auth.uid() = organizer_id);
 
 -- ---------------------------------------------------------------------------
--- tournament_participants: a player registered for a tournament. seed is
--- null until the organizer sets one (manually or via "Randomize seeds") —
--- bracket generation falls back to registration order (created_at) for
--- anyone left unseeded, so an organizer who does nothing still gets a
--- valid bracket.
+-- tournament_teams: a team registered for a tournament — scoped to that one
+-- tournament, not a persistent org (see guilds for that). Whoever creates
+-- the team becomes its captain and its first member (tournament_team_members
+-- row, inserted by the same app action). seed is null until the organizer
+-- sets one (manually or via "Randomize seeds") — bracket generation falls
+-- back to registration order (created_at) for anyone left unseeded.
 -- ---------------------------------------------------------------------------
-create table if not exists public.tournament_participants (
+create table if not exists public.tournament_teams (
   id uuid primary key default gen_random_uuid(),
   tournament_id uuid not null references public.tournaments (id) on delete cascade,
-  profile_id uuid not null references public.profiles (id) on delete cascade,
+  name text not null,
+  captain_id uuid not null references public.profiles (id) on delete cascade,
   seed integer,
   created_at timestamptz not null default now(),
-  unique (tournament_id, profile_id)
+  unique (tournament_id, name)
 );
 
-alter table public.tournament_participants enable row level security;
+alter table public.tournament_teams enable row level security;
 
-drop policy if exists "Tournament rosters are publicly readable" on public.tournament_participants;
-create policy "Tournament rosters are publicly readable"
-  on public.tournament_participants for select
+drop policy if exists "Tournament teams are publicly readable" on public.tournament_teams;
+create policy "Tournament teams are publicly readable"
+  on public.tournament_teams for select
   using (true);
 
--- Registration only while the tournament is still open, and only up to
--- max_participants (unenforced/null = unlimited). The app checks both
--- up front for a friendly error message; this is the backstop.
-drop policy if exists "Players can register themselves" on public.tournament_participants;
-create policy "Players can register themselves"
-  on public.tournament_participants for insert
+-- Team creation only while the tournament is still open, and only up to
+-- max_teams (unenforced/null = unlimited). The app checks both up front
+-- for a friendly error message; this is the backstop.
+drop policy if exists "Players can create a team" on public.tournament_teams;
+create policy "Players can create a team"
+  on public.tournament_teams for insert
   with check (
-    auth.uid() = profile_id
+    auth.uid() = captain_id
     and exists (
       select 1 from public.tournaments t
       where t.id = tournament_id
         and t.status = 'open'
         and (
-          t.max_participants is null
-          or (select count(*) from public.tournament_participants tp where tp.tournament_id = t.id) < t.max_participants
+          t.max_teams is null
+          or (select count(*) from public.tournament_teams team where team.tournament_id = t.id) < t.max_teams
         )
     )
   );
 
--- Seed assignment — organizer only.
-drop policy if exists "Organizers can set seeds" on public.tournament_participants;
-create policy "Organizers can set seeds"
-  on public.tournament_participants for update
+-- Seed assignment — organizer only (column-level trust, same as the rest
+-- of this app's "narrow update policy, app decides which fields it
+-- actually writes" pattern — the captain has no update policy at all here).
+drop policy if exists "Organizers can set team seeds" on public.tournament_teams;
+create policy "Organizers can set team seeds"
+  on public.tournament_teams for update
   using (auth.uid() = (select organizer_id from public.tournaments where id = tournament_id));
 
--- A player can withdraw themselves before the bracket locks; the organizer
--- can remove anyone at any time (e.g. a no-show/DQ).
-drop policy if exists "Players can withdraw, organizers can remove anyone" on public.tournament_participants;
-create policy "Players can withdraw, organizers can remove anyone"
-  on public.tournament_participants for delete
+-- The captain can disband their own team before the bracket locks; the
+-- organizer can remove any team at any time (e.g. a no-show/DQ).
+drop policy if exists "Captains can disband, organizers can remove any team" on public.tournament_teams;
+create policy "Captains can disband, organizers can remove any team"
+  on public.tournament_teams for delete
+  using (
+    (
+      auth.uid() = captain_id
+      and exists (select 1 from public.tournaments where id = tournament_id and status = 'open')
+    )
+    or auth.uid() = (select organizer_id from public.tournaments where id = tournament_id)
+  );
+
+-- ---------------------------------------------------------------------------
+-- tournament_team_members: a player's membership on a tournament team.
+-- tournament_id is denormalized from tournament_teams purely so "one team
+-- per player per tournament" can be a plain unique constraint here, rather
+-- than a cross-table check.
+-- ---------------------------------------------------------------------------
+create table if not exists public.tournament_team_members (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.tournament_teams (id) on delete cascade,
+  tournament_id uuid not null references public.tournaments (id) on delete cascade,
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (team_id, profile_id),
+  unique (tournament_id, profile_id)
+);
+
+alter table public.tournament_team_members enable row level security;
+
+drop policy if exists "Team rosters are publicly readable" on public.tournament_team_members;
+create policy "Team rosters are publicly readable"
+  on public.tournament_team_members for select
+  using (true);
+
+-- Self-join only while the tournament is open and the team has room
+-- (capped at the tournament's team_size). No captain-adds-others path —
+-- a player joins themselves, same consent model as everything else on
+-- this site that isn't an explicit invite.
+drop policy if exists "Players can join a team themselves" on public.tournament_team_members;
+create policy "Players can join a team themselves"
+  on public.tournament_team_members for insert
+  with check (
+    auth.uid() = profile_id
+    and exists (
+      select 1 from public.tournament_teams team
+      join public.tournaments t on t.id = team.tournament_id
+      where team.id = team_id
+        and t.status = 'open'
+        and (select count(*) from public.tournament_team_members m where m.team_id = team.id) < t.team_size
+    )
+  );
+
+-- A player can leave their own team (while still open); the team's captain
+-- or the tournament organizer can remove anyone, any time.
+drop policy if exists "Members can leave, captains/organizers can remove anyone" on public.tournament_team_members;
+create policy "Members can leave, captains/organizers can remove anyone"
+  on public.tournament_team_members for delete
   using (
     (
       auth.uid() = profile_id
       and exists (select 1 from public.tournaments where id = tournament_id and status = 'open')
     )
+    or auth.uid() = (select captain_id from public.tournament_teams where id = team_id)
     or auth.uid() = (select organizer_id from public.tournaments where id = tournament_id)
   );
 
@@ -1276,15 +1360,17 @@ create policy "Players can withdraw, organizers can remove anyone"
 -- generated once, up front, when the organizer starts the tournament (see
 -- generateBracket in src/lib/bracket.ts), so reporting a result is just
 -- "fill in the winner here, then fill in the known slot over there."
+-- participant1/2/winner point at tournament_teams — each bracket slot is a
+-- team, not an individual player.
 -- ---------------------------------------------------------------------------
 create table if not exists public.tournament_matches (
   id uuid primary key default gen_random_uuid(),
   tournament_id uuid not null references public.tournaments (id) on delete cascade,
   round smallint not null,
   match_number smallint not null,
-  participant1_id uuid references public.tournament_participants (id) on delete set null,
-  participant2_id uuid references public.tournament_participants (id) on delete set null,
-  winner_id uuid references public.tournament_participants (id) on delete set null,
+  participant1_id uuid references public.tournament_teams (id) on delete set null,
+  participant2_id uuid references public.tournament_teams (id) on delete set null,
+  winner_id uuid references public.tournament_teams (id) on delete set null,
   score1 smallint,
   score2 smallint,
   status text not null default 'pending' check (status in ('pending', 'ready', 'completed')),
@@ -1293,6 +1379,25 @@ create table if not exists public.tournament_matches (
   created_at timestamptz not null default now(),
   unique (tournament_id, round, match_number)
 );
+
+-- Repoints participant1_id/participant2_id/winner_id at tournament_teams —
+-- a no-op on a fresh install (the create table above already has it right)
+-- but required on a database where tournament_matches was created before
+-- this switch from individual to team registration.
+alter table public.tournament_matches drop constraint if exists tournament_matches_participant1_id_fkey;
+alter table public.tournament_matches
+  add constraint tournament_matches_participant1_id_fkey
+  foreign key (participant1_id) references public.tournament_teams (id) on delete set null;
+
+alter table public.tournament_matches drop constraint if exists tournament_matches_participant2_id_fkey;
+alter table public.tournament_matches
+  add constraint tournament_matches_participant2_id_fkey
+  foreign key (participant2_id) references public.tournament_teams (id) on delete set null;
+
+alter table public.tournament_matches drop constraint if exists tournament_matches_winner_id_fkey;
+alter table public.tournament_matches
+  add constraint tournament_matches_winner_id_fkey
+  foreign key (winner_id) references public.tournament_teams (id) on delete set null;
 
 alter table public.tournament_matches enable row level security;
 
@@ -1311,10 +1416,11 @@ create policy "Organizers can report match results"
   on public.tournament_matches for update
   using (auth.uid() = (select organizer_id from public.tournaments where id = tournament_id));
 
--- Notifies both players once a match has everyone it needs and is ready to
--- be played — fires whether that happens at bracket generation (a match
--- with no byes on either side comes in 'ready' from the initial insert) or
--- later, when a previous round's winner fills the last open slot.
+-- Notifies every player on both teams once a match has everyone it needs
+-- and is ready to be played — fires whether that happens at bracket
+-- generation (a match with no byes on either side comes in 'ready' from
+-- the initial insert) or later, when a previous round's winner fills the
+-- last open slot.
 create or replace function public.notify_tournament_match_ready()
 returns trigger
 language plpgsql
@@ -1333,11 +1439,11 @@ begin
   select name into tournament_name from public.tournaments where id = new.tournament_id;
 
   insert into public.notifications (profile_id, type, title, body, link)
-  select tp.profile_id, 'tournament_match_ready', 'Match ready',
+  select m.profile_id, 'tournament_match_ready', 'Match ready',
     'Your next match in "' || coalesce(tournament_name, 'a tournament') || '" is ready.',
     '/tournaments/' || new.tournament_id
-  from public.tournament_participants tp
-  where tp.id in (new.participant1_id, new.participant2_id);
+  from public.tournament_team_members m
+  where m.team_id in (new.participant1_id, new.participant2_id);
 
   return new;
 end;
@@ -1348,7 +1454,8 @@ create trigger tournament_matches_notify_ready
   after insert or update on public.tournament_matches
   for each row execute function public.notify_tournament_match_ready();
 
--- Notifies every registered player when the organizer locks the bracket in.
+-- Notifies every player on every registered team when the organizer locks
+-- the bracket in.
 create or replace function public.notify_tournament_started()
 returns trigger
 language plpgsql
@@ -1357,11 +1464,11 @@ as $$
 begin
   if new.status = 'in_progress' and old.status = 'open' then
     insert into public.notifications (profile_id, type, title, body, link)
-    select tp.profile_id, 'tournament_started', 'Tournament started',
+    select m.profile_id, 'tournament_started', 'Tournament started',
       '"' || new.name || '" has started — check your bracket.',
       '/tournaments/' || new.id
-    from public.tournament_participants tp
-    where tp.tournament_id = new.id;
+    from public.tournament_team_members m
+    where m.tournament_id = new.id;
   end if;
   return new;
 end;

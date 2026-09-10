@@ -7,7 +7,7 @@ import { TOURNAMENT_STATUS_LABEL, TOURNAMENT_STATUS_BADGE_VARIANT } from "@/lib/
 import type { TournamentWithRelations } from "@/lib/supabase/types";
 
 export function TournamentCard({ tournament }: { tournament: TournamentWithRelations }) {
-  const participantCount = tournament.tournament_participants?.[0]?.count ?? 0;
+  const teamCount = tournament.tournament_teams?.[0]?.count ?? 0;
 
   return (
     <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
@@ -16,6 +16,9 @@ export function TournamentCard({ tournament }: { tournament: TournamentWithRelat
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{tournament.games?.name ?? "Unknown game"}</Badge>
+              <Badge variant="muted">
+                {tournament.team_size}v{tournament.team_size}
+              </Badge>
               <Badge variant={TOURNAMENT_STATUS_BADGE_VARIANT[tournament.status]}>
                 {TOURNAMENT_STATUS_LABEL[tournament.status]}
               </Badge>
@@ -47,8 +50,8 @@ export function TournamentCard({ tournament }: { tournament: TournamentWithRelat
         <div className="flex flex-wrap items-center gap-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <Users className="size-3.5" />
-            {participantCount}
-            {tournament.max_participants ? ` / ${tournament.max_participants}` : ""} players
+            {teamCount}
+            {tournament.max_teams ? ` / ${tournament.max_teams}` : ""} teams
           </span>
           {tournament.region ? (
             <span className="flex items-center gap-1.5">

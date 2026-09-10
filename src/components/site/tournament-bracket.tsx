@@ -7,7 +7,7 @@ import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { roundLabel } from "@/lib/bracket";
 import { ReportMatchDialog, type ReportableMatch } from "@/components/site/report-match-dialog";
-import type { TournamentMatch, TournamentParticipantWithProfile } from "@/lib/supabase/types";
+import type { TournamentMatch, TournamentTeamWithRelations } from "@/lib/supabase/types";
 
 const MATCH_HEIGHT = 72;
 const MATCH_GAP = 16;
@@ -18,7 +18,7 @@ function participantLabel(
   status: TournamentMatch["status"],
   nameById: Map<string, string>,
 ): string {
-  if (participantId) return nameById.get(participantId) ?? "Unknown player";
+  if (participantId) return nameById.get(participantId) ?? "Unknown team";
   if (round === 1 && status === "completed") return "BYE";
   return "TBD";
 }
@@ -26,12 +26,12 @@ function participantLabel(
 export function TournamentBracket({
   tournamentId,
   matches,
-  participants,
+  teams,
   canReport,
 }: {
   tournamentId: string;
   matches: TournamentMatch[];
-  participants: TournamentParticipantWithProfile[];
+  teams: TournamentTeamWithRelations[];
   canReport: boolean;
 }) {
   const router = useRouter();
@@ -40,11 +40,11 @@ export function TournamentBracket({
 
   const nameById = React.useMemo(() => {
     const map = new Map<string, string>();
-    for (const participant of participants) {
-      map.set(participant.id, participant.profiles?.username ?? "Unknown player");
+    for (const team of teams) {
+      map.set(team.id, team.name);
     }
     return map;
-  }, [participants]);
+  }, [teams]);
 
   const rounds = React.useMemo(() => {
     const byRound = new Map<number, TournamentMatch[]>();

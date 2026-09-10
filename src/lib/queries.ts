@@ -17,7 +17,8 @@ import type {
   Tournament,
   TournamentMatch,
   TournamentWithRelations,
-  TournamentParticipantWithProfile,
+  TournamentTeamWithRelations,
+  TournamentTeamMemberWithProfile,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -627,7 +628,7 @@ export async function getTournaments(gameSlug?: string, filters: TournamentFilte
 
   let builder = supabase
     .from("tournaments")
-    .select("*, profiles(username, avatar_url), games(name, slug), tournament_participants(count)")
+    .select("*, profiles(username, avatar_url), games(name, slug), tournament_teams(count)")
     .order("created_at", { ascending: false });
 
   if (gameId) builder = builder.eq("game_id", gameId);
@@ -643,7 +644,7 @@ export const getTournamentById = cache(async (id: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("tournaments")
-    .select("*, profiles(username, avatar_url), games(name, slug), tournament_participants(count)")
+    .select("*, profiles(username, avatar_url), games(name, slug), tournament_teams(count)")
     .eq("id", id)
     .maybeSingle()
     .returns<TournamentWithRelations>();
@@ -652,38 +653,53 @@ export const getTournamentById = cache(async (id: string) => {
 
 // Ordered seed-first (nulls last, tie-broken by registration order) — this
 // is the exact order generateBracket (src/lib/bracket.ts) seeds from, so
-// the roster list an organizer sees while setting seeds is the same order
+// the team list an organizer sees while setting seeds is the same order
 // the bracket will use.
-export async function getTournamentParticipants(tournamentId: string) {
+export async function getTournamentTeams(tournamentId: string) {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("tournament_participants")
-    .select("*, profiles(username, avatar_url)")
+    .from("tournament_teams")
+    .select("*, profiles(username, avatar_url), tournament_team_members(count)")
     .eq("tournament_id", tournamentId)
     .order("seed", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true })
-    .returns<TournamentParticipantWithProfile[]>();
+    .returns<TournamentTeamWithRelations[]>();
   return data ?? [];
 }
 
-export async function getMyTournamentParticipant(tournamentId: string, profileId: string) {
+export async function getTournamentTeamMembers(teamId: string) {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("tournament_participants")
-    .select("id")
+    .from("tournament_team_members")
+    .select("*, profiles(username, avatar_url)")
+    .eq("team_id", teamId)
+    .order("created_at", { ascending: true })
+    .returns<TournamentTeamMemberWithProfile[]>();
+  return data ?? [];
+}
+
+// The team (if any) a player is on for a given tournament — at most one,
+// enforced by tournament_team_members' (tournament_id, profile_id) unique
+// constraint. Used to show "You're on Team X" and gate create/join actions.
+export async function getMyTournamentTeam(tournamentId: string, profileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournament_team_members")
+    .select("team_id, tournament_teams(name)")
     .eq("tournament_id", tournamentId)
     .eq("profile_id", profileId)
     .maybeSingle();
-  return data?.id ?? null;
+  if (!data) return null;
+  return { teamId: data.team_id, teamName: data.tournament_teams?.name ?? null };
 }
 
 // Raw match rows only — no participant/profile embed. tournament_matches
-// has three separate foreign keys into tournament_participants
+// has three separate foreign keys into tournament_teams
 // (participant1_id/participant2_id/winner_id), and embedding relations to
 // the same target table more than once needs Postgrest's `!constraint`
 // disambiguation syntax; rather than risk a subtly wrong guess there, the
-// bracket UI is handed this alongside getTournamentParticipants (which has
-// only one, unambiguous profiles relation) and joins the two client-side.
+// bracket UI is handed this alongside getTournamentTeams (which has only
+// one, unambiguous profiles relation) and joins the two client-side.
 export async function getTournamentMatches(tournamentId: string) {
   const supabase = await createClient();
   const { data } = await supabase

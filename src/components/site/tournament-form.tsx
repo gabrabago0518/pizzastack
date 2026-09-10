@@ -11,6 +11,8 @@ import { createTournament, type TournamentFormState } from "@/app/tournaments/ac
 import { REGIONS } from "@/lib/regions";
 import type { Game } from "@/lib/supabase/types";
 
+const TEAM_SIZE_OPTIONS = [1, 2, 3, 4, 5] as const;
+
 export function TournamentForm({ games }: { games: Game[] }) {
   const [state, formAction, isPending] = useActionState<TournamentFormState, FormData>(
     createTournament,
@@ -24,7 +26,7 @@ export function TournamentForm({ games }: { games: Game[] }) {
         <Input id="name" name="name" required placeholder="Pizzastack Open #1" />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="gameId">Game</Label>
           <SelectNative id="gameId" name="gameId" required defaultValue="">
@@ -39,7 +41,20 @@ export function TournamentForm({ games }: { games: Game[] }) {
           </SelectNative>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="region">Region (optional)</Label>
+          <Label htmlFor="teamSize">Format</Label>
+          <SelectNative id="teamSize" name="teamSize" required defaultValue="5">
+            {TEAM_SIZE_OPTIONS.map((size) => (
+              <option key={size} value={size}>
+                {size}v{size}
+              </option>
+            ))}
+          </SelectNative>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="region">Region</Label>
           <SelectNative id="region" name="region" defaultValue="">
             <option value="">Any region</option>
             {REGIONS.map((region) => (
@@ -50,10 +65,10 @@ export function TournamentForm({ games }: { games: Game[] }) {
           </SelectNative>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="maxParticipants">Max players (optional)</Label>
+          <Label htmlFor="maxTeams">Max teams</Label>
           <Input
-            id="maxParticipants"
-            name="maxParticipants"
+            id="maxTeams"
+            name="maxTeams"
             type="number"
             min={2}
             step={1}
@@ -74,9 +89,10 @@ export function TournamentForm({ games }: { games: Game[] }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Single elimination. Registration stays open until you start the
-        tournament — the bracket is generated automatically from whoever has
-        joined by then.
+        Single elimination. Players create or join a team of up to your
+        chosen format&apos;s size, and registration stays open until you start
+        the tournament — the bracket is generated automatically from
+        whichever teams have formed by then.
       </p>
 
       {state.error ? (

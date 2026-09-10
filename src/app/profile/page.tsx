@@ -7,6 +7,7 @@ import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { RankBanner } from "@/components/site/rank-banner";
 import { MostPlayedList } from "@/components/site/most-played-list";
+import { EditProfileDialog } from "@/components/site/edit-profile-dialog";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,16 @@ export default async function ProfilePage() {
               </Link>
             </Button>
           ) : null}
+          <EditProfileDialog
+            username={profile.username}
+            initialVisibility={{
+              show_ranks: profile.show_ranks,
+              show_most_played: profile.show_most_played,
+              show_games: profile.show_games,
+              show_listings: profile.show_listings,
+              show_coaching: profile.show_coaching,
+            }}
+          />
           <Button asChild variant="outline">
             <Link href="/profile/settings">
               <Settings /> Profile settings

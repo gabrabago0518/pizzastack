@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { syncValorantRank } from "@/lib/rank-sync";
 import { isValorantRegion } from "@/lib/valorant-rank";
+import type { Database } from "@/lib/supabase/types";
 
 export interface ProfileFormState {
   error?: string;
@@ -153,6 +154,50 @@ export async function toggleProfileGame(
 
   revalidatePath("/profile");
   revalidatePath("/profile/settings");
+  return {};
+}
+
+export type ProfileVisibilityField =
+  | "show_ranks"
+  | "show_most_played"
+  | "show_games"
+  | "show_listings"
+  | "show_coaching";
+
+export interface VisibilityResult {
+  error?: string;
+}
+
+// Toggles what shows on the player's PUBLIC profile (/players/[username]) —
+// self-editable like bio/display_name, since it only ever hides a section
+// from other viewers rather than touching any verified data. The owner's
+// own /profile dashboard ignores these and always shows everything.
+export async function setProfileVisibility(
+  field: ProfileVisibilityField,
+  value: boolean,
+  username: string,
+): Promise<VisibilityResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to edit your profile." };
+  }
+
+  const update = { [field]: value } as Pick<
+    Database["public"]["Tables"]["profiles"]["Update"],
+    ProfileVisibilityField
+  >;
+  const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/profile");
+  revalidatePath(`/players/${username}`);
   return {};
 }
 

@@ -88,7 +88,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
                 {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}
                 <CommendCount />
               </div>
-              {games.length > 0 ? (
+              {profile.show_games && games.length > 0 ? (
                 <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
                   {games.map((game) => (
                     <Badge key={game.id} variant="secondary">
@@ -110,39 +110,49 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         </p>
       ) : null}
 
-      <RankBanner
-        dotaRankTier={profile.dota_rank_tier}
-        dotaLeaderboardRank={profile.dota_leaderboard_rank}
-        cs2PremierRating={profile.cs2_premier_rating}
-        cs2CompetitiveRank={profile.cs2_competitive_rank}
-        valorantTier={profile.valorant_tier}
-        valorantTierIcon={profile.valorant_tier_icon}
-      />
-
-      <div className="mb-10 flex flex-col gap-4">
-        <h2 className="font-display text-xl">Most played</h2>
-        <MostPlayedList
-          topHeroes={topHeroes}
-          emptyText={`@${profile.username} has no synced matches yet.`}
+      {profile.show_ranks ? (
+        <RankBanner
+          dotaRankTier={profile.dota_rank_tier}
+          dotaLeaderboardRank={profile.dota_leaderboard_rank}
+          cs2PremierRating={profile.cs2_premier_rating}
+          cs2CompetitiveRank={profile.cs2_competitive_rank}
+          valorantTier={profile.valorant_tier}
+          valorantTierIcon={profile.valorant_tier_icon}
         />
-      </div>
+      ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div className="flex flex-col gap-4">
-          <h2 className="font-display text-xl">Listings</h2>
-          <LfgPostsList
-            posts={posts}
-            emptyText={`@${profile.username} hasn't posted any listings.`}
+      {profile.show_most_played ? (
+        <div className="mb-10 flex flex-col gap-4">
+          <h2 className="font-display text-xl">Most played</h2>
+          <MostPlayedList
+            topHeroes={topHeroes}
+            emptyText={`@${profile.username} has no synced matches yet.`}
           />
         </div>
-        <div className="flex flex-col gap-4">
-          <h2 className="font-display text-xl">Coaching</h2>
-          <CoachProfilesList
-            coachProfiles={coachProfiles}
-            emptyText={`@${profile.username} isn't listed as a coach.`}
-          />
+      ) : null}
+
+      {profile.show_listings || profile.show_coaching ? (
+        <div className="grid gap-8 lg:grid-cols-2">
+          {profile.show_listings ? (
+            <div className="flex flex-col gap-4">
+              <h2 className="font-display text-xl">Listings</h2>
+              <LfgPostsList
+                posts={posts}
+                emptyText={`@${profile.username} hasn't posted any listings.`}
+              />
+            </div>
+          ) : null}
+          {profile.show_coaching ? (
+            <div className="flex flex-col gap-4">
+              <h2 className="font-display text-xl">Coaching</h2>
+              <CoachProfilesList
+                coachProfiles={coachProfiles}
+                emptyText={`@${profile.username} isn't listed as a coach.`}
+              />
+            </div>
+          ) : null}
         </div>
-      </div>
+      ) : null}
     </Section>
   );
 }

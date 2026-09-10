@@ -107,10 +107,27 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists last_seen_at timestamptz;
 
+-- show_*: what a player has chosen to display on their PUBLIC profile
+-- (/players/[username]) — plain self-editable preferences, same trust
+-- level as bio/display_name, since they only ever hide a section from
+-- other viewers rather than touch any verified data. The owner's own
+-- /profile dashboard always shows everything regardless of these.
+alter table public.profiles
+  add column if not exists show_ranks boolean not null default true;
+alter table public.profiles
+  add column if not exists show_most_played boolean not null default true;
+alter table public.profiles
+  add column if not exists show_games boolean not null default true;
+alter table public.profiles
+  add column if not exists show_listings boolean not null default true;
+alter table public.profiles
+  add column if not exists show_coaching boolean not null default true;
+
 revoke update on public.profiles from authenticated;
 grant update (
   username, display_name, avatar_url, bio, region, onboarded, is_coach,
-  riot_name, riot_tag, riot_region, last_seen_at
+  riot_name, riot_tag, riot_region, last_seen_at,
+  show_ranks, show_most_played, show_games, show_listings, show_coaching
 ) on public.profiles to authenticated;
 
 -- One-time grant for the account requested as the site's first admin.

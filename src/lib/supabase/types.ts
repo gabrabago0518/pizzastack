@@ -28,6 +28,11 @@ export interface Database {
           valorant_rank_synced_at: string | null;
           is_admin: boolean;
           last_seen_at: string | null;
+          show_ranks: boolean;
+          show_most_played: boolean;
+          show_games: boolean;
+          show_listings: boolean;
+          show_coaching: boolean;
           created_at: string;
         };
         Insert: {
@@ -56,6 +61,11 @@ export interface Database {
           valorant_rank_synced_at?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
+          show_ranks?: boolean;
+          show_most_played?: boolean;
+          show_games?: boolean;
+          show_listings?: boolean;
+          show_coaching?: boolean;
         };
         Update: {
           username?: string;
@@ -82,6 +92,11 @@ export interface Database {
           valorant_rank_synced_at?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
+          show_ranks?: boolean;
+          show_most_played?: boolean;
+          show_games?: boolean;
+          show_listings?: boolean;
+          show_coaching?: boolean;
         };
         Relationships: [];
       };

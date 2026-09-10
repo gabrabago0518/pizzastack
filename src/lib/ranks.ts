@@ -62,6 +62,16 @@ export const RANKS_BY_GAME: Record<string, string[]> = {
   "dota-2": ["Herald", "Guardian", "Crusader", "Archon", "Legend", "Ancient", "Divine", "Immortal"],
   cs2: ["Silver", "Gold Nova", "Master Guardian", "Legendary Eagle", "Supreme", "Global Elite"],
   valorant: ["Iron", "Bronze", "Silver", "Gold", "Platinum", "Diamond", "Ascendant", "Immortal", "Radiant"],
+  "mobile-legends": [
+    "Warrior",
+    "Elite",
+    "Master",
+    "Grandmaster",
+    "Epic",
+    "Legend",
+    "Mythic",
+    "Mythical Glory",
+  ],
 };
 
 export const FALLBACK_RANKS = ["Beginner", "Intermediate", "Advanced", "Expert"];

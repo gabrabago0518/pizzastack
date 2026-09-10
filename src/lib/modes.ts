@@ -7,6 +7,7 @@ export const MODES_BY_GAME: Record<string, string[]> = {
   "rocket-league": ["Casual", "Competitive", "Extra Modes"],
   fortnite: ["Battle Royale", "Zero Build", "Ranked", "Creative"],
   "dota-2": ["Unranked", "Ranked", "Turbo"],
+  "mobile-legends": ["Classic", "Ranked", "Brawl"],
 };
 
 export const FALLBACK_MODES = ["Casual", "Ranked"];

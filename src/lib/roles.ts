@@ -7,6 +7,7 @@ export const ROLES_BY_GAME: Record<string, string[]> = {
   "rocket-league": ["Striker", "Midfield", "Defense"],
   fortnite: ["Fragger", "Builder", "Support"],
   "dota-2": ["Carry", "Mid", "Offlane", "Soft Support", "Hard Support"],
+  "mobile-legends": ["Tank", "Fighter", "Assassin", "Mage", "Marksman", "Support"],
 };
 
 export const FALLBACK_ROLES = ["Flex", "Support", "Carry", "IGL"];

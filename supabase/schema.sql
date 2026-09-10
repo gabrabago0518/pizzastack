@@ -206,7 +206,8 @@ insert into public.games (name, slug) values
   ('Apex Legends', 'apex-legends'),
   ('Rocket League', 'rocket-league'),
   ('Fortnite', 'fortnite'),
-  ('Dota 2', 'dota-2')
+  ('Dota 2', 'dota-2'),
+  ('Mobile Legends: Bang Bang', 'mobile-legends')
 on conflict (slug) do nothing;
 
 -- Poster art for the game-picker card grid on /teammates. Sourced from

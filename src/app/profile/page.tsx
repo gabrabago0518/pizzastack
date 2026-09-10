@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Award, ExternalLink, Settings, ShieldCheck } from "lucide-react";
+import { Award, ExternalLink, Settings, ShieldCheck, Crown } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
@@ -90,16 +90,24 @@ export default async function ProfilePage() {
               </Link>
             </Button>
           ) : null}
-          <EditProfileDialog
-            username={profile.username}
-            initialVisibility={{
-              show_ranks: profile.show_ranks,
-              show_most_played: profile.show_most_played,
-              show_games: profile.show_games,
-              show_listings: profile.show_listings,
-              show_coaching: profile.show_coaching,
-            }}
-          />
+          {profile.is_premium ? (
+            <EditProfileDialog
+              username={profile.username}
+              initialVisibility={{
+                show_ranks: profile.show_ranks,
+                show_most_played: profile.show_most_played,
+                show_games: profile.show_games,
+                show_listings: profile.show_listings,
+                show_coaching: profile.show_coaching,
+              }}
+            />
+          ) : (
+            <Button asChild variant="outline">
+              <Link href="/premium">
+                <Crown /> Upgrade to Premium
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline">
             <Link href="/profile/settings">
               <Settings /> Profile settings

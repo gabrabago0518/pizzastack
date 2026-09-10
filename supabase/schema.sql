@@ -123,6 +123,14 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists show_coaching boolean not null default true;
 
+-- is_premium: unlocks the paid profile-customization dialog (editing which
+-- show_* sections appear — see EditProfileDialog). Service-role-only like
+-- is_admin: this will eventually be flipped by a Stripe subscription
+-- webhook, never set by the user directly, so it's deliberately left out
+-- of the authenticated grant below.
+alter table public.profiles
+  add column if not exists is_premium boolean not null default false;
+
 revoke update on public.profiles from authenticated;
 grant update (
   username, display_name, avatar_url, bio, region, onboarded, is_coach,
@@ -133,6 +141,10 @@ grant update (
 -- One-time grant for the account requested as the site's first admin.
 -- Safe to re-run; no-ops if the username doesn't exist (yet).
 update public.profiles set is_admin = true where username = 'kydothecreator_6a67';
+
+-- Comps the site owner Premium so they can test/demo profile customization
+-- before Stripe billing is wired up. Safe to re-run.
+update public.profiles set is_premium = true where username = 'kydothecreator_6a67';
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
 -- Games are picked afterward on the onboarding step (see profile_games and

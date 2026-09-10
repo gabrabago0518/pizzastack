@@ -33,6 +33,7 @@ export interface Database {
           show_games: boolean;
           show_listings: boolean;
           show_coaching: boolean;
+          is_premium: boolean;
           created_at: string;
         };
         Insert: {
@@ -66,6 +67,7 @@ export interface Database {
           show_games?: boolean;
           show_listings?: boolean;
           show_coaching?: boolean;
+          is_premium?: boolean;
         };
         Update: {
           username?: string;
@@ -97,6 +99,7 @@ export interface Database {
           show_games?: boolean;
           show_listings?: boolean;
           show_coaching?: boolean;
+          is_premium?: boolean;
         };
         Relationships: [];
       };

@@ -1168,3 +1168,206 @@ create policy "Admins can update report status"
   using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
+
+-- ---------------------------------------------------------------------------
+-- tournaments: an organizer posts a bracket-based tournament, players
+-- register while it's 'open', the organizer locks registration and
+-- generates the bracket (status -> 'in_progress'), then reports results
+-- until the final match closes it out (status -> 'completed'). Single
+-- elimination only for now — see src/lib/bracket.ts for the seeding
+-- algorithm (standard "1v8, 4v5, 2v7, 3v6" ordering with byes to the top
+-- seeds, the same convention used by Challonge and most sports
+-- federations, researched before building this).
+-- ---------------------------------------------------------------------------
+create table if not exists public.tournaments (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  game_id uuid not null references public.games (id),
+  organizer_id uuid not null references public.profiles (id) on delete cascade,
+  description text,
+  region text,
+  max_participants smallint,
+  status text not null default 'open' check (status in ('open', 'in_progress', 'completed', 'cancelled')),
+  created_at timestamptz not null default now(),
+  constraint tournaments_max_participants_check check (max_participants is null or max_participants >= 2)
+);
+
+alter table public.tournaments enable row level security;
+
+drop policy if exists "Tournaments are publicly readable" on public.tournaments;
+create policy "Tournaments are publicly readable"
+  on public.tournaments for select
+  using (true);
+
+drop policy if exists "Users can create their own tournaments" on public.tournaments;
+create policy "Users can create their own tournaments"
+  on public.tournaments for insert
+  with check (auth.uid() = organizer_id);
+
+drop policy if exists "Organizers can update their own tournaments" on public.tournaments;
+create policy "Organizers can update their own tournaments"
+  on public.tournaments for update
+  using (auth.uid() = organizer_id);
+
+-- ---------------------------------------------------------------------------
+-- tournament_participants: a player registered for a tournament. seed is
+-- null until the organizer sets one (manually or via "Randomize seeds") —
+-- bracket generation falls back to registration order (created_at) for
+-- anyone left unseeded, so an organizer who does nothing still gets a
+-- valid bracket.
+-- ---------------------------------------------------------------------------
+create table if not exists public.tournament_participants (
+  id uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references public.tournaments (id) on delete cascade,
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  seed integer,
+  created_at timestamptz not null default now(),
+  unique (tournament_id, profile_id)
+);
+
+alter table public.tournament_participants enable row level security;
+
+drop policy if exists "Tournament rosters are publicly readable" on public.tournament_participants;
+create policy "Tournament rosters are publicly readable"
+  on public.tournament_participants for select
+  using (true);
+
+-- Registration only while the tournament is still open, and only up to
+-- max_participants (unenforced/null = unlimited). The app checks both
+-- up front for a friendly error message; this is the backstop.
+drop policy if exists "Players can register themselves" on public.tournament_participants;
+create policy "Players can register themselves"
+  on public.tournament_participants for insert
+  with check (
+    auth.uid() = profile_id
+    and exists (
+      select 1 from public.tournaments t
+      where t.id = tournament_id
+        and t.status = 'open'
+        and (
+          t.max_participants is null
+          or (select count(*) from public.tournament_participants tp where tp.tournament_id = t.id) < t.max_participants
+        )
+    )
+  );
+
+-- Seed assignment — organizer only.
+drop policy if exists "Organizers can set seeds" on public.tournament_participants;
+create policy "Organizers can set seeds"
+  on public.tournament_participants for update
+  using (auth.uid() = (select organizer_id from public.tournaments where id = tournament_id));
+
+-- A player can withdraw themselves before the bracket locks; the organizer
+-- can remove anyone at any time (e.g. a no-show/DQ).
+drop policy if exists "Players can withdraw, organizers can remove anyone" on public.tournament_participants;
+create policy "Players can withdraw, organizers can remove anyone"
+  on public.tournament_participants for delete
+  using (
+    (
+      auth.uid() = profile_id
+      and exists (select 1 from public.tournaments where id = tournament_id and status = 'open')
+    )
+    or auth.uid() = (select organizer_id from public.tournaments where id = tournament_id)
+  );
+
+-- ---------------------------------------------------------------------------
+-- tournament_matches: one cell of the bracket. next_match_id/next_match_slot
+-- say where this match's winner advances to (slot 1 or 2 of that match) —
+-- generated once, up front, when the organizer starts the tournament (see
+-- generateBracket in src/lib/bracket.ts), so reporting a result is just
+-- "fill in the winner here, then fill in the known slot over there."
+-- ---------------------------------------------------------------------------
+create table if not exists public.tournament_matches (
+  id uuid primary key default gen_random_uuid(),
+  tournament_id uuid not null references public.tournaments (id) on delete cascade,
+  round smallint not null,
+  match_number smallint not null,
+  participant1_id uuid references public.tournament_participants (id) on delete set null,
+  participant2_id uuid references public.tournament_participants (id) on delete set null,
+  winner_id uuid references public.tournament_participants (id) on delete set null,
+  score1 smallint,
+  score2 smallint,
+  status text not null default 'pending' check (status in ('pending', 'ready', 'completed')),
+  next_match_id uuid references public.tournament_matches (id) on delete set null,
+  next_match_slot smallint check (next_match_slot in (1, 2)),
+  created_at timestamptz not null default now(),
+  unique (tournament_id, round, match_number)
+);
+
+alter table public.tournament_matches enable row level security;
+
+drop policy if exists "Tournament brackets are publicly readable" on public.tournament_matches;
+create policy "Tournament brackets are publicly readable"
+  on public.tournament_matches for select
+  using (true);
+
+drop policy if exists "Organizers can generate their bracket" on public.tournament_matches;
+create policy "Organizers can generate their bracket"
+  on public.tournament_matches for insert
+  with check (auth.uid() = (select organizer_id from public.tournaments where id = tournament_id));
+
+drop policy if exists "Organizers can report match results" on public.tournament_matches;
+create policy "Organizers can report match results"
+  on public.tournament_matches for update
+  using (auth.uid() = (select organizer_id from public.tournaments where id = tournament_id));
+
+-- Notifies both players once a match has everyone it needs and is ready to
+-- be played — fires whether that happens at bracket generation (a match
+-- with no byes on either side comes in 'ready' from the initial insert) or
+-- later, when a previous round's winner fills the last open slot.
+create or replace function public.notify_tournament_match_ready()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  tournament_name text;
+begin
+  if new.status <> 'ready' or new.participant1_id is null or new.participant2_id is null then
+    return new;
+  end if;
+  if TG_OP = 'UPDATE' and old.status = 'ready' then
+    return new;
+  end if;
+
+  select name into tournament_name from public.tournaments where id = new.tournament_id;
+
+  insert into public.notifications (profile_id, type, title, body, link)
+  select tp.profile_id, 'tournament_match_ready', 'Match ready',
+    'Your next match in "' || coalesce(tournament_name, 'a tournament') || '" is ready.',
+    '/tournaments/' || new.tournament_id
+  from public.tournament_participants tp
+  where tp.id in (new.participant1_id, new.participant2_id);
+
+  return new;
+end;
+$$;
+
+drop trigger if exists tournament_matches_notify_ready on public.tournament_matches;
+create trigger tournament_matches_notify_ready
+  after insert or update on public.tournament_matches
+  for each row execute function public.notify_tournament_match_ready();
+
+-- Notifies every registered player when the organizer locks the bracket in.
+create or replace function public.notify_tournament_started()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if new.status = 'in_progress' and old.status = 'open' then
+    insert into public.notifications (profile_id, type, title, body, link)
+    select tp.profile_id, 'tournament_started', 'Tournament started',
+      '"' || new.name || '" has started — check your bracket.',
+      '/tournaments/' || new.id
+    from public.tournament_participants tp
+    where tp.tournament_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists tournaments_notify_started on public.tournaments;
+create trigger tournaments_notify_started
+  after update on public.tournaments
+  for each row execute function public.notify_tournament_started();

@@ -14,6 +14,10 @@ import type {
   GuildMemberWithProfile,
   GuildMessageWithSender,
   Game,
+  Tournament,
+  TournamentMatch,
+  TournamentWithRelations,
+  TournamentParticipantWithProfile,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -611,4 +615,83 @@ export async function getPlayerReports(): Promise<PlayerReportRow[]> {
     status: report.status as "open" | "reviewed",
     createdAt: report.created_at,
   }));
+}
+
+export interface TournamentFilters {
+  status?: Tournament["status"];
+}
+
+export async function getTournaments(gameSlug?: string, filters: TournamentFilters = {}) {
+  const supabase = await createClient();
+  const gameId = await resolveGameId(gameSlug);
+
+  let builder = supabase
+    .from("tournaments")
+    .select("*, profiles(username, avatar_url), games(name, slug), tournament_participants(count)")
+    .order("created_at", { ascending: false });
+
+  if (gameId) builder = builder.eq("game_id", gameId);
+  if (filters.status) builder = builder.eq("status", filters.status);
+
+  const { data } = await builder.returns<TournamentWithRelations[]>();
+  return data ?? [];
+}
+
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getTournamentById = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournaments")
+    .select("*, profiles(username, avatar_url), games(name, slug), tournament_participants(count)")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<TournamentWithRelations>();
+  return data;
+});
+
+// Ordered seed-first (nulls last, tie-broken by registration order) — this
+// is the exact order generateBracket (src/lib/bracket.ts) seeds from, so
+// the roster list an organizer sees while setting seeds is the same order
+// the bracket will use.
+export async function getTournamentParticipants(tournamentId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournament_participants")
+    .select("*, profiles(username, avatar_url)")
+    .eq("tournament_id", tournamentId)
+    .order("seed", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true })
+    .returns<TournamentParticipantWithProfile[]>();
+  return data ?? [];
+}
+
+export async function getMyTournamentParticipant(tournamentId: string, profileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournament_participants")
+    .select("id")
+    .eq("tournament_id", tournamentId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+// Raw match rows only — no participant/profile embed. tournament_matches
+// has three separate foreign keys into tournament_participants
+// (participant1_id/participant2_id/winner_id), and embedding relations to
+// the same target table more than once needs Postgrest's `!constraint`
+// disambiguation syntax; rather than risk a subtly wrong guess there, the
+// bracket UI is handed this alongside getTournamentParticipants (which has
+// only one, unambiguous profiles relation) and joins the two client-side.
+export async function getTournamentMatches(tournamentId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournament_matches")
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("round", { ascending: true })
+    .order("match_number", { ascending: true })
+    .returns<TournamentMatch[]>();
+  return data ?? [];
 }

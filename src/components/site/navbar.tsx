@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Users, GraduationCap, Shield } from "lucide-react";
+import { Search, Users, GraduationCap, Shield, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/site/logo";
@@ -13,6 +13,7 @@ const links = [
   { href: "/teammates", label: "Find Teammates", icon: Users },
   { href: "/coaches", label: "Find Coaches", icon: GraduationCap },
   { href: "/guilds", label: "Find Guild", icon: Shield },
+  { href: "/tournaments", label: "Tournaments", icon: Trophy },
 ];
 
 const iconLinkClassName =

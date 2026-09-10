@@ -707,6 +707,159 @@ export interface Database {
           },
         ];
       };
+      tournaments: {
+        Row: {
+          id: string;
+          name: string;
+          game_id: string;
+          organizer_id: string;
+          description: string | null;
+          region: string | null;
+          max_participants: number | null;
+          status: "open" | "in_progress" | "completed" | "cancelled";
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          game_id: string;
+          organizer_id: string;
+          description?: string | null;
+          region?: string | null;
+          max_participants?: number | null;
+          status?: "open" | "in_progress" | "completed" | "cancelled";
+        };
+        Update: {
+          name?: string;
+          description?: string | null;
+          region?: string | null;
+          max_participants?: number | null;
+          status?: "open" | "in_progress" | "completed" | "cancelled";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournaments_organizer_id_fkey";
+            columns: ["organizer_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tournament_participants: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          profile_id: string;
+          seed: number | null;
+          created_at: string;
+        };
+        Insert: {
+          tournament_id: string;
+          profile_id: string;
+          seed?: number | null;
+        };
+        Update: {
+          seed?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_participants_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tournament_matches: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          round: number;
+          match_number: number;
+          participant1_id: string | null;
+          participant2_id: string | null;
+          winner_id: string | null;
+          score1: number | null;
+          score2: number | null;
+          status: "pending" | "ready" | "completed";
+          next_match_id: string | null;
+          next_match_slot: 1 | 2 | null;
+          created_at: string;
+        };
+        Insert: {
+          tournament_id: string;
+          round: number;
+          match_number: number;
+          participant1_id?: string | null;
+          participant2_id?: string | null;
+          winner_id?: string | null;
+          score1?: number | null;
+          score2?: number | null;
+          status?: "pending" | "ready" | "completed";
+          next_match_id?: string | null;
+          next_match_slot?: 1 | 2 | null;
+        };
+        Update: {
+          participant1_id?: string | null;
+          participant2_id?: string | null;
+          winner_id?: string | null;
+          score1?: number | null;
+          score2?: number | null;
+          status?: "pending" | "ready" | "completed";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_matches_participant1_id_fkey";
+            columns: ["participant1_id"];
+            isOneToOne: false;
+            referencedRelation: "tournament_participants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_matches_participant2_id_fkey";
+            columns: ["participant2_id"];
+            isOneToOne: false;
+            referencedRelation: "tournament_participants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_matches_winner_id_fkey";
+            columns: ["winner_id"];
+            isOneToOne: false;
+            referencedRelation: "tournament_participants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_matches_next_match_id_fkey";
+            columns: ["next_match_id"];
+            isOneToOne: false;
+            referencedRelation: "tournament_matches";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -728,6 +881,9 @@ export type Guild = Database["public"]["Tables"]["guilds"]["Row"];
 export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
 export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
+export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"];
+export type TournamentParticipant = Database["public"]["Tables"]["tournament_participants"]["Row"];
+export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -766,4 +922,14 @@ export type GuildMessageWithSender = GuildMessage & {
 export type CoachingRequestWithRelations = CoachingRequest & {
   profiles: Pick<Profile, "username" | "region"> | null;
   games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type TournamentWithRelations = Tournament & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+  games: Pick<Game, "name" | "slug"> | null;
+  tournament_participants: { count: number }[];
+};
+
+export type TournamentParticipantWithProfile = TournamentParticipant & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

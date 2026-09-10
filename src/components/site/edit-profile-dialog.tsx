@@ -24,12 +24,12 @@ const OPTIONS: VisibilityOption[] = [
   {
     field: "show_ranks",
     label: "Verified ranks",
-    description: "Your Dota 2 and CS2 ranks. Valorant always shows.",
+    description: "Your Dota 2 and CS2 ranks.",
   },
   {
     field: "show_most_played",
     label: "Most played",
-    description: "Your top Dota 2 hero with win rate. Valorant always shows.",
+    description: "Your top Dota 2 hero with win rate.",
   },
   {
     field: "show_games",

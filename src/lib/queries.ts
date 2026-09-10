@@ -21,13 +21,15 @@ export interface TopHero {
 // from raw match rows — for Dota 2 that sync pulls OpenDota's own all-time
 // per-hero totals, so this stays accurate for accounts with a long match
 // history instead of skewing toward whatever handful of recent matches
-// happened to be sampled.
+// happened to be sampled. Excludes any already-synced Valorant rows —
+// see verified-ranks.ts for why that sync is currently disabled.
 export async function getTopHeroesForProfile(profileId: string): Promise<TopHero[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("top_hero_stats")
     .select("game_slug, character_name, character_icon_url, games_played, wins")
-    .eq("profile_id", profileId);
+    .eq("profile_id", profileId)
+    .neq("game_slug", "valorant");
 
   return (data ?? []).map((row) => ({
     gameSlug: row.game_slug,

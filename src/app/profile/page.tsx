@@ -121,8 +121,6 @@ export default async function ProfilePage() {
         dotaLeaderboardRank={profile.dota_leaderboard_rank}
         cs2PremierRating={profile.cs2_premier_rating}
         cs2CompetitiveRank={profile.cs2_competitive_rank}
-        valorantTier={profile.valorant_tier}
-        valorantTierIcon={profile.valorant_tier_icon}
       />
 
       <div className="mb-10 flex flex-col gap-4">

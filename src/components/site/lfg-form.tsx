@@ -65,16 +65,12 @@ export function LfgForm({
   dotaLeaderboardRank,
   cs2PremierRating,
   cs2CompetitiveRank,
-  valorantTier,
-  valorantRr,
 }: {
   games: Game[];
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
-  valorantTier: string | null;
-  valorantRr: number | null;
 }) {
   const [state, formAction, isPending] = useActionState<LfgFormState, FormData>(
     createLfgPost,
@@ -90,8 +86,6 @@ export function LfgForm({
     dotaLeaderboardRank,
     cs2PremierRating,
     cs2CompetitiveRank,
-    valorantTier,
-    valorantRr,
   });
   const modeOptions = selectedGame
     ? (MODES_BY_GAME[selectedGame.slug] ?? FALLBACK_MODES)
@@ -193,10 +187,9 @@ export function LfgForm({
 
       {blockedByUnverifiedRank ? (
         <p className="rounded-lg bg-muted/40 px-3.5 py-2.5 text-sm text-muted-foreground">
-          {selectedGame?.name} rank is pulled from your{" "}
-          {selectedGame?.slug === "valorant" ? "connected Riot ID" : "connected Steam account"}.{" "}
+          {selectedGame?.name} rank is pulled from your connected Steam account.{" "}
           <Link href="/profile/settings" className="font-medium text-primary hover:underline">
-            {selectedGame?.slug === "valorant" ? "Connect your Riot ID" : "Connect Steam"}
+            Connect Steam
           </Link>{" "}
           and sync your rank before posting.
         </p>

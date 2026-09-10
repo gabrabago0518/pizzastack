@@ -21,7 +21,7 @@ const perks = [
     icon: SlidersHorizontal,
     title: "Customize your profile",
     description:
-      "Choose exactly which sections show on your public profile — Dota 2/CS2 ranks, most played, games, listings, coaching. Valorant always shows.",
+      "Choose exactly which sections show on your public profile — Dota 2/CS2 ranks, most played, games, listings, coaching.",
     available: true,
   },
   {

@@ -1,5 +1,13 @@
 "use client";
 
+// Currently unused — not rendered from /profile/settings. HenrikDev's
+// unofficial API requires a paid Patreon tier for any project with a paid
+// tier of its own, and Riot's API Terms separately require their prior
+// written approval before charging for anything tied to Valorant game
+// data; neither has been sought, so the Riot ID connect flow is disabled
+// for now. Left in place (along with syncValorantRank in rank-sync.ts and
+// the /api/valorant/refresh-rank route) so re-enabling is just re-adding
+// the import and this component to the settings page.
 import * as React from "react";
 import { useActionState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";

@@ -110,25 +110,24 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         </p>
       ) : null}
 
-      <RankBanner
-        dotaRankTier={profile.dota_rank_tier}
-        dotaLeaderboardRank={profile.dota_leaderboard_rank}
-        cs2PremierRating={profile.cs2_premier_rating}
-        cs2CompetitiveRank={profile.cs2_competitive_rank}
-        valorantTier={profile.valorant_tier}
-        valorantTierIcon={profile.valorant_tier_icon}
-        showDotaAndCs2={profile.show_ranks}
-      />
-
-      <div className="mb-10 flex flex-col gap-4">
-        <h2 className="font-display text-xl">Most played</h2>
-        <MostPlayedList
-          topHeroes={topHeroes.filter(
-            (hero) => hero.gameSlug === "valorant" || profile.show_most_played,
-          )}
-          emptyText={`@${profile.username} has no synced matches yet.`}
+      {profile.show_ranks ? (
+        <RankBanner
+          dotaRankTier={profile.dota_rank_tier}
+          dotaLeaderboardRank={profile.dota_leaderboard_rank}
+          cs2PremierRating={profile.cs2_premier_rating}
+          cs2CompetitiveRank={profile.cs2_competitive_rank}
         />
-      </div>
+      ) : null}
+
+      {profile.show_most_played ? (
+        <div className="mb-10 flex flex-col gap-4">
+          <h2 className="font-display text-xl">Most played</h2>
+          <MostPlayedList
+            topHeroes={topHeroes}
+            emptyText={`@${profile.username} has no synced matches yet.`}
+          />
+        </div>
+      ) : null}
 
       {profile.show_listings || profile.show_coaching ? (
         <div className="grid gap-8 lg:grid-cols-2">

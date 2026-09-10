@@ -2,9 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
-import { formatValorantRank } from "@/lib/valorant-rank";
 
-export const VERIFIED_RANK_GAME_SLUGS = ["dota-2", "cs2", "valorant"] as const;
+// Valorant intentionally isn't a verified-rank game here — its rank came
+// from the Riot ID connect flow (see riot-connect.tsx), which is currently
+// disabled: HenrikDev's unofficial API requires a paid Patreon tier for
+// any project with a paid tier of its own, on top of Riot's API Terms
+// requiring their prior written approval before charging for anything
+// tied to Valorant game data. Neither has been sought. The underlying
+// sync code (rank-sync.ts's syncValorantRank, /api/valorant/refresh-rank)
+// is left in place, just unreachable from the UI, so re-enabling later is
+// cheap if that changes.
+export const VERIFIED_RANK_GAME_SLUGS = ["dota-2", "cs2"] as const;
 
 export type VerifiedRankResult =
   | { rank: string; rankTier: number | null }
@@ -52,22 +60,6 @@ export async function resolveVerifiedRank(
     };
   }
 
-  if (gameSlug === "valorant") {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("valorant_tier, valorant_rr")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (!profile?.valorant_tier) {
-      return { error: `Connect your Riot ID and sync your rank before ${actionLabel}.` };
-    }
-    return {
-      rank: formatValorantRank(profile.valorant_tier),
-      rankTier: null,
-    };
-  }
-
   return { error: "Unsupported game for verified rank." };
 }
 
@@ -76,8 +68,6 @@ export interface FormVerifiedRankInputs {
   dotaLeaderboardRank: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
-  valorantTier: string | null;
-  valorantRr: number | null;
 }
 
 export interface FormVerifiedRank {
@@ -103,12 +93,6 @@ export function getFormVerifiedRank(
     return {
       available: Boolean(inputs.cs2PremierRating || inputs.cs2CompetitiveRank),
       label: formatCs2Rank(inputs.cs2PremierRating, inputs.cs2CompetitiveRank),
-    };
-  }
-  if (gameSlug === "valorant") {
-    return {
-      available: Boolean(inputs.valorantTier),
-      label: formatValorantRank(inputs.valorantTier),
     };
   }
   return null;

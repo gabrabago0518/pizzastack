@@ -10,3 +10,9 @@ export const MODES_BY_GAME: Record<string, string[]> = {
 };
 
 export const FALLBACK_MODES = ["Casual", "Ranked"];
+
+// Modes with no meaningful rank to report — Unranked matches have none,
+// Turbo (Dota 2's fast/casual mode) doesn't affect MMR. Used by both the
+// posting form (to skip the rank field/verified-rank gate) and the
+// server action (so that skip can't be bypassed by editing the form).
+export const RANK_NOT_NEEDED_MODES = ["Unranked", "Turbo"];

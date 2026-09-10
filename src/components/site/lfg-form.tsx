@@ -14,7 +14,7 @@ import { createLfgPost, type LfgFormState } from "@/app/teammates/actions";
 import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
-import { MODES_BY_GAME, FALLBACK_MODES } from "@/lib/modes";
+import { MODES_BY_GAME, FALLBACK_MODES, RANK_NOT_NEEDED_MODES } from "@/lib/modes";
 import { getFormVerifiedRank } from "@/lib/verified-ranks";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
@@ -81,8 +81,10 @@ export function LfgForm({
     {},
   );
   const [selectedGameId, setSelectedGameId] = React.useState("");
+  const [selectedMode, setSelectedMode] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
+  const rankNotNeeded = RANK_NOT_NEEDED_MODES.includes(selectedMode);
   const verifiedRank = getFormVerifiedRank(selectedGame?.slug, {
     dotaRankTier,
     dotaLeaderboardRank,
@@ -100,7 +102,8 @@ export function LfgForm({
   const roleOptions = selectedGame
     ? (ROLES_BY_GAME[selectedGame.slug] ?? FALLBACK_ROLES)
     : [];
-  const blockedByUnverifiedRank = verifiedRank !== null && !verifiedRank.available;
+  const blockedByUnverifiedRank =
+    verifiedRank !== null && !verifiedRank.available && !rankNotNeeded;
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -112,7 +115,10 @@ export function LfgForm({
             name="gameId"
             required
             value={selectedGameId}
-            onChange={(event) => setSelectedGameId(event.target.value)}
+            onChange={(event) => {
+              setSelectedGameId(event.target.value);
+              setSelectedMode("");
+            }}
           >
             <option value="" disabled>
               Select a game
@@ -127,12 +133,12 @@ export function LfgForm({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="mode">Mode</Label>
           <SelectNative
-            key={selectedGameId}
             id="mode"
             name="mode"
             required
             disabled={!selectedGame}
-            defaultValue=""
+            value={selectedMode}
+            onChange={(event) => setSelectedMode(event.target.value)}
           >
             <option value="" disabled>
               {selectedGame ? "Select a mode" : "Select a game first"}
@@ -146,7 +152,11 @@ export function LfgForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="rank">Rank</Label>
-          {verifiedRank ? (
+          {rankNotNeeded ? (
+            <div className="flex h-9 items-center rounded-lg border border-input bg-muted/40 px-3.5 text-sm text-muted-foreground">
+              Not needed for {selectedMode}
+            </div>
+          ) : verifiedRank ? (
             <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
               {verifiedRank.available ? (
                 <>

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { VERIFIED_RANK_GAME_SLUGS, resolveVerifiedRank } from "@/lib/verified-ranks";
 import { REGIONS } from "@/lib/regions";
+import { RANK_NOT_NEEDED_MODES } from "@/lib/modes";
 
 export interface LfgFormState {
   error?: string;
@@ -50,11 +51,17 @@ export async function createLfgPost(
     .eq("id", gameId)
     .maybeSingle();
 
+  // Unranked/Turbo matches have no rank to report — skips both the manual
+  // field and the verified-rank gate below, same as the form does.
+  const rankNotNeeded = RANK_NOT_NEEDED_MODES.includes(mode);
+
   // Verified games' rank is never trusted from the form — it's pulled
   // server-side from the author's Steam-verified rank, so it can't be
   // self-reported.
-  let rank: string;
-  if (game && (VERIFIED_RANK_GAME_SLUGS as readonly string[]).includes(game.slug)) {
+  let rank: string | null;
+  if (rankNotNeeded) {
+    rank = null;
+  } else if (game && (VERIFIED_RANK_GAME_SLUGS as readonly string[]).includes(game.slug)) {
     const result = await resolveVerifiedRank(
       supabase,
       user.id,

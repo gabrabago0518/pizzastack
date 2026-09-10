@@ -71,7 +71,7 @@ export function CoachingRequestForm({
           </SelectNative>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rank">Your rank (optional)</Label>
+          <Label htmlFor="rank">Your rank</Label>
           {verifiedRank ? (
             <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
               {verifiedRank.available ? (

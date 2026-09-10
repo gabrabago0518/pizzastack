@@ -623,6 +623,42 @@ export interface Database {
           },
         ];
       };
+      player_reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_id: string;
+          reason: string;
+          details: string | null;
+          status: "open" | "reviewed";
+          created_at: string;
+        };
+        Insert: {
+          reporter_id: string;
+          reported_id: string;
+          reason: string;
+          details?: string | null;
+        };
+        Update: {
+          status?: "open" | "reviewed";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_reports_reported_id_fkey";
+            columns: ["reported_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

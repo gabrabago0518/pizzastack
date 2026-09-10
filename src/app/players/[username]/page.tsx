@@ -11,6 +11,7 @@ import {
 } from "@/components/site/commend-button";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { MostPlayedList } from "@/components/site/most-played-list";
+import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -100,7 +101,12 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
             </div>
           </div>
 
-          {viewer && !isOwnProfile ? <CommendToggleButton /> : null}
+          {viewer && !isOwnProfile ? (
+            <div className="flex items-center gap-2">
+              <CommendToggleButton />
+              <ReportPlayerDialog profileId={profile.id} username={profile.username} />
+            </div>
+          ) : null}
         </div>
       </CommendProvider>
 

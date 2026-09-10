@@ -523,3 +523,50 @@ export async function getGuildMessages(guildId: string) {
     .returns<GuildMessageWithSender[]>();
   return data ?? [];
 }
+
+export interface PlayerReportRow {
+  id: string;
+  reporterUsername: string | null;
+  reportedUsername: string | null;
+  reason: string;
+  details: string | null;
+  status: "open" | "reviewed";
+  createdAt: string;
+}
+
+// Admin-only — RLS on player_reports independently enforces this (only
+// admins can select), this is just gated at the page level too so a
+// non-admin never even issues the query. Two plain queries + a JS merge
+// rather than embedding both profile relations in one select, since that
+// needs Postgres's auto-generated two-different-FK-to-the-same-table
+// constraint names guessed correctly in the query string — this is safer.
+export async function getPlayerReports(): Promise<PlayerReportRow[]> {
+  const supabase = await createClient();
+  const { data: reports } = await supabase
+    .from("player_reports")
+    .select("id, reporter_id, reported_id, reason, details, status, created_at")
+    .order("status", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (!reports || reports.length === 0) return [];
+
+  const profileIds = Array.from(
+    new Set(reports.flatMap((report) => [report.reporter_id, report.reported_id])),
+  );
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .in("id", profileIds);
+
+  const usernameById = new Map((profiles ?? []).map((p) => [p.id, p.username]));
+
+  return reports.map((report) => ({
+    id: report.id,
+    reporterUsername: usernameById.get(report.reporter_id) ?? null,
+    reportedUsername: usernameById.get(report.reported_id) ?? null,
+    reason: report.reason,
+    details: report.details,
+    status: report.status as "open" | "reviewed",
+    createdAt: report.created_at,
+  }));
+}

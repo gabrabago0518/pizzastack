@@ -1076,3 +1076,41 @@ create policy "Guild members can send guild chat"
         and guild_members.profile_id = auth.uid()
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- player_reports: moderation data, not public — only admins can read it
+-- (checked against profiles.is_admin, same service-role-adjacent trust
+-- level as everything else admin-only on this site). Any signed-in player
+-- can file one against anyone but themselves.
+-- ---------------------------------------------------------------------------
+create table if not exists public.player_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_id uuid not null references public.profiles (id) on delete cascade,
+  reported_id uuid not null references public.profiles (id) on delete cascade,
+  reason text not null,
+  details text,
+  status text not null default 'open' check (status in ('open', 'reviewed')),
+  created_at timestamptz not null default now(),
+  constraint player_reports_no_self_report check (reporter_id <> reported_id)
+);
+
+alter table public.player_reports enable row level security;
+
+drop policy if exists "Admins can read reports" on public.player_reports;
+create policy "Admins can read reports"
+  on public.player_reports for select
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Users can submit a report" on public.player_reports;
+create policy "Users can submit a report"
+  on public.player_reports for insert
+  with check (auth.uid() = reporter_id);
+
+drop policy if exists "Admins can update report status" on public.player_reports;
+create policy "Admins can update report status"
+  on public.player_reports for update
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );

@@ -46,3 +46,41 @@ export async function toggleCommend(
   revalidatePath("/players/[username]", "page");
   return {};
 }
+
+export interface ReportPlayerResult {
+  error?: string;
+}
+
+export async function reportPlayer(
+  reportedId: string,
+  reason: string,
+  details: string,
+): Promise<ReportPlayerResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to report a player." };
+  }
+  if (user.id === reportedId) {
+    return { error: "You can't report yourself." };
+  }
+  if (!reason) {
+    return { error: "Pick a reason." };
+  }
+
+  const { error } = await supabase.from("player_reports").insert({
+    reporter_id: user.id,
+    reported_id: reportedId,
+    reason,
+    details: details.trim() || null,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}

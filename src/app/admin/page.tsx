@@ -6,8 +6,9 @@ import { ArrowLeft, Users, CalendarPlus, Radio } from "lucide-react";
 import { Section, SectionHeading } from "@/components/site/section";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ReportsList } from "@/components/site/reports-list";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile, getAdminStats } from "@/lib/queries";
+import { getProfile, getAdminStats, getPlayerReports } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -25,7 +26,7 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const stats = await getAdminStats();
+  const [stats, reports] = await Promise.all([getAdminStats(), getPlayerReports()]);
 
   const tiles = [
     { label: "Total accounts", value: stats.totalAccounts, icon: Users },
@@ -69,6 +70,11 @@ export default async function AdminPage() {
         &ldquo;Online now&rdquo; counts accounts active in the last 5 minutes —
         approximate, not a live connection count.
       </p>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Player reports</h2>
+        <ReportsList reports={reports} />
+      </div>
     </Section>
   );
 }

@@ -53,20 +53,6 @@ export async function Navbar() {
           />
         </form>
 
-        <nav className="hidden shrink-0 items-center gap-1 lg:flex">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-label={link.label}
-              title={link.label}
-              className={iconLinkClassName}
-            >
-              <link.icon className="size-[18px]" />
-            </Link>
-          ))}
-        </nav>
-
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
           <Link
             href="/search"
@@ -75,6 +61,19 @@ export async function Navbar() {
           >
             <Search className="size-4" />
           </Link>
+          <nav className="hidden shrink-0 items-center gap-1 lg:flex">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-label={link.label}
+                title={link.label}
+                className={iconLinkClassName}
+              >
+                <link.icon className="size-[18px]" />
+              </Link>
+            ))}
+          </nav>
           {user ? (
             <>
               <NotificationBell

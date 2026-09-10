@@ -65,3 +65,35 @@ export function Logo({ id, className }: { id: string; className?: string }) {
     </svg>
   );
 }
+
+// Compact "PS" mark — same two-tone treatment as the favicon (white P,
+// pink S), for spots too narrow for the full wordmark, like the mobile
+// header, where every pixel goes toward fitting the nav icons instead.
+export function LogoMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 60 60" className={className} role="img" aria-label="Pizzastack.gg">
+      <text
+        x="6"
+        y="45"
+        className="font-display"
+        fontWeight="900"
+        fontSize="42"
+        letterSpacing="-0.02em"
+        fill="#FAFAFA"
+      >
+        P
+      </text>
+      <text
+        x="30"
+        y="45"
+        className="font-display"
+        fontWeight="900"
+        fontSize="42"
+        letterSpacing="-0.02em"
+        fill="var(--primary)"
+      >
+        S
+      </text>
+    </svg>
+  );
+}

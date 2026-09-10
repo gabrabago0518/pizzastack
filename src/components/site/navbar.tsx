@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Search, Users, GraduationCap, Shield, Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/site/logo";
+import { Logo, LogoMark } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { createClient } from "@/lib/supabase/server";
@@ -35,9 +35,11 @@ export async function Navbar() {
       <div className="mx-auto flex h-18 max-w-6xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 md:gap-6">
         <Link
           href="/"
+          aria-label="Pizzastack.gg"
           className="flex shrink-0 items-center transition-opacity hover:opacity-80"
         >
-          <Logo id="nav" className="h-7 w-auto sm:h-9" />
+          <LogoMark className="size-8 sm:hidden" />
+          <Logo id="nav" className="hidden h-9 w-auto sm:block" />
         </Link>
 
         <form

@@ -7,7 +7,7 @@ import { Section } from "@/components/site/section";
 import { CoachingRequestForm } from "@/components/site/coaching-request-form";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
-import { getGames, getOwnOpenCoachingRequestId } from "@/lib/queries";
+import { getGames, getOwnOpenCoachingRequestId, getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Post a Listing",
@@ -41,7 +41,7 @@ export default async function NewCoachingRequestPage() {
     );
   }
 
-  const games = await getGames();
+  const [games, profile] = await Promise.all([getGames(), getProfile(user.id)]);
 
   return (
     <Section className="!pb-24">
@@ -51,7 +51,13 @@ export default async function NewCoachingRequestPage() {
           Tell coaches what you need help with. Your listing goes live
           immediately on the board.
         </p>
-        <CoachingRequestForm games={games} />
+        <CoachingRequestForm
+          games={games}
+          dotaRankTier={profile?.dota_rank_tier ?? null}
+          dotaLeaderboardRank={profile?.dota_leaderboard_rank ?? null}
+          cs2PremierRating={profile?.cs2_premier_rating ?? null}
+          cs2CompetitiveRank={profile?.cs2_competitive_rank ?? null}
+        />
       </div>
     </Section>
   );

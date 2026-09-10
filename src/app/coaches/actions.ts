@@ -105,7 +105,6 @@ export async function createCoachingRequest(
   }
 
   const gameId = String(formData.get("gameId") ?? "");
-  const rank = String(formData.get("rank") ?? "").trim();
   const region = String(formData.get("region") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
 
@@ -113,10 +112,28 @@ export async function createCoachingRequest(
     return { error: "Pick a game and describe what you're looking for." };
   }
 
+  const { data: game } = await supabase
+    .from("games")
+    .select("name, slug")
+    .eq("id", gameId)
+    .maybeSingle();
+
+  // Verified games' rank is never trusted from the form — it's pulled
+  // server-side from the author's Steam-verified rank, same as the LFG/coach
+  // forms. Unlike those, rank here is optional: an unverified/unconnected
+  // account just posts without one instead of being blocked.
+  let rank: string | null;
+  if (game && (VERIFIED_RANK_GAME_SLUGS as readonly string[]).includes(game.slug)) {
+    const result = await resolveVerifiedRank(supabase, user.id, game.slug, "posting this listing");
+    rank = "error" in result ? null : result.rank;
+  } else {
+    rank = String(formData.get("rank") ?? "").trim() || null;
+  }
+
   const { error } = await supabase.from("coaching_requests").insert({
     author_id: user.id,
     game_id: gameId,
-    rank: rank || null,
+    rank,
     region: region || null,
     description,
   });

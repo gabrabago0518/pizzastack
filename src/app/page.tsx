@@ -76,8 +76,8 @@ export default async function Home() {
             style={{ animationDelay: "0.15s" }}
           >
             <Button asChild size="lg">
-              <Link href="/signup">
-                Create your profile <ArrowRight />
+              <Link href="/teammates/new">
+                Post a Listing <ArrowRight />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">

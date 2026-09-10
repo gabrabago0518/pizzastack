@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Users, GraduationCap, Gamepad2, ArrowRight } from "lucide-react";
+import {
+  Users,
+  GraduationCap,
+  Gamepad2,
+  ArrowRight,
+  MessageCircleQuestion,
+  Shield,
+  Trophy,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,18 +22,42 @@ const features = [
     title: "Post what you need",
     description:
       "Looking for a 5th, a duo, or a whole roster? Post a listing with your game, rank, and roles needed.",
+    href: "/teammates/new",
   },
   {
     icon: GraduationCap,
     title: "Find a coach",
     description:
       "Browse players who coach your game and reach out directly. No fees, no booking system.",
+    href: "/coaches",
+  },
+  {
+    icon: MessageCircleQuestion,
+    title: "Looking for a coach?",
+    description:
+      "Post your game, rank, region, and what you want to learn — coaches come to you instead.",
+    href: "/coaches/looking-for-coach",
+  },
+  {
+    icon: Shield,
+    title: "Form a guild",
+    description:
+      "Create or join a persistent squad with a shared roster and its own built-in chat.",
+    href: "/guilds",
+  },
+  {
+    icon: Trophy,
+    title: "Run a tournament",
+    description:
+      "Create teams, generate a bracket automatically, and report results as you go — single elimination.",
+    href: "/tournaments",
   },
   {
     icon: Gamepad2,
     title: "Any game, one hub",
     description:
       "Valorant, League, CS2, Apex, and more. One profile, every game you play.",
+    href: "/signup",
   },
 ];
 
@@ -111,17 +143,19 @@ export default async function Home() {
         <div className="grid gap-6 sm:grid-cols-3">
           {features.map((feature, i) => (
             <Reveal key={feature.title} delay={i * 100}>
-              <Card className="h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-                <CardContent className="flex flex-col gap-3">
-                  <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <feature.icon className="size-5" />
-                  </span>
-                  <h3 className="font-display text-lg">{feature.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
+              <Link href={feature.href} className="block h-full">
+                <Card className="h-full transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+                  <CardContent className="flex flex-col gap-3">
+                    <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <feature.icon className="size-5" />
+                    </span>
+                    <h3 className="font-display text-lg">{feature.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             </Reveal>
           ))}
         </div>

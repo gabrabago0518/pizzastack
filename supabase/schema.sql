@@ -930,3 +930,149 @@ where p.onboarded = false
   and exists (
     select 1 from public.profile_games pg where pg.profile_id = p.id
   );
+
+-- ---------------------------------------------------------------------------
+-- guilds: a persistent community a player can create and others can join —
+-- distinct from a one-off LFG listing. Open-join by default (no invite/
+-- request system for now, matching the site's "no gatekeeping" bent
+-- elsewhere — see coach_profiles' "no booking system" comment): anyone can
+-- join instantly and leave any time, except the leader, who deletes the
+-- guild instead of leaving it, to avoid an ownerless-guild edge case.
+-- game_id is nullable — a guild can be general-purpose or tied to one game.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guilds (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  tag text not null,
+  description text,
+  game_id uuid references public.games (id),
+  region text,
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  member_count integer not null default 1,
+  created_at timestamptz not null default now(),
+  unique (name),
+  unique (tag)
+);
+
+alter table public.guilds enable row level security;
+
+drop policy if exists "Guilds are publicly readable" on public.guilds;
+create policy "Guilds are publicly readable"
+  on public.guilds for select
+  using (true);
+
+drop policy if exists "Users can create a guild" on public.guilds;
+create policy "Users can create a guild"
+  on public.guilds for insert
+  with check (auth.uid() = owner_id);
+
+drop policy if exists "Guild owners can update their guild" on public.guilds;
+create policy "Guild owners can update their guild"
+  on public.guilds for update
+  using (auth.uid() = owner_id);
+
+drop policy if exists "Guild owners can delete their guild" on public.guilds;
+create policy "Guild owners can delete their guild"
+  on public.guilds for delete
+  using (auth.uid() = owner_id);
+
+-- ---------------------------------------------------------------------------
+-- guild_members: profile_id is the primary key, not (guild_id, profile_id)
+-- — a player can only be in one guild at a time (mirrors lfg_posts'
+-- one-open-listing-per-author constraint), so this is naturally at most
+-- one row per player rather than a many-to-many join table.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guild_members (
+  profile_id uuid primary key references public.profiles (id) on delete cascade,
+  guild_id uuid not null references public.guilds (id) on delete cascade,
+  role text not null default 'member' check (role in ('leader', 'officer', 'member')),
+  joined_at timestamptz not null default now()
+);
+
+alter table public.guild_members enable row level security;
+
+drop policy if exists "Guild members are publicly readable" on public.guild_members;
+create policy "Guild members are publicly readable"
+  on public.guild_members for select
+  using (true);
+
+drop policy if exists "Users can join a guild" on public.guild_members;
+create policy "Users can join a guild"
+  on public.guild_members for insert
+  with check (auth.uid() = profile_id);
+
+-- A member can leave on their own; the guild's owner can also remove
+-- anyone (kick) — checked against guilds.owner_id rather than a role
+-- column so kick permission can't be spoofed by a member editing their
+-- own role (which no policy here grants them anyway — role changes
+-- aren't exposed to the app at all yet).
+drop policy if exists "Members can leave or be kicked by the owner" on public.guild_members;
+create policy "Members can leave or be kicked by the owner"
+  on public.guild_members for delete
+  using (
+    auth.uid() = profile_id
+    or auth.uid() = (select owner_id from public.guilds where id = guild_id)
+  );
+
+-- Keeps guilds.member_count in sync — same denormalized-aggregate pattern
+-- as coach_profiles.avg_rating.
+create or replace function public.recalculate_guild_member_count()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  target_guild_id uuid := coalesce(new.guild_id, old.guild_id);
+begin
+  update public.guilds
+  set member_count = (
+    select count(*) from public.guild_members where guild_id = target_guild_id
+  )
+  where id = target_guild_id;
+  return null;
+end;
+$$;
+
+drop trigger if exists guild_members_recalculate_count on public.guild_members;
+create trigger guild_members_recalculate_count
+  after insert or delete on public.guild_members
+  for each row execute function public.recalculate_guild_member_count();
+
+-- ---------------------------------------------------------------------------
+-- guild_messages: one shared chat per guild, open to every member. Unlike
+-- lfg_messages (which only unlocks for accepted party members), there's no
+-- separate "accepted" state to check — guild_members already only ever
+-- contains actual members.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guild_messages (
+  id uuid primary key default gen_random_uuid(),
+  guild_id uuid not null references public.guilds (id) on delete cascade,
+  sender_id uuid references public.profiles (id) on delete cascade,
+  body text not null check (char_length(body) between 1 and 1000),
+  created_at timestamptz not null default now()
+);
+
+alter table public.guild_messages enable row level security;
+
+drop policy if exists "Guild members can read guild chat" on public.guild_messages;
+create policy "Guild members can read guild chat"
+  on public.guild_messages for select
+  using (
+    exists (
+      select 1 from public.guild_members
+      where guild_members.guild_id = guild_messages.guild_id
+        and guild_members.profile_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Guild members can send guild chat" on public.guild_messages;
+create policy "Guild members can send guild chat"
+  on public.guild_messages for insert
+  with check (
+    sender_id = auth.uid()
+    and exists (
+      select 1 from public.guild_members
+      where guild_members.guild_id = guild_messages.guild_id
+        and guild_members.profile_id = auth.uid()
+    )
+  );

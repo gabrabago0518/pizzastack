@@ -12,6 +12,7 @@ import { getProfile, getNotifications, getUnreadNotificationCount } from "@/lib/
 const links = [
   { href: "/teammates", label: "Find Teammates", icon: Users },
   { href: "/coaches", label: "Find Coaches", icon: GraduationCap },
+  { href: "/guilds", label: "Find Guild", icon: Shield },
 ];
 
 const iconLinkClassName =
@@ -64,13 +65,6 @@ export async function Navbar() {
               <link.icon className="size-[18px]" />
             </Link>
           ))}
-          <span
-            aria-label="Find Guild — coming soon"
-            title="Find Guild — coming soon"
-            className="flex size-9 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-muted-foreground/40"
-          >
-            <Shield className="size-[18px]" />
-          </span>
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">

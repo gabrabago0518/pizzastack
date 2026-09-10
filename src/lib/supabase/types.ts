@@ -516,6 +516,113 @@ export interface Database {
           },
         ];
       };
+      guilds: {
+        Row: {
+          id: string;
+          name: string;
+          tag: string;
+          description: string | null;
+          game_id: string | null;
+          region: string | null;
+          owner_id: string;
+          member_count: number;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          tag: string;
+          description?: string | null;
+          game_id?: string | null;
+          region?: string | null;
+          owner_id: string;
+        };
+        Update: {
+          name?: string;
+          tag?: string;
+          description?: string | null;
+          game_id?: string | null;
+          region?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guilds_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guilds_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guild_members: {
+        Row: {
+          profile_id: string;
+          guild_id: string;
+          role: "leader" | "officer" | "member";
+          joined_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          guild_id: string;
+          role?: "leader" | "officer" | "member";
+        };
+        Update: {
+          role?: "leader" | "officer" | "member";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "guild_members_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guild_members_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guild_messages: {
+        Row: {
+          id: string;
+          guild_id: string;
+          sender_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          guild_id: string;
+          sender_id?: string | null;
+          body: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "guild_messages_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guild_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -533,6 +640,9 @@ export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
 export type TopHeroStat = Database["public"]["Tables"]["top_hero_stats"]["Row"];
 export type CoachReview = Database["public"]["Tables"]["coach_reviews"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type Guild = Database["public"]["Tables"]["guilds"]["Row"];
+export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
+export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -553,5 +663,17 @@ export type CoachProfileWithRelations = CoachProfile & {
 };
 
 export type CoachReviewWithReviewer = CoachReview & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type GuildWithRelations = Guild & {
+  games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type GuildMemberWithProfile = GuildMember & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type GuildMessageWithSender = GuildMessage & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

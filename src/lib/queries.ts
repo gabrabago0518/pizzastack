@@ -7,6 +7,11 @@ import type {
   JoinRequestWithRequester,
   LfgMessageWithSender,
   Notification,
+  Guild,
+  GuildMember,
+  GuildWithRelations,
+  GuildMemberWithProfile,
+  GuildMessageWithSender,
   Game,
 } from "@/lib/supabase/types";
 
@@ -453,4 +458,68 @@ export async function getUnreadNotificationCount(profileId: string) {
     .eq("profile_id", profileId)
     .eq("read", false);
   return count ?? 0;
+}
+
+export async function getGuilds(gameSlug?: string) {
+  const supabase = await createClient();
+  const gameId = await resolveGameId(gameSlug);
+
+  let builder = supabase
+    .from("guilds")
+    .select("*, games(name, slug)")
+    .order("member_count", { ascending: false });
+
+  if (gameId) builder = builder.eq("game_id", gameId);
+
+  const { data } = await builder.returns<GuildWithRelations[]>();
+  return data ?? [];
+}
+
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getGuildById = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guilds")
+    .select("*, games(name, slug)")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<GuildWithRelations>();
+  return data;
+});
+
+export async function getGuildMembers(guildId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_members")
+    .select("*, profiles(username, avatar_url)")
+    .eq("guild_id", guildId)
+    .order("joined_at", { ascending: true })
+    .returns<GuildMemberWithProfile[]>();
+  return data ?? [];
+}
+
+// A player can only be in one guild at a time (guild_members.profile_id is
+// its primary key), so this is at most one row — used to gate "Create a
+// guild" and to show "You're already in a guild" states.
+export async function getMyGuildMembership(profileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_members")
+    .select("*, guilds(id, name, tag)")
+    .eq("profile_id", profileId)
+    .maybeSingle()
+    .returns<(GuildMember & { guilds: Pick<Guild, "id" | "name" | "tag"> | null }) | null>();
+  return data;
+}
+
+export async function getGuildMessages(guildId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_messages")
+    .select("*, profiles(username, avatar_url)")
+    .eq("guild_id", guildId)
+    .order("created_at", { ascending: true })
+    .returns<GuildMessageWithSender[]>();
+  return data ?? [];
 }

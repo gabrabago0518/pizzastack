@@ -15,7 +15,7 @@ export async function getGames() {
 }
 
 async function resolveGameId(gameSlug?: string) {
-  if (!gameSlug) return undefined;
+  if (!gameSlug || gameSlug === "all") return undefined;
   const supabase = await createClient();
   const { data } = await supabase
     .from("games")
@@ -25,19 +25,31 @@ async function resolveGameId(gameSlug?: string) {
   return data?.id;
 }
 
-export async function getLfgPosts(gameSlug?: string) {
+export interface LfgPostFilters {
+  rank?: string;
+  role?: string;
+  mode?: string;
+}
+
+export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {}) {
   const supabase = await createClient();
   const gameId = await resolveGameId(gameSlug);
 
-  const builder = supabase
+  let builder = supabase
     .from("lfg_posts")
     .select("*, profiles(username, region), games(name, slug)")
     .eq("status", "open")
     .order("created_at", { ascending: false });
 
-  const { data } = await (gameId ? builder.eq("game_id", gameId) : builder).returns<
-    LfgPostWithRelations[]
-  >();
+  if (gameId) builder = builder.eq("game_id", gameId);
+  // Rank is a formatted label ("Legend 3", "Diamond 2 (RR 45)"), not a bare
+  // tier name, for the verified-rank games — see ranks.ts — so this matches
+  // the tier as a substring rather than requiring an exact value.
+  if (filters.rank) builder = builder.ilike("rank", `%${filters.rank}%`);
+  if (filters.role) builder = builder.contains("roles_needed", [filters.role]);
+  if (filters.mode) builder = builder.eq("mode", filters.mode);
+
+  const { data } = await builder.returns<LfgPostWithRelations[]>();
   return data ?? [];
 }
 

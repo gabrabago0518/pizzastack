@@ -84,14 +84,17 @@ export interface Database {
           id: string;
           name: string;
           slug: string;
+          cover_url: string | null;
         };
         Insert: {
           name: string;
           slug: string;
+          cover_url?: string | null;
         };
         Update: {
           name?: string;
           slug?: string;
+          cover_url?: string | null;
         };
         Relationships: [];
       };

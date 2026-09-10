@@ -129,8 +129,11 @@ create trigger on_auth_user_created
 create table if not exists public.games (
   id uuid primary key default gen_random_uuid(),
   name text unique not null,
-  slug text unique not null
+  slug text unique not null,
+  cover_url text
 );
+
+alter table public.games add column if not exists cover_url text;
 
 alter table public.games enable row level security;
 
@@ -149,6 +152,19 @@ insert into public.games (name, slug) values
   ('Fortnite', 'fortnite'),
   ('Dota 2', 'dota-2')
 on conflict (slug) do nothing;
+
+-- Poster art for the game-picker card grid on /teammates. Sourced from
+-- Steam's own CDN (stable, widely hotlinked — see library_600x900.jpg
+-- usage across other open-source Steam-library tools) for the four games
+-- that are actually on Steam; the rest fall back to a plain gradient card
+-- in GamePosterCard since there's no equivalently reliable public CDN
+-- asset for them yet. An explicit update (not just the insert above)
+-- since this column is new and the insert no-ops for rows that already
+-- exist from a prior deploy.
+update public.games set cover_url = 'https://cdn.cloudflare.steamstatic.com/steam/apps/730/library_600x900.jpg' where slug = 'cs2';
+update public.games set cover_url = 'https://cdn.cloudflare.steamstatic.com/steam/apps/570/library_600x900.jpg' where slug = 'dota-2';
+update public.games set cover_url = 'https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/library_600x900.jpg' where slug = 'apex-legends';
+update public.games set cover_url = 'https://cdn.cloudflare.steamstatic.com/steam/apps/252950/library_600x900.jpg' where slug = 'rocket-league';
 
 -- ---------------------------------------------------------------------------
 -- lfg_posts: "looking for group / teammates" board.

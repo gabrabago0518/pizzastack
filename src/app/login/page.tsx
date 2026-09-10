@@ -20,7 +20,7 @@ export default function LoginPage() {
       <AuthForm mode="login" action={signIn} />
       <Link
         href="/forgot-password"
-        className="mt-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="mt-3 text-center text-sm font-medium text-primary hover:underline"
       >
         Forgot your password?
       </Link>

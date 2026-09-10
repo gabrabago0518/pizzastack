@@ -55,6 +55,14 @@ alter table public.profiles
   add column if not exists dota_leaderboard_rank integer;
 alter table public.profiles
   add column if not exists dota_rank_synced_at timestamptz;
+-- Career totals from OpenDota's /wl and /totals endpoints (all matches it
+-- has parsed for the account, not just recent ones) — synced alongside
+-- dota_rank_tier above, shown next to the rank card rather than gated
+-- behind show_ranks' verified-rank meaning.
+alter table public.profiles
+  add column if not exists dota_total_matches integer;
+alter table public.profiles
+  add column if not exists dota_hours_played integer;
 
 -- cs2_premier_rating: Valve's real numeric CS Rating (Leetify's ranks.premier,
 -- parsed from actual match data, not a third-party score). cs2_competitive_rank:

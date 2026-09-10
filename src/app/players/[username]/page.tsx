@@ -120,6 +120,8 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         <RankBanner
           dotaRankTier={profile.dota_rank_tier}
           dotaLeaderboardRank={profile.dota_leaderboard_rank}
+          dotaTotalMatches={profile.dota_total_matches}
+          dotaHoursPlayed={profile.dota_hours_played}
           cs2PremierRating={profile.cs2_premier_rating}
           cs2CompetitiveRank={profile.cs2_competitive_rank}
         />

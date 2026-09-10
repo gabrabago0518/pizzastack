@@ -7,14 +7,29 @@ import { formatCs2Rank } from "@/lib/cs2-rank";
 // list so adding the next game's rank later is just another entry here,
 // not a redesign. Valorant isn't included here — see verified-ranks.ts
 // for why.
+// Renders "1,234 matches · 567 hrs played" once both career-totals fields
+// have synced. Either alone (a partial sync, or a very new account with
+// 0 hours rounding down) still reads fine, so this degrades gracefully
+// rather than requiring both.
+function formatDotaStatLine(totalMatches: number | null, hoursPlayed: number | null): string | undefined {
+  const parts: string[] = [];
+  if (totalMatches !== null) parts.push(`${totalMatches.toLocaleString()} matches`);
+  if (hoursPlayed !== null) parts.push(`${hoursPlayed.toLocaleString()} hrs played`);
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
 export function RankBanner({
   dotaRankTier,
   dotaLeaderboardRank,
+  dotaTotalMatches,
+  dotaHoursPlayed,
   cs2PremierRating,
   cs2CompetitiveRank,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
+  dotaTotalMatches?: number | null;
+  dotaHoursPlayed?: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
 }) {
@@ -32,6 +47,7 @@ export function RankBanner({
             game="Dota 2"
             rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
             sourceLabel="Verified via Steam"
+            statLine={formatDotaStatLine(dotaTotalMatches ?? null, dotaHoursPlayed ?? null)}
             icon={<DotaRankIcon rankTier={dotaRankTier} className="size-16 shrink-0 drop-shadow-md" />}
           />
         ) : null}

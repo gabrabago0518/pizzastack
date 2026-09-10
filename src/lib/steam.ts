@@ -106,3 +106,45 @@ export async function fetchDotaHeroStats(steamId64: string): Promise<DotaHeroSta
     wins: entry.win,
   }));
 }
+
+export interface DotaTotals {
+  totalMatches: number;
+  hoursPlayed: number;
+}
+
+// Career totals: /wl for the match count (all matches OpenDota has parsed
+// for the account), /totals for summed match duration — the "duration"
+// field's sum is in seconds across every match, which is the closest
+// OpenDota has to "hours played" since Dota itself has no playtime API.
+export async function fetchDotaTotals(steamId64: string): Promise<DotaTotals> {
+  const accountId = steamId64ToDotaAccountId(steamId64);
+
+  const [wlResponse, totalsResponse] = await Promise.all([
+    fetch(`https://api.opendota.com/api/players/${accountId}/wl`, {
+      headers: { Accept: "application/json" },
+    }),
+    fetch(`https://api.opendota.com/api/players/${accountId}/totals`, {
+      headers: { Accept: "application/json" },
+    }),
+  ]);
+  if (!wlResponse.ok) {
+    throw new Error(`OpenDota win/loss request failed (${wlResponse.status})`);
+  }
+  if (!totalsResponse.ok) {
+    throw new Error(`OpenDota totals request failed (${totalsResponse.status})`);
+  }
+
+  const wl = (await wlResponse.json()) as { win?: number; lose?: number };
+  const totals = (await totalsResponse.json()) as Array<{
+    field: string;
+    sum: number;
+  }>;
+
+  const totalMatches = (wl.win ?? 0) + (wl.lose ?? 0);
+  const durationSum = totals.find((entry) => entry.field === "duration")?.sum ?? 0;
+
+  return {
+    totalMatches,
+    hoursPlayed: Math.round(durationSum / 3600),
+  };
+}

@@ -15,6 +15,8 @@ export interface Database {
           dota_rank_tier: number | null;
           dota_leaderboard_rank: number | null;
           dota_rank_synced_at: string | null;
+          dota_total_matches: number | null;
+          dota_hours_played: number | null;
           cs2_premier_rating: number | null;
           cs2_competitive_rank: number | null;
           cs2_rank_synced_at: string | null;
@@ -49,6 +51,8 @@ export interface Database {
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;
+          dota_total_matches?: number | null;
+          dota_hours_played?: number | null;
           cs2_premier_rating?: number | null;
           cs2_competitive_rank?: number | null;
           cs2_rank_synced_at?: string | null;
@@ -81,6 +85,8 @@ export interface Database {
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;
+          dota_total_matches?: number | null;
+          dota_hours_played?: number | null;
           cs2_premier_rating?: number | null;
           cs2_competitive_rank?: number | null;
           cs2_rank_synced_at?: string | null;

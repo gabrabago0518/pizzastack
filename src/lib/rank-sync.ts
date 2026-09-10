@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchDotaRankFromOpenDota, fetchDotaHeroStats } from "@/lib/steam";
+import { fetchDotaRankFromOpenDota, fetchDotaHeroStats, fetchDotaTotals } from "@/lib/steam";
 import { fetchCs2RankFromLeetify } from "@/lib/leetify";
 import { fetchValorantRank, fetchValorantMatches } from "@/lib/henrikdev";
 import { fetchValorantTierIcon, fetchValorantAgentIcon } from "@/lib/valorant-content";
@@ -39,6 +39,8 @@ async function upsertMatchHistory(
 export interface SyncedRanks {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
+  dotaTotalMatches: number | null;
+  dotaHoursPlayed: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
 }
@@ -71,6 +73,26 @@ export async function syncRanksForSteamId(
       .eq("id", userId);
   } catch (err) {
     console.error("[rank-sync] OpenDota fetch failed:", err);
+  }
+
+  // Career totals (match count, hours played) — a separate OpenDota
+  // request from the rank fetch above, so it's wrapped independently: a
+  // failure here shouldn't discard the rank data that already succeeded.
+  let dotaTotalMatches: number | null = null;
+  let dotaHoursPlayed: number | null = null;
+  try {
+    const totals = await fetchDotaTotals(steamId64);
+    dotaTotalMatches = totals.totalMatches;
+    dotaHoursPlayed = totals.hoursPlayed;
+    await service
+      .from("profiles")
+      .update({
+        dota_total_matches: totals.totalMatches,
+        dota_hours_played: totals.hoursPlayed,
+      })
+      .eq("id", userId);
+  } catch (err) {
+    console.error("[rank-sync] OpenDota totals fetch failed:", err);
   }
 
   // Most-played hero — a separate OpenDota endpoint from the rank fetch
@@ -120,7 +142,14 @@ export async function syncRanksForSteamId(
     console.error("[rank-sync] Leetify fetch failed:", err);
   }
 
-  return { dotaRankTier, dotaLeaderboardRank, cs2PremierRating, cs2CompetitiveRank };
+  return {
+    dotaRankTier,
+    dotaLeaderboardRank,
+    dotaTotalMatches,
+    dotaHoursPlayed,
+    cs2PremierRating,
+    cs2CompetitiveRank,
+  };
 }
 
 export interface SyncedValorantRank {

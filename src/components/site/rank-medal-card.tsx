@@ -14,12 +14,14 @@ export function RankMedalCard({
   rankLabel,
   sourceLabel,
   icon,
+  statLine,
   leetifyAttribution = false,
 }: {
   game: string;
   rankLabel: string;
   sourceLabel: string;
   icon?: ReactNode;
+  statLine?: string;
   leetifyAttribution?: boolean;
 }) {
   return (
@@ -30,6 +32,9 @@ export function RankMedalCard({
           {game}
         </p>
         <p className="font-display text-xl leading-tight">{rankLabel}</p>
+        {statLine ? (
+          <p className="text-xs text-muted-foreground">{statLine}</p>
+        ) : null}
         {leetifyAttribution ? (
           <a
             href="https://leetify.com"

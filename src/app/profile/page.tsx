@@ -52,6 +52,7 @@ export default async function ProfilePage() {
           <AvatarDisplay
             url={profile.avatar_url}
             label={profile.display_name || profile.username}
+            frame="flame"
           />
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
             <h1 className="font-display text-3xl">

@@ -7,13 +7,15 @@ import { fetchValorantTierIcon, fetchValorantAgentIcon } from "@/lib/valorant-co
 import { fetchDotaHeroInfo } from "@/lib/dota-heroes";
 import type { Database } from "@/lib/supabase/types";
 
-// How many of the player's most recent Valorant matches to sample when
-// picking their most-played agent — HenrikDev has no all-time per-agent
-// aggregate endpoint (unlike OpenDota's /heroes for Dota), so this is a
-// recent-form approximation rather than a true all-time count.
-const VALORANT_AGENT_SAMPLE_SIZE = 20;
+// How many of the player's most recent Valorant matches HenrikDev returns
+// per sync — HenrikDev has no all-time per-agent aggregate endpoint or
+// bulk history pull (unlike OpenDota's /heroes for Dota), so this batch
+// gets appended to match_history each sync (see the Valorant block in
+// syncValorantRank below) rather than treated as the whole picture.
+const VALORANT_MATCH_FETCH_SIZE = 10;
 
 type TopHeroStatsInsert = Database["public"]["Tables"]["top_hero_stats"]["Insert"];
+type MatchHistoryInsert = Database["public"]["Tables"]["match_history"]["Insert"];
 
 async function upsertTopHeroStat(
   service: SupabaseClient<Database>,
@@ -22,6 +24,16 @@ async function upsertTopHeroStat(
   await service
     .from("top_hero_stats")
     .upsert(row, { onConflict: "profile_id,game_slug" });
+}
+
+async function upsertMatchHistory(
+  service: SupabaseClient<Database>,
+  rows: MatchHistoryInsert[],
+) {
+  if (rows.length === 0) return;
+  await service
+    .from("match_history")
+    .upsert(rows, { onConflict: "profile_id,game_slug,external_match_id" });
 }
 
 export interface SyncedRanks {
@@ -156,21 +168,61 @@ export async function syncValorantRank(
 
   // Most-played agent, same best-effort treatment as the icon above — a
   // failure here shouldn't fail the whole "connect Riot ID" action.
-  // HenrikDev has no all-time per-agent aggregate endpoint, so this is
-  // derived from a sample of recently played matches rather than true
-  // lifetime totals.
+  // HenrikDev has no all-time per-agent aggregate endpoint or bulk history
+  // pull, so true "all acts" stats aren't available in one request. Instead,
+  // each sync's batch of recent matches is appended to match_history
+  // (deduped by external_match_id, so re-syncing the same matches is a
+  // no-op) and the top agent is recomputed over everything accumulated so
+  // far — the count converges toward real all-time stats the more often a
+  // player refreshes, the same way a tracker site builds up its numbers
+  // from repeated ingestion rather than a single bulk pull.
   try {
-    const matches = await fetchValorantMatches(name, tag, region, VALORANT_AGENT_SAMPLE_SIZE);
-    const byAgent = new Map<string, { games: number; wins: number }>();
-    for (const match of matches) {
-      if (!match.agentName) continue;
-      const entry = byAgent.get(match.agentName) ?? { games: 0, wins: 0 };
+    const matches = await fetchValorantMatches(name, tag, region, VALORANT_MATCH_FETCH_SIZE);
+    const rows = await Promise.all(
+      matches.map(async (match): Promise<MatchHistoryInsert> => ({
+        profile_id: userId,
+        game_slug: "valorant",
+        external_match_id: match.matchId,
+        played_at: match.playedAt,
+        won: match.won,
+        character_name: match.agentName,
+        character_icon_url: await fetchValorantAgentIcon(match.agentName).catch(() => null),
+        kills: match.kills,
+        deaths: match.deaths,
+        assists: match.assists,
+        map_name: match.mapName,
+        mode: match.mode,
+      })),
+    );
+    await upsertMatchHistory(service, rows);
+
+    const { data: allMatches } = await service
+      .from("match_history")
+      .select("character_name, character_icon_url, won")
+      .eq("profile_id", userId)
+      .eq("game_slug", "valorant")
+      .not("character_name", "is", null);
+
+    const byAgent = new Map<
+      string,
+      { games: number; wins: number; iconUrl: string | null }
+    >();
+    for (const row of allMatches ?? []) {
+      if (!row.character_name) continue;
+      const entry = byAgent.get(row.character_name) ?? {
+        games: 0,
+        wins: 0,
+        iconUrl: null,
+      };
       entry.games += 1;
-      if (match.won) entry.wins += 1;
-      byAgent.set(match.agentName, entry);
+      if (row.won) entry.wins += 1;
+      entry.iconUrl ??= row.character_icon_url;
+      byAgent.set(row.character_name, entry);
     }
 
-    let topAgent: { name: string; games: number; wins: number } | null = null;
+    let topAgent:
+      | { name: string; games: number; wins: number; iconUrl: string | null }
+      | null = null;
     for (const [agentName, stat] of byAgent) {
       if (!topAgent || stat.games > topAgent.games) {
         topAgent = { name: agentName, ...stat };
@@ -182,7 +234,7 @@ export async function syncValorantRank(
         profile_id: userId,
         game_slug: "valorant",
         character_name: topAgent.name,
-        character_icon_url: await fetchValorantAgentIcon(topAgent.name).catch(() => null),
+        character_icon_url: topAgent.iconUrl,
         games_played: topAgent.games,
         wins: topAgent.wins,
         synced_at: syncedAt,

@@ -336,6 +336,60 @@ export interface Database {
           },
         ];
       };
+      match_history: {
+        Row: {
+          id: string;
+          profile_id: string;
+          game_slug: string;
+          external_match_id: string;
+          played_at: string;
+          won: boolean | null;
+          character_name: string | null;
+          character_icon_url: string | null;
+          kills: number | null;
+          deaths: number | null;
+          assists: number | null;
+          map_name: string | null;
+          mode: string | null;
+          duration_seconds: number | null;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          game_slug: string;
+          external_match_id: string;
+          played_at: string;
+          won?: boolean | null;
+          character_name?: string | null;
+          character_icon_url?: string | null;
+          kills?: number | null;
+          deaths?: number | null;
+          assists?: number | null;
+          map_name?: string | null;
+          mode?: string | null;
+          duration_seconds?: number | null;
+        };
+        Update: {
+          won?: boolean | null;
+          character_name?: string | null;
+          character_icon_url?: string | null;
+          kills?: number | null;
+          deaths?: number | null;
+          assists?: number | null;
+          map_name?: string | null;
+          mode?: string | null;
+          duration_seconds?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "match_history_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -350,6 +404,7 @@ export type LfgPost = Database["public"]["Tables"]["lfg_posts"]["Row"];
 export type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"];
 export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row"];
 export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
+export type MatchHistoryEntry = Database["public"]["Tables"]["match_history"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;

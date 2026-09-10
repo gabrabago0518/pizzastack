@@ -6,6 +6,7 @@ import { Award, ExternalLink, Settings, ShieldCheck } from "lucide-react";
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { RankBanner } from "@/components/site/rank-banner";
+import { MatchHistoryList } from "@/components/site/match-history-list";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import {
   getCoachProfilesByAuthor,
   getGamesForProfile,
   getCommendCount,
+  getMatchHistoryForProfile,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -34,11 +36,12 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles, games, commendCount] = await Promise.all([
+  const [posts, coachProfiles, games, commendCount, matches] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
     getGamesForProfile(user.id),
     getCommendCount(user.id),
+    getMatchHistoryForProfile(user.id),
   ]);
 
   return (
@@ -103,6 +106,14 @@ export default async function ProfilePage() {
         valorantTierIcon={profile.valorant_tier_icon}
         valorantRr={profile.valorant_rr}
       />
+
+      <div className="mb-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Recent matches</h2>
+        <MatchHistoryList
+          matches={matches}
+          emptyText="No synced matches yet — connect Steam or a Riot ID and sync your rank to see recent matches here."
+        />
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-4">

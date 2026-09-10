@@ -31,3 +31,38 @@ export async function fetchValorantTierIcon(tierId: number | null): Promise<stri
 
   return entry?.largeIcon ?? entry?.smallIcon ?? null;
 }
+
+interface AgentEntry {
+  displayName: string;
+  displayIcon: string | null;
+}
+
+interface AgentsResponse {
+  data?: AgentEntry[];
+}
+
+// Cached per server instance for the same reason as Dota's hero cache
+// (dota-heroes.ts) — the agent roster only changes with new agent
+// releases, so there's no need to refetch it for every match in a sync
+// batch.
+let agentCache: AgentEntry[] | null = null;
+
+// HenrikDev's match data gives the agent by display name (e.g. "Jett"),
+// not a UUID, so this matches on displayName rather than an id.
+export async function fetchValorantAgentIcon(agentName: string | null): Promise<string | null> {
+  if (!agentName) return null;
+
+  if (!agentCache) {
+    const response = await fetch(
+      "https://valorant-api.com/v1/agents?isPlayableCharacter=true",
+    );
+    if (!response.ok) return null;
+    const json = (await response.json()) as AgentsResponse;
+    agentCache = json.data ?? [];
+  }
+
+  const agent = agentCache.find(
+    (entry) => entry.displayName.toLowerCase() === agentName.toLowerCase(),
+  );
+  return agent?.displayIcon ?? null;
+}

@@ -10,6 +10,7 @@ import {
   CommendToggleButton,
 } from "@/components/site/commend-button";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
+import { MatchHistoryList } from "@/components/site/match-history-list";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -19,6 +20,7 @@ import {
   getGamesForProfile,
   getCommendCount,
   hasCommended,
+  getMatchHistoryForProfile,
 } from "@/lib/queries";
 
 interface PlayerPageProps {
@@ -57,13 +59,14 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
   const isOwnProfile = viewer?.id === profile.id;
 
-  const [posts, coachProfiles, games, commendCount, viewerHasCommended] =
+  const [posts, coachProfiles, games, commendCount, viewerHasCommended, matches] =
     await Promise.all([
       getLfgPostsByAuthor(profile.id),
       getCoachProfilesByAuthor(profile.id),
       getGamesForProfile(profile.id),
       getCommendCount(profile.id),
       viewer && !isOwnProfile ? hasCommended(profile.id, viewer.id) : false,
+      getMatchHistoryForProfile(profile.id),
     ]);
 
   const label = profile.display_name || profile.username;
@@ -116,6 +119,14 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         valorantTierIcon={profile.valorant_tier_icon}
         valorantRr={profile.valorant_rr}
       />
+
+      <div className="mb-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Recent matches</h2>
+        <MatchHistoryList
+          matches={matches}
+          emptyText={`@${profile.username} has no synced matches yet.`}
+        />
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-4">

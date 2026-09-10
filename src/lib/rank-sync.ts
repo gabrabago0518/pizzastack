@@ -1,8 +1,25 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchDotaRankFromOpenDota } from "@/lib/steam";
+import { fetchDotaRankFromOpenDota, fetchDotaMatches } from "@/lib/steam";
 import { fetchCs2RankFromLeetify } from "@/lib/leetify";
-import { fetchValorantRank } from "@/lib/henrikdev";
-import { fetchValorantTierIcon } from "@/lib/valorant-content";
+import { fetchValorantRank, fetchValorantMatches } from "@/lib/henrikdev";
+import { fetchValorantTierIcon, fetchValorantAgentIcon } from "@/lib/valorant-content";
+import { fetchDotaHeroInfo } from "@/lib/dota-heroes";
+import type { Database } from "@/lib/supabase/types";
+
+const MATCH_HISTORY_LIMIT = 10;
+
+type MatchHistoryInsert = Database["public"]["Tables"]["match_history"]["Insert"];
+
+async function upsertMatchHistory(
+  service: SupabaseClient<Database>,
+  rows: MatchHistoryInsert[],
+) {
+  if (rows.length === 0) return;
+  await service
+    .from("match_history")
+    .upsert(rows, { onConflict: "profile_id,game_slug,external_match_id" });
+}
 
 export interface SyncedRanks {
   dotaRankTier: number | null;
@@ -39,6 +56,34 @@ export async function syncRanksForSteamId(
       .eq("id", userId);
   } catch (err) {
     console.error("[rank-sync] OpenDota fetch failed:", err);
+  }
+
+  // Recent match history — a separate OpenDota endpoint from the rank
+  // fetch above, so it's wrapped independently: a failure here shouldn't
+  // discard the rank data that already succeeded.
+  try {
+    const matches = await fetchDotaMatches(steamId64, MATCH_HISTORY_LIMIT);
+    const rows = await Promise.all(
+      matches.map(async (match): Promise<MatchHistoryInsert> => {
+        const hero = await fetchDotaHeroInfo(match.heroId).catch(() => null);
+        return {
+          profile_id: userId,
+          game_slug: "dota-2",
+          external_match_id: match.matchId,
+          played_at: new Date(match.startTime * 1000).toISOString(),
+          won: match.won,
+          character_name: hero?.name ?? null,
+          character_icon_url: hero?.iconUrl ?? null,
+          kills: match.kills,
+          deaths: match.deaths,
+          assists: match.assists,
+          duration_seconds: match.duration,
+        };
+      }),
+    );
+    await upsertMatchHistory(service, rows);
+  } catch (err) {
+    console.error("[rank-sync] OpenDota match history fetch failed:", err);
   }
 
   let cs2PremierRating: number | null = null;
@@ -104,6 +149,31 @@ export async function syncValorantRank(
       valorant_rank_synced_at: syncedAt,
     })
     .eq("id", userId);
+
+  // Recent match history, same best-effort treatment as the icon above —
+  // a failure here shouldn't fail the whole "connect Riot ID" action.
+  try {
+    const matches = await fetchValorantMatches(name, tag, region, MATCH_HISTORY_LIMIT);
+    const rows = await Promise.all(
+      matches.map(async (match): Promise<MatchHistoryInsert> => ({
+        profile_id: userId,
+        game_slug: "valorant",
+        external_match_id: match.matchId,
+        played_at: match.playedAt,
+        won: match.won,
+        character_name: match.agentName,
+        character_icon_url: await fetchValorantAgentIcon(match.agentName).catch(() => null),
+        kills: match.kills,
+        deaths: match.deaths,
+        assists: match.assists,
+        map_name: match.mapName,
+        mode: match.mode,
+      })),
+    );
+    await upsertMatchHistory(service, rows);
+  } catch (err) {
+    console.error("[rank-sync] HenrikDev match history fetch failed:", err);
+  }
 
   return { tier: rank.tierName, tierIcon, rr: rank.rr, elo: rank.elo, syncedAt };
 }

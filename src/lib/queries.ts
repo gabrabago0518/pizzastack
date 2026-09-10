@@ -8,6 +8,22 @@ import type {
   Game,
 } from "@/lib/supabase/types";
 
+const MATCH_HISTORY_DISPLAY_LIMIT = 10;
+
+// Most recent synced matches across all games — see rank-sync.ts for how
+// these get populated. Publicly readable, same as the rank badges this
+// sits alongside on a profile.
+export async function getMatchHistoryForProfile(profileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("match_history")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("played_at", { ascending: false })
+    .limit(MATCH_HISTORY_DISPLAY_LIMIT);
+  return data ?? [];
+}
+
 export async function getGames() {
   const supabase = await createClient();
   const { data } = await supabase.from("games").select("*").order("name");

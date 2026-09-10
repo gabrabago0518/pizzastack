@@ -549,6 +549,40 @@ create policy "Users can remove their own commend"
   on public.commendations for delete
   using (auth.uid() = commender_id);
 
+-- ---------------------------------------------------------------------------
+-- match_history: recent verified matches (Dota 2 via OpenDota, Valorant via
+-- HenrikDev), synced alongside the rank data those same providers already
+-- supply — see rank-sync.ts. Service-role-only for writes (no insert/update
+-- policy for authenticated/anon at all — unlike the rank columns on
+-- profiles, there's no self-reported equivalent to grant here), same trust
+-- boundary as the verified rank columns.
+-- ---------------------------------------------------------------------------
+create table if not exists public.match_history (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  game_slug text not null,
+  external_match_id text not null,
+  played_at timestamptz not null,
+  won boolean,
+  character_name text,
+  character_icon_url text,
+  kills smallint,
+  deaths smallint,
+  assists smallint,
+  map_name text,
+  mode text,
+  duration_seconds integer,
+  created_at timestamptz not null default now(),
+  unique (profile_id, game_slug, external_match_id)
+);
+
+alter table public.match_history enable row level security;
+
+drop policy if exists "Match history is publicly readable" on public.match_history;
+create policy "Match history is publicly readable"
+  on public.match_history for select
+  using (true);
+
 -- Backfill: the onboarding "what do you play?" step only exists to collect
 -- profile_games from players who don't have any yet. Accounts that already
 -- picked games (via the old signup-time picker) shouldn't be asked again.

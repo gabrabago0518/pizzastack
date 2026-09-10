@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { VERIFIED_RANK_GAME_SLUGS, resolveVerifiedRank } from "@/lib/verified-ranks";
+import { REGIONS } from "@/lib/regions";
 
 export interface LfgFormState {
   error?: string;
@@ -38,6 +39,9 @@ export async function createLfgPost(
   }
   if (!Number.isInteger(playersNeeded) || playersNeeded < 1 || playersNeeded > 4) {
     return { error: "Choose how many players you need (1-4)." };
+  }
+  if (!(REGIONS as readonly string[]).includes(region)) {
+    return { error: "Pick a region." };
   }
 
   const { data: game } = await supabase
@@ -75,7 +79,7 @@ export async function createLfgPost(
     description: description || null,
     mode,
     rank,
-    region: region || null,
+    region,
     roles_needed: rolesNeeded.length ? rolesNeeded : null,
     players_needed: playersNeeded,
   });

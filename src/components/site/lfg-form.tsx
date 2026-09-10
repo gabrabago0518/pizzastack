@@ -233,9 +233,11 @@ export function LfgForm({
           </SelectNative>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="region">Region (optional)</Label>
-          <SelectNative id="region" name="region" defaultValue="">
-            <option value="">Select a region</option>
+          <Label htmlFor="region">Region</Label>
+          <SelectNative id="region" name="region" required defaultValue="">
+            <option value="" disabled>
+              Select a region
+            </option>
             {REGIONS.map((region) => (
               <option key={region} value={region}>
                 {region}

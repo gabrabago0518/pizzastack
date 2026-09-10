@@ -29,6 +29,7 @@ export interface LfgPostFilters {
   rank?: string;
   role?: string;
   mode?: string;
+  region?: string;
 }
 
 export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {}) {
@@ -48,6 +49,7 @@ export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {
   if (filters.rank) builder = builder.ilike("rank", `%${filters.rank}%`);
   if (filters.role) builder = builder.contains("roles_needed", [filters.role]);
   if (filters.mode) builder = builder.eq("mode", filters.mode);
+  if (filters.region) builder = builder.eq("region", filters.region);
 
   const { data } = await builder.returns<LfgPostWithRelations[]>();
   return data ?? [];

@@ -23,16 +23,22 @@ const ALL_GAMES_TILE = { name: "All games", slug: "all", cover_url: null };
 export default async function TeammatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string; rank?: string; role?: string; mode?: string }>;
+  searchParams: Promise<{
+    game?: string;
+    rank?: string;
+    role?: string;
+    mode?: string;
+    region?: string;
+  }>;
 }) {
-  const { game, rank, role, mode } = await searchParams;
+  const { game, rank, role, mode, region } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();
 
   const games = await getGames();
-  const posts = game ? await getLfgPosts(game, { rank, role, mode }) : [];
+  const posts = game ? await getLfgPosts(game, { rank, role, mode, region }) : [];
   const selectedGame =
     game && game !== "all" ? games.find((g) => g.slug === game) : undefined;
   const selectedTile = game === "all" ? ALL_GAMES_TILE : selectedGame;
@@ -87,9 +93,13 @@ export default async function TeammatesPage({
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-6">
-            {selectedGame ? (
-              <ListingFilters gameSlug={selectedGame.slug} rank={rank} role={role} mode={mode} />
-            ) : null}
+            <ListingFilters
+              gameSlug={selectedTile.slug}
+              rank={rank}
+              role={role}
+              mode={mode}
+              region={region}
+            />
 
             {posts.length === 0 ? (
               <p className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">

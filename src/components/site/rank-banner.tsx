@@ -8,6 +8,12 @@ import { formatValorantRank } from "@/lib/valorant-rank";
 // A showcase strip of a player's verified ranks across games. Built as a
 // list so adding the next game's rank later is just another entry here,
 // not a redesign.
+//
+// showDotaAndCs2 gates only the Dota 2/CS2 cards (see the Edit Profile
+// dialog) — Valorant is deliberately never gated by it. Riot's API Terms
+// require their prior written approval before charging for anything tied
+// to Valorant game data, which hasn't been sought, so nothing paid can
+// control whether a Valorant rank is shown or hidden.
 export function RankBanner({
   dotaRankTier,
   dotaLeaderboardRank,
@@ -15,6 +21,7 @@ export function RankBanner({
   cs2CompetitiveRank,
   valorantTier,
   valorantTierIcon,
+  showDotaAndCs2 = true,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
@@ -22,9 +29,11 @@ export function RankBanner({
   cs2CompetitiveRank: number | null;
   valorantTier: string | null;
   valorantTierIcon: string | null;
+  showDotaAndCs2?: boolean;
 }) {
-  const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
-  if (!dotaRankTier && !hasCs2Rank && !valorantTier) return null;
+  const showDota = showDotaAndCs2 && Boolean(dotaRankTier);
+  const showCs2 = showDotaAndCs2 && Boolean(cs2PremierRating || cs2CompetitiveRank);
+  if (!showDota && !showCs2 && !valorantTier) return null;
 
   return (
     <div className="mb-10 flex flex-col gap-3">
@@ -32,7 +41,7 @@ export function RankBanner({
         Verified ranks
       </h2>
       <div className="flex flex-wrap gap-3">
-        {dotaRankTier ? (
+        {showDota ? (
           <RankMedalCard
             game="Dota 2"
             rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
@@ -40,7 +49,7 @@ export function RankBanner({
             icon={<DotaRankIcon rankTier={dotaRankTier} className="size-16 shrink-0 drop-shadow-md" />}
           />
         ) : null}
-        {hasCs2Rank ? (
+        {showCs2 ? (
           <RankMedalCard
             game="Counter-Strike 2"
             rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}

@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CoachProfileWithRelations,
+  CoachReviewWithReviewer,
   LfgPostWithRelations,
   JoinRequestWithRequester,
   LfgMessageWithSender,
@@ -145,6 +146,41 @@ export async function getCoachProfiles(gameSlug?: string) {
     CoachProfileWithRelations[]
   >();
   return data ?? [];
+}
+
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getCoachProfileById = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_profiles")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<CoachProfileWithRelations>();
+  return data;
+});
+
+export async function getCoachReviews(coachProfileId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_reviews")
+    .select("*, profiles(username, avatar_url)")
+    .eq("coach_profile_id", coachProfileId)
+    .order("created_at", { ascending: false })
+    .returns<CoachReviewWithReviewer[]>();
+  return data ?? [];
+}
+
+export async function getMyCoachReview(coachProfileId: string, reviewerId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_reviews")
+    .select("rating, comment")
+    .eq("coach_profile_id", coachProfileId)
+    .eq("reviewer_id", reviewerId)
+    .maybeSingle();
+  return data;
 }
 
 export async function getProfile(userId: string) {

@@ -486,6 +486,84 @@ create policy "Users can delete their own coach profiles"
   on public.coach_profiles for delete
   using (auth.uid() = profile_id);
 
+-- avg_rating/review_count: denormalized aggregates over coach_reviews,
+-- maintained by the trigger below — lets the coach directory list show a
+-- rating on every card from one plain select on coach_profiles, instead of
+-- aggregating coach_reviews client-side (Supabase's query builder has no
+-- GROUP BY) or firing one review-count query per coach card.
+alter table public.coach_profiles
+  add column if not exists avg_rating numeric;
+alter table public.coach_profiles
+  add column if not exists review_count integer not null default 0;
+
+-- ---------------------------------------------------------------------------
+-- coach_reviews: a star rating (+ optional written comment) a player leaves
+-- on a coach's listing. Same openness model as commendations — anyone
+-- signed in can review, since there's no booking system to verify someone
+-- was actually coached (see coach_profiles.contact_method: it's a direct-
+-- contact model, not a booking flow). One review per (coach, reviewer);
+-- resubmitting updates it rather than stacking duplicates.
+-- ---------------------------------------------------------------------------
+create table if not exists public.coach_reviews (
+  id uuid primary key default gen_random_uuid(),
+  coach_profile_id uuid not null references public.coach_profiles (id) on delete cascade,
+  reviewer_id uuid not null references public.profiles (id) on delete cascade,
+  rating smallint not null check (rating between 1 and 5),
+  comment text,
+  created_at timestamptz not null default now(),
+  unique (coach_profile_id, reviewer_id)
+);
+
+alter table public.coach_reviews enable row level security;
+
+drop policy if exists "Coach reviews are publicly readable" on public.coach_reviews;
+create policy "Coach reviews are publicly readable"
+  on public.coach_reviews for select
+  using (true);
+
+drop policy if exists "Users can leave coach reviews" on public.coach_reviews;
+create policy "Users can leave coach reviews"
+  on public.coach_reviews for insert
+  with check (auth.uid() = reviewer_id);
+
+drop policy if exists "Users can update their own coach review" on public.coach_reviews;
+create policy "Users can update their own coach review"
+  on public.coach_reviews for update
+  using (auth.uid() = reviewer_id);
+
+drop policy if exists "Users can delete their own coach review" on public.coach_reviews;
+create policy "Users can delete their own coach review"
+  on public.coach_reviews for delete
+  using (auth.uid() = reviewer_id);
+
+-- Recomputes the coach_profiles aggregate whenever a review is added,
+-- edited, or removed. security definer so it can write avg_rating/
+-- review_count without those columns needing to be in the authenticated
+-- column grant (there isn't one on coach_profiles — every column is
+-- either owner-editable via the update policy above or, like these two,
+-- system-maintained only).
+create or replace function public.recalculate_coach_rating()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  target_coach_id uuid := coalesce(new.coach_profile_id, old.coach_profile_id);
+begin
+  update public.coach_profiles
+  set
+    avg_rating = (select avg(rating) from public.coach_reviews where coach_profile_id = target_coach_id),
+    review_count = (select count(*) from public.coach_reviews where coach_profile_id = target_coach_id)
+  where id = target_coach_id;
+  return null;
+end;
+$$;
+
+drop trigger if exists coach_reviews_recalculate on public.coach_reviews;
+create trigger coach_reviews_recalculate
+  after insert or update or delete on public.coach_reviews
+  for each row execute function public.recalculate_coach_rating();
+
 -- ---------------------------------------------------------------------------
 -- Storage: avatars bucket. Files are stored at "{user_id}/avatar.<ext>" so
 -- ownership can be checked from the path alone.

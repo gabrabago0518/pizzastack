@@ -187,6 +187,8 @@ export interface Database {
           contact_method: string;
           rank: string | null;
           rank_tier: number | null;
+          avg_rating: number | null;
+          review_count: number;
           created_at: string;
         };
         Insert: {
@@ -220,6 +222,42 @@ export interface Database {
             columns: ["game_id"];
             isOneToOne: false;
             referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      coach_reviews: {
+        Row: {
+          id: string;
+          coach_profile_id: string;
+          reviewer_id: string;
+          rating: number;
+          comment: string | null;
+          created_at: string;
+        };
+        Insert: {
+          coach_profile_id: string;
+          reviewer_id: string;
+          rating: number;
+          comment?: string | null;
+        };
+        Update: {
+          rating?: number;
+          comment?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "coach_reviews_coach_profile_id_fkey";
+            columns: ["coach_profile_id"];
+            isOneToOne: false;
+            referencedRelation: "coach_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "coach_reviews_reviewer_id_fkey";
+            columns: ["reviewer_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -460,6 +498,7 @@ export type CoachProfile = Database["public"]["Tables"]["coach_profiles"]["Row"]
 export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row"];
 export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
 export type TopHeroStat = Database["public"]["Tables"]["top_hero_stats"]["Row"];
+export type CoachReview = Database["public"]["Tables"]["coach_reviews"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -477,4 +516,8 @@ export type LfgMessageWithSender = LfgMessage & {
 export type CoachProfileWithRelations = CoachProfile & {
   profiles: Pick<Profile, "username" | "region"> | null;
   games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type CoachReviewWithReviewer = CoachReview & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

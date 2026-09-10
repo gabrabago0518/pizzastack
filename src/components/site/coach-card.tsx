@@ -4,6 +4,7 @@ import { MessageCircle, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
+import { StarRating } from "@/components/site/star-rating";
 import type { CoachProfileWithRelations } from "@/lib/supabase/types";
 
 export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
@@ -20,7 +21,18 @@ export function CoachCard({ coach }: { coach: CoachProfileWithRelations }) {
             ) : null}
             {coach.rate_note ? <Badge variant="muted">{coach.rate_note}</Badge> : null}
           </div>
-          <h3 className="font-display text-lg leading-snug">{coach.headline}</h3>
+          <Link
+            href={`/coaches/${coach.id}`}
+            className="font-display text-lg leading-snug transition-colors hover:text-primary"
+          >
+            {coach.headline}
+          </Link>
+          {coach.review_count > 0 ? (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StarRating rating={coach.avg_rating ?? 0} size="size-3" />
+              {(coach.avg_rating ?? 0).toFixed(1)} ({coach.review_count})
+            </span>
+          ) : null}
           {coach.profiles?.username ? (
             <Link
               href={`/players/${coach.profiles.username}`}

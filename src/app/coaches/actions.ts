@@ -82,3 +82,89 @@ export async function createCoachProfile(
   revalidatePath("/coaches");
   redirect("/coaches");
 }
+
+export interface CoachReviewResult {
+  error?: string;
+}
+
+// Same openness model as commending a player (see players/actions.ts) —
+// there's no booking system to verify someone was actually coached, so
+// any signed-in player other than the coach themselves can leave one.
+// Upserted on (coach_profile_id, reviewer_id) so resubmitting edits the
+// existing review instead of erroring or stacking duplicates; the
+// coach_profiles.avg_rating/review_count aggregate updates itself via the
+// recalculate_coach_rating trigger, not here.
+export async function submitCoachReview(
+  coachProfileId: string,
+  rating: number,
+  comment: string,
+): Promise<CoachReviewResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to leave a review." };
+  }
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { error: "Pick a rating between 1 and 5 stars." };
+  }
+
+  const { data: coach } = await supabase
+    .from("coach_profiles")
+    .select("profile_id")
+    .eq("id", coachProfileId)
+    .maybeSingle();
+
+  if (!coach) {
+    return { error: "Coach listing not found." };
+  }
+  if (coach.profile_id === user.id) {
+    return { error: "You can't review your own coach listing." };
+  }
+
+  const { error } = await supabase.from("coach_reviews").upsert(
+    {
+      coach_profile_id: coachProfileId,
+      reviewer_id: user.id,
+      rating,
+      comment: comment.trim() || null,
+    },
+    { onConflict: "coach_profile_id,reviewer_id" },
+  );
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/coaches");
+  revalidatePath("/coaches/[id]", "page");
+  return {};
+}
+
+export async function deleteCoachReview(coachProfileId: string): Promise<CoachReviewResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("coach_reviews")
+    .delete()
+    .eq("coach_profile_id", coachProfileId)
+    .eq("reviewer_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/coaches");
+  revalidatePath("/coaches/[id]", "page");
+  return {};
+}

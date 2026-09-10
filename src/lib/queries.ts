@@ -96,6 +96,7 @@ export interface LfgPostFilters {
   role?: string;
   mode?: string;
   region?: string;
+  sort?: "newest" | "requested";
 }
 
 export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {}) {
@@ -105,8 +106,15 @@ export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {
   let builder = supabase
     .from("lfg_posts")
     .select("*, profiles(username, region), games(name, slug)")
-    .eq("status", "open")
-    .order("created_at", { ascending: false });
+    .eq("status", "open");
+
+  // request_count is a trigger-maintained total of every join request the
+  // listing has ever received (see schema.sql) — a simple proxy for "how
+  // much interest has this gotten" to power a "Most requested" sort.
+  builder =
+    filters.sort === "requested"
+      ? builder.order("request_count", { ascending: false }).order("created_at", { ascending: false })
+      : builder.order("created_at", { ascending: false });
 
   if (gameId) builder = builder.eq("game_id", gameId);
   // Rank is a formatted label ("Legend 3", "Diamond 2 (RR 45)"), not a bare
@@ -137,6 +145,7 @@ export const getLfgPostById = cache(async (id: string) => {
 export interface CoachProfileFilters {
   rank?: string;
   minRating?: number;
+  sort?: "newest" | "rating" | "reviews";
 }
 
 export async function getCoachProfiles(
@@ -148,8 +157,19 @@ export async function getCoachProfiles(
 
   let builder = supabase
     .from("coach_profiles")
-    .select("*, profiles(username, region), games(name, slug)")
-    .order("created_at", { ascending: false });
+    .select("*, profiles(username, region), games(name, slug)");
+
+  if (filters.sort === "rating") {
+    builder = builder
+      .order("avg_rating", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  } else if (filters.sort === "reviews") {
+    builder = builder
+      .order("review_count", { ascending: false })
+      .order("created_at", { ascending: false });
+  } else {
+    builder = builder.order("created_at", { ascending: false });
+  }
 
   if (gameId) builder = builder.eq("game_id", gameId);
   // Rank is a formatted verified-rank label ("Legend 3"), same substring

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MapPin, UserPlus } from "lucide-react";
+import { Users, MapPin, UserPlus, Flame } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,6 +89,12 @@ export function LfgPostCard({
             <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5" />
               {post.region}
+            </span>
+          ) : null}
+          {post.request_count > 0 ? (
+            <span className="flex items-center gap-1.5">
+              <Flame className="size-3.5" />
+              {post.request_count} {post.request_count === 1 ? "request" : "requests"}
             </span>
           ) : null}
           <span

@@ -135,6 +135,7 @@ export interface Database {
           players_needed: number;
           mode: string | null;
           status: "open" | "closed";
+          request_count: number;
           created_at: string;
         };
         Insert: {

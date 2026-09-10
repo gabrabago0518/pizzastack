@@ -246,6 +246,13 @@ alter table public.lfg_posts
 alter table public.lfg_posts
   add column if not exists mode text;
 
+-- request_count: total join requests ever received (any status), kept in
+-- sync by the trigger below — a simple "how much interest has this
+-- listing gotten" signal for sorting by "Most requested" on /teammates,
+-- same denormalized-aggregate approach as coach_profiles.avg_rating.
+alter table public.lfg_posts
+  add column if not exists request_count integer not null default 0;
+
 -- Backfill: accounts predating the one-active-listing rule may already have
 -- more than one open post. Keep only the most recent one open so the unique
 -- index below can actually be created.
@@ -482,6 +489,28 @@ drop trigger if exists lfg_join_requests_notify_status on public.lfg_join_reques
 create trigger lfg_join_requests_notify_status
   after update on public.lfg_join_requests
   for each row execute function public.notify_join_request_status_change();
+
+create or replace function public.recalculate_lfg_request_count()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  target_post_id uuid := coalesce(new.post_id, old.post_id);
+begin
+  update public.lfg_posts
+  set request_count = (
+    select count(*) from public.lfg_join_requests where post_id = target_post_id
+  )
+  where id = target_post_id;
+  return null;
+end;
+$$;
+
+drop trigger if exists lfg_join_requests_recalculate_count on public.lfg_join_requests;
+create trigger lfg_join_requests_recalculate_count
+  after insert or delete on public.lfg_join_requests
+  for each row execute function public.recalculate_lfg_request_count();
 
 -- ---------------------------------------------------------------------------
 -- lfg_messages: one shared chat per listing, unlocked for the post's owner

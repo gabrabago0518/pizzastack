@@ -19,14 +19,21 @@ export const metadata: Metadata = {
 export default async function CoachesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string; rank?: string; minRating?: string }>;
+  searchParams: Promise<{
+    game?: string;
+    rank?: string;
+    minRating?: string;
+    sort?: string;
+  }>;
 }) {
-  const { game, rank, minRating } = await searchParams;
+  const { game, rank, minRating, sort } = await searchParams;
+  const validSort = sort === "rating" || sort === "reviews" ? sort : "newest";
   const [games, coaches] = await Promise.all([
     getGames(),
     getCoachProfiles(game, {
       rank,
       minRating: minRating ? Number(minRating) : undefined,
+      sort: validSort,
     }),
   ]);
 
@@ -51,7 +58,7 @@ export default async function CoachesPage({
       </div>
 
       <div className="mb-8">
-        <CoachFilters gameSlug={game} rank={rank} minRating={minRating} />
+        <CoachFilters gameSlug={game} rank={rank} minRating={minRating} sort={sort} />
       </div>
 
       {coaches.length === 0 ? (

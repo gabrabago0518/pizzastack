@@ -29,16 +29,25 @@ export default async function TeammatesPage({
     role?: string;
     mode?: string;
     region?: string;
+    sort?: string;
   }>;
 }) {
-  const { game, rank, role, mode, region } = await searchParams;
+  const { game, rank, role, mode, region, sort } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();
 
   const games = await getGames();
-  const posts = game ? await getLfgPosts(game, { rank, role, mode, region }) : [];
+  const posts = game
+    ? await getLfgPosts(game, {
+        rank,
+        role,
+        mode,
+        region,
+        sort: sort === "requested" ? "requested" : "newest",
+      })
+    : [];
   const selectedGame =
     game && game !== "all" ? games.find((g) => g.slug === game) : undefined;
   const selectedTile = game === "all" ? ALL_GAMES_TILE : selectedGame;
@@ -99,6 +108,7 @@ export default async function TeammatesPage({
               role={role}
               mode={mode}
               region={region}
+              sort={sort}
             />
 
             {posts.length === 0 ? (

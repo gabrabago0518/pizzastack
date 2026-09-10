@@ -16,10 +16,12 @@ export function CoachFilters({
   gameSlug,
   rank,
   minRating,
+  sort,
 }: {
   gameSlug?: string;
   rank?: string;
   minRating?: string;
+  sort?: string;
 }) {
   const rankOptions = gameSlug ? (RANKS_BY_GAME[gameSlug] ?? FALLBACK_RANKS) : [];
   const hasActiveFilter = Boolean(rank || minRating);
@@ -27,6 +29,18 @@ export function CoachFilters({
   return (
     <form action="/coaches" method="GET" className="flex flex-wrap items-center gap-3">
       {gameSlug ? <input type="hidden" name="game" value={gameSlug} /> : null}
+
+      <SelectNative
+        name="sort"
+        defaultValue={sort ?? "newest"}
+        onChange={submitOnChange}
+        aria-label="Sort coaches"
+        className="w-auto min-w-36"
+      >
+        <option value="newest">Newest</option>
+        <option value="rating">Highest rated</option>
+        <option value="reviews">Most reviewed</option>
+      </SelectNative>
 
       {gameSlug ? (
         <SelectNative

@@ -21,12 +21,14 @@ export function ListingFilters({
   role,
   mode,
   region,
+  sort,
 }: {
   gameSlug: string;
   rank?: string;
   role?: string;
   mode?: string;
   region?: string;
+  sort?: string;
 }) {
   // Rank/Role/Mode are per-game option lists, so they only make sense once
   // a specific game is picked — "All games" has no single list to offer.
@@ -44,6 +46,18 @@ export function ListingFilters({
       className="flex flex-wrap items-center gap-3"
     >
       <input type="hidden" name="game" value={gameSlug} />
+
+      <SelectNative
+        name="sort"
+        defaultValue={sort ?? "newest"}
+        onChange={submitOnChange}
+        aria-label="Sort listings"
+        className="w-auto min-w-36"
+      >
+        <option value="newest">Newest</option>
+        <option value="requested">Most requested</option>
+      </SelectNative>
+
       {isSpecificGame ? (
         <>
           <SelectNative

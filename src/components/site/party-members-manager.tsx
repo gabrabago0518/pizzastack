@@ -7,8 +7,10 @@ import type { JoinRequestWithRequester } from "@/lib/supabase/types";
 
 export function PartyMembersManager({
   members,
+  playersNeeded,
 }: {
   members: JoinRequestWithRequester[];
+  playersNeeded: number;
 }) {
   const [removed, setRemoved] = React.useState<Set<string>>(new Set());
   const [isPending, startTransition] = React.useTransition();
@@ -26,7 +28,8 @@ export function PartyMembersManager({
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
       <p className="text-xs font-medium text-muted-foreground">
-        {active.length} {active.length === 1 ? "player" : "players"} in the party
+        {active.length}/{playersNeeded} in the party
+        {active.length >= playersNeeded ? " — full" : ""}
       </p>
       {active.map((member) => (
         <div key={member.id} className="flex items-center justify-between gap-3">

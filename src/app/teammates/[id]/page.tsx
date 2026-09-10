@@ -130,16 +130,29 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   {post.region}
                 </span>
               ) : null}
-              <span className="flex items-center gap-1.5">
+              <span
+                className={`flex items-center gap-1.5${
+                  acceptedMembers.length >= post.players_needed
+                    ? " font-medium text-foreground"
+                    : ""
+                }`}
+              >
                 <UserPlus className="size-3.5" />
-                Needs {post.players_needed}
+                {acceptedMembers.length}/{post.players_needed}
               </span>
             </div>
 
             {isOwner ? (
               <>
-                <JoinRequestsManager requests={pendingRequests} />
-                <PartyMembersManager members={acceptedMembers} />
+                <JoinRequestsManager
+                  requests={pendingRequests}
+                  acceptedCount={acceptedMembers.length}
+                  playersNeeded={post.players_needed}
+                />
+                <PartyMembersManager
+                  members={acceptedMembers}
+                  playersNeeded={post.players_needed}
+                />
                 {post.status === "open" ? (
                   <div className="flex justify-end">
                     <CloseListingButton postId={post.id} />

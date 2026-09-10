@@ -85,3 +85,59 @@ export async function signOut() {
   revalidatePath("/", "layout");
   redirect("/");
 }
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pizzastack.gg";
+
+export async function requestPasswordReset(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    return { error: "Enter your email." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/reset-password`,
+  });
+
+  if (error) {
+    console.error("[auth] resetPasswordForEmail failed:", error);
+  }
+
+  // Same response whether or not the email has an account — otherwise this
+  // becomes a way to check which emails are registered.
+  return {
+    info: "If an account exists for that email, we've sent a link to reset your password.",
+  };
+}
+
+export async function resetPassword(
+  _prevState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+  if (password !== confirmPassword) {
+    return { error: "Passwords don't match." };
+  }
+
+  const supabase = await createClient();
+  // Only works within the temporary session Supabase creates from the
+  // recovery link's token — see /auth/confirm, which is what a visitor
+  // actually lands on first when they click the emailed link.
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}

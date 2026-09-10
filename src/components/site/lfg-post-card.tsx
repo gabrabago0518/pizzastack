@@ -29,6 +29,7 @@ export function LfgPostCard({
   partyMembers?: JoinRequestWithRequester[];
 }) {
   const isOwner = viewerId === post.author_id;
+  const isFull = partyMembers.length >= post.players_needed;
 
   return (
     <Card className="relative transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
@@ -90,16 +91,22 @@ export function LfgPostCard({
               {post.region}
             </span>
           ) : null}
-          <span className="flex items-center gap-1.5">
+          <span
+            className={`flex items-center gap-1.5${isFull ? " font-medium text-foreground" : ""}`}
+          >
             <UserPlus className="size-3.5" />
-            Needs {post.players_needed}
+            {partyMembers.length}/{post.players_needed}
           </span>
         </div>
 
         {isOwner ? (
           <div className="relative flex flex-col gap-3">
-            <JoinRequestsManager requests={pendingRequests} />
-            <PartyMembersManager members={partyMembers} />
+            <JoinRequestsManager
+              requests={pendingRequests}
+              acceptedCount={partyMembers.length}
+              playersNeeded={post.players_needed}
+            />
+            <PartyMembersManager members={partyMembers} playersNeeded={post.players_needed} />
           </div>
         ) : (
           <div className="relative flex justify-end">

@@ -18,6 +18,12 @@ export default function LoginPage() {
         Log in to post LFG listings, message coaches, and manage your profile.
       </p>
       <AuthForm mode="login" action={signIn} />
+      <Link
+        href="/forgot-password"
+        className="mt-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+      >
+        Forgot your password?
+      </Link>
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New here?{" "}
         <Link href="/signup" className="font-medium text-primary hover:underline">

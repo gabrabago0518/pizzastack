@@ -291,6 +291,42 @@ create policy "Requesters can cancel their own pending request"
   on public.lfg_join_requests for delete
   using (auth.uid() = requester_id);
 
+-- Caps accepted party members at the listing's players_needed — e.g. a
+-- listing that needs 1 more player can only ever have 1 accepted request,
+-- so it can't be over-filled by racing accepts or a stale UI. Locks the
+-- post row first (select ... for update) so two concurrent accepts on the
+-- same listing serialize instead of both reading the same pre-accept
+-- count and both succeeding.
+create or replace function public.enforce_lfg_party_capacity()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  needed integer;
+  accepted_count integer;
+begin
+  if new.status = 'accepted' and old.status is distinct from 'accepted' then
+    select players_needed into needed
+      from public.lfg_posts where id = new.post_id for update;
+
+    select count(*) into accepted_count
+      from public.lfg_join_requests
+      where post_id = new.post_id and status = 'accepted' and id <> new.id;
+
+    if accepted_count >= needed then
+      raise exception 'This listing is already full.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists lfg_join_requests_capacity on public.lfg_join_requests;
+create trigger lfg_join_requests_capacity
+  before update on public.lfg_join_requests
+  for each row execute function public.enforce_lfg_party_capacity();
+
 -- ---------------------------------------------------------------------------
 -- lfg_messages: one shared chat per listing, unlocked for the post's owner
 -- and any player whose join request was accepted.

@@ -94,9 +94,6 @@ export async function Navbar() {
                   textClassName="text-xs"
                 />
               </Link>
-              <Button asChild size="sm" className="hidden sm:inline-flex">
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
               <form action={signOut}>
                 <Button
                   type="submit"

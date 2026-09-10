@@ -81,7 +81,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
       >
         <div className="mb-8 flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            <AvatarDisplay url={profile.avatar_url} label={label} frame="flame" />
+            <AvatarDisplay url={profile.avatar_url} label={label} />
             <div className="flex flex-col items-center gap-1.5 sm:items-start">
               <h1 className="font-display text-3xl">{label}</h1>
               <p className="text-muted-foreground">@{profile.username}</p>

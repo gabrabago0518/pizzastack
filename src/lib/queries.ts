@@ -133,18 +133,30 @@ export const getLfgPostById = cache(async (id: string) => {
   return data;
 });
 
-export async function getCoachProfiles(gameSlug?: string) {
+export interface CoachProfileFilters {
+  rank?: string;
+  minRating?: number;
+}
+
+export async function getCoachProfiles(
+  gameSlug?: string,
+  filters: CoachProfileFilters = {},
+) {
   const supabase = await createClient();
   const gameId = await resolveGameId(gameSlug);
 
-  const builder = supabase
+  let builder = supabase
     .from("coach_profiles")
     .select("*, profiles(username, region), games(name, slug)")
     .order("created_at", { ascending: false });
 
-  const { data } = await (gameId ? builder.eq("game_id", gameId) : builder).returns<
-    CoachProfileWithRelations[]
-  >();
+  if (gameId) builder = builder.eq("game_id", gameId);
+  // Rank is a formatted verified-rank label ("Legend 3"), same substring
+  // match as the teammates listing filter — see ListingFilters/ranks.ts.
+  if (filters.rank) builder = builder.ilike("rank", `%${filters.rank}%`);
+  if (filters.minRating) builder = builder.gte("avg_rating", filters.minRating);
+
+  const { data } = await builder.returns<CoachProfileWithRelations[]>();
   return data ?? [];
 }
 

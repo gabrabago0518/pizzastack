@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 
 import { Section, SectionHeading } from "@/components/site/section";
 import { GameFilter } from "@/components/site/game-filter";
+import { CoachFilters } from "@/components/site/coach-filters";
 import { CoachCard } from "@/components/site/coach-card";
 import { Button } from "@/components/ui/button";
 import { getGames, getCoachProfiles } from "@/lib/queries";
@@ -18,10 +19,16 @@ export const metadata: Metadata = {
 export default async function CoachesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string }>;
+  searchParams: Promise<{ game?: string; rank?: string; minRating?: string }>;
 }) {
-  const { game } = await searchParams;
-  const [games, coaches] = await Promise.all([getGames(), getCoachProfiles(game)]);
+  const { game, rank, minRating } = await searchParams;
+  const [games, coaches] = await Promise.all([
+    getGames(),
+    getCoachProfiles(game, {
+      rank,
+      minRating: minRating ? Number(minRating) : undefined,
+    }),
+  ]);
 
   return (
     <Section className="!pb-24">
@@ -39,13 +46,19 @@ export default async function CoachesPage({
         </Button>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-5">
         <GameFilter games={games} active={game} basePath="/coaches" />
+      </div>
+
+      <div className="mb-8">
+        <CoachFilters gameSlug={game} rank={rank} minRating={minRating} />
       </div>
 
       {coaches.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">
-          No coaches listed{game ? " for this game" : ""} yet — be the first.
+          {rank || minRating
+            ? "No coaches match these filters yet."
+            : `No coaches listed${game ? " for this game" : ""} yet — be the first.`}
         </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

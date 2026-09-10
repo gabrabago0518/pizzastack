@@ -15,7 +15,6 @@ export function RankBanner({
   cs2CompetitiveRank,
   valorantTier,
   valorantTierIcon,
-  valorantRr,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
@@ -23,7 +22,6 @@ export function RankBanner({
   cs2CompetitiveRank: number | null;
   valorantTier: string | null;
   valorantTierIcon: string | null;
-  valorantRr: number | null;
 }) {
   const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
   if (!dotaRankTier && !hasCs2Rank && !valorantTier) return null;
@@ -52,7 +50,7 @@ export function RankBanner({
         {valorantTier ? (
           <RankMedalCard
             game="Valorant"
-            rankLabel={formatValorantRank(valorantTier, valorantRr)}
+            rankLabel={formatValorantRank(valorantTier)}
             sourceLabel="Via Riot ID"
             icon={<ValorantRankIcon iconUrl={valorantTierIcon} className="size-16 shrink-0 drop-shadow-md" />}
           />

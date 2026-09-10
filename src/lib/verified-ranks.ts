@@ -63,7 +63,7 @@ export async function resolveVerifiedRank(
       return { error: `Connect your Riot ID and sync your rank before ${actionLabel}.` };
     }
     return {
-      rank: formatValorantRank(profile.valorant_tier, profile.valorant_rr),
+      rank: formatValorantRank(profile.valorant_tier),
       rankTier: null,
     };
   }
@@ -108,7 +108,7 @@ export function getFormVerifiedRank(
   if (gameSlug === "valorant") {
     return {
       available: Boolean(inputs.valorantTier),
-      label: formatValorantRank(inputs.valorantTier, inputs.valorantRr),
+      label: formatValorantRank(inputs.valorantTier),
     };
   }
   return null;

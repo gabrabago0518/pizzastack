@@ -20,7 +20,6 @@ interface RiotConnectProps {
   riotRegion: string | null;
   valorantTier: string | null;
   valorantTierIcon: string | null;
-  valorantRr: number | null;
   syncedAt: string | null;
 }
 
@@ -30,7 +29,6 @@ export function RiotConnect({
   riotRegion,
   valorantTier: initialTier,
   valorantTierIcon: initialTierIcon,
-  valorantRr: initialRr,
   syncedAt: initialSyncedAt,
 }: RiotConnectProps) {
   const [state, formAction, isPending] = useActionState<RiotFormState, FormData>(
@@ -39,7 +37,6 @@ export function RiotConnect({
   );
   const [tier, setTier] = React.useState(initialTier);
   const [tierIcon, setTierIcon] = React.useState(initialTierIcon);
-  const [rr, setRr] = React.useState(initialRr);
   const [syncedAt, setSyncedAt] = React.useState(initialSyncedAt);
   const [refreshError, setRefreshError] = React.useState<string | null>(null);
   const [isRefreshing, startRefresh] = React.useTransition();
@@ -54,7 +51,6 @@ export function RiotConnect({
         error?: string;
         tier?: string | null;
         tierIcon?: string | null;
-        rr?: number | null;
         syncedAt?: string;
       };
       if (result.error) {
@@ -63,7 +59,6 @@ export function RiotConnect({
       }
       setTier(result.tier ?? null);
       setTierIcon(result.tierIcon ?? null);
-      setRr(result.rr ?? null);
       setSyncedAt(result.syncedAt ?? null);
     });
   }
@@ -133,7 +128,7 @@ export function RiotConnect({
         <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
           <RankMedalCard
             game="Valorant"
-            rankLabel={formatValorantRank(tier, rr)}
+            rankLabel={formatValorantRank(tier)}
             sourceLabel="Via Riot ID"
             icon={<ValorantRankIcon iconUrl={tierIcon} className="size-10" />}
           />

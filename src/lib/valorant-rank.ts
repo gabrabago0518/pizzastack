@@ -11,7 +11,6 @@ export function isValorantRegion(value: string): boolean {
   return VALORANT_REGIONS.some((region) => region.value === value);
 }
 
-export function formatValorantRank(tier: string | null, rr: number | null): string {
-  if (!tier) return "Unranked";
-  return rr != null ? `${tier} (RR ${rr})` : tier;
+export function formatValorantRank(tier: string | null): string {
+  return tier ?? "Unranked";
 }

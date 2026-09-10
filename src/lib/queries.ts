@@ -6,6 +6,7 @@ import type {
   LfgPostWithRelations,
   JoinRequestWithRequester,
   LfgMessageWithSender,
+  Notification,
   Game,
 } from "@/lib/supabase/types";
 
@@ -408,4 +409,28 @@ export async function getGamesForProfile(profileId: string) {
   return (data ?? [])
     .map((row) => row.games)
     .filter((game): game is Game => game !== null);
+}
+
+// Populated by triggers on lfg_join_requests, commendations, and
+// coach_reviews (see schema.sql) — never written directly by the app.
+export async function getNotifications(profileId: string, limit = 20) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+    .returns<Notification[]>();
+  return data ?? [];
+}
+
+export async function getUnreadNotificationCount(profileId: string) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("profile_id", profileId)
+    .eq("read", false);
+  return count ?? 0;
 }

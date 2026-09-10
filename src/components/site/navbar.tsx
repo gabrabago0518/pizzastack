@@ -4,9 +4,10 @@ import { Search, Users, GraduationCap, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { NotificationBell } from "@/components/site/notification-bell";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
-import { getProfile } from "@/lib/queries";
+import { getProfile, getNotifications, getUnreadNotificationCount } from "@/lib/queries";
 
 const links = [
   { href: "/teammates", label: "Find Teammates", icon: Users },
@@ -23,6 +24,9 @@ export async function Navbar() {
   } = await supabase.auth.getUser();
 
   const profile = user ? await getProfile(user.id) : null;
+  const [notifications, unreadCount] = user
+    ? await Promise.all([getNotifications(user.id), getUnreadNotificationCount(user.id)])
+    : [[], 0];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -79,6 +83,10 @@ export async function Navbar() {
           </Link>
           {user ? (
             <>
+              <NotificationBell
+                initialNotifications={notifications}
+                initialUnreadCount={unreadCount}
+              />
               <Link
                 href="/profile"
                 aria-label="Profile"

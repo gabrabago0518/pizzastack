@@ -293,6 +293,38 @@ export interface Database {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          profile_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          link: string | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          type: string;
+          title: string;
+          body?: string | null;
+          link?: string | null;
+          read?: boolean;
+        };
+        Update: {
+          read?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       lfg_join_requests: {
         Row: {
           id: string;
@@ -499,6 +531,7 @@ export type JoinRequest = Database["public"]["Tables"]["lfg_join_requests"]["Row
 export type LfgMessage = Database["public"]["Tables"]["lfg_messages"]["Row"];
 export type TopHeroStat = Database["public"]["Tables"]["top_hero_stats"]["Row"];
 export type CoachReview = Database["public"]["Tables"]["coach_reviews"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;

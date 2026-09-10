@@ -288,6 +288,48 @@ create policy "Users can delete their own LFG posts"
   using (auth.uid() = author_id);
 
 -- ---------------------------------------------------------------------------
+-- notifications: a per-player feed of things that happened to them
+-- elsewhere on the site (a join request accepted, a new request on their
+-- listing, a commend, a coach review). Populated entirely by triggers on
+-- the source tables (see below and further down this file) rather than
+-- written by the app directly, so every code path that causes one of
+-- these events — present or future — notifies for free without having to
+-- remember to add it. No insert/update grant for authenticated: only the
+-- security-definer trigger functions write rows; a player can only read,
+-- mark read, or delete their own.
+-- ---------------------------------------------------------------------------
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  type text not null,
+  title text not null,
+  body text,
+  link text,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_profile_id_created_at_idx
+  on public.notifications (profile_id, created_at desc);
+
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can read their own notifications" on public.notifications;
+create policy "Users can read their own notifications"
+  on public.notifications for select
+  using (auth.uid() = profile_id);
+
+drop policy if exists "Users can update their own notifications" on public.notifications;
+create policy "Users can update their own notifications"
+  on public.notifications for update
+  using (auth.uid() = profile_id);
+
+drop policy if exists "Users can delete their own notifications" on public.notifications;
+create policy "Users can delete their own notifications"
+  on public.notifications for delete
+  using (auth.uid() = profile_id);
+
+-- ---------------------------------------------------------------------------
 -- lfg_join_requests: a player requesting to join someone else's listing.
 -- The post's author decides to accept or decline.
 -- ---------------------------------------------------------------------------
@@ -374,6 +416,72 @@ drop trigger if exists lfg_join_requests_capacity on public.lfg_join_requests;
 create trigger lfg_join_requests_capacity
   before update on public.lfg_join_requests
   for each row execute function public.enforce_lfg_party_capacity();
+
+-- Notifies a listing's owner when someone requests to join it.
+create or replace function public.notify_new_join_request()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  post_title text;
+  post_author uuid;
+  requester_name text;
+begin
+  select title, author_id into post_title, post_author
+    from public.lfg_posts where id = new.post_id;
+  if post_author is null or post_author = new.requester_id then
+    return new;
+  end if;
+
+  select username into requester_name from public.profiles where id = new.requester_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    post_author,
+    'join_request_received',
+    'New join request',
+    coalesce('@' || requester_name, 'Someone') || ' wants to join "' || post_title || '"',
+    '/teammates/' || new.post_id
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists lfg_join_requests_notify_new on public.lfg_join_requests;
+create trigger lfg_join_requests_notify_new
+  after insert on public.lfg_join_requests
+  for each row execute function public.notify_new_join_request();
+
+-- Notifies the requester once their request is accepted or declined.
+create or replace function public.notify_join_request_status_change()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  post_title text;
+begin
+  if new.status = old.status or new.status not in ('accepted', 'declined') then
+    return new;
+  end if;
+
+  select title into post_title from public.lfg_posts where id = new.post_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    new.requester_id,
+    'join_request_' || new.status,
+    case when new.status = 'accepted' then 'Request accepted' else 'Request declined' end,
+    'Your request to join "' || post_title || '" was ' || new.status,
+    '/teammates/' || new.post_id
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists lfg_join_requests_notify_status on public.lfg_join_requests;
+create trigger lfg_join_requests_notify_status
+  after update on public.lfg_join_requests
+  for each row execute function public.notify_join_request_status_change();
 
 -- ---------------------------------------------------------------------------
 -- lfg_messages: one shared chat per listing, unlocked for the post's owner
@@ -564,6 +672,43 @@ create trigger coach_reviews_recalculate
   after insert or update or delete on public.coach_reviews
   for each row execute function public.recalculate_coach_rating();
 
+-- Notifies a coach when they get a new review. Only on insert, not on
+-- edits — a resubmitted review shouldn't re-notify for a minor edit.
+create or replace function public.notify_coach_review_received()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  coach_owner uuid;
+  coach_headline text;
+  reviewer_name text;
+begin
+  select profile_id, headline into coach_owner, coach_headline
+    from public.coach_profiles where id = new.coach_profile_id;
+  if coach_owner is null then
+    return new;
+  end if;
+
+  select username into reviewer_name from public.profiles where id = new.reviewer_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    coach_owner,
+    'coach_review_received',
+    'New review',
+    coalesce('@' || reviewer_name, 'Someone') || ' left a ' || new.rating ||
+      '-star review on "' || coach_headline || '"',
+    '/coaches/' || new.coach_profile_id
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists coach_reviews_notify on public.coach_reviews;
+create trigger coach_reviews_notify
+  after insert on public.coach_reviews
+  for each row execute function public.notify_coach_review_received();
+
 -- ---------------------------------------------------------------------------
 -- Storage: avatars bucket. Files are stored at "{user_id}/avatar.<ext>" so
 -- ownership can be checked from the path alone.
@@ -655,6 +800,33 @@ drop policy if exists "Users can remove their own commend" on public.commendatio
 create policy "Users can remove their own commend"
   on public.commendations for delete
   using (auth.uid() = commender_id);
+
+-- Notifies a player when someone commends their profile.
+create or replace function public.notify_commend_received()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  commender_name text;
+begin
+  select username into commender_name from public.profiles where id = new.commender_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  select
+    new.profile_id,
+    'commend_received',
+    'New commend',
+    coalesce('@' || commender_name, 'Someone') || ' commended you',
+    '/players/' || p.username
+  from public.profiles p where p.id = new.profile_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists commendations_notify on public.commendations;
+create trigger commendations_notify
+  after insert on public.commendations
+  for each row execute function public.notify_commend_received();
 
 -- ---------------------------------------------------------------------------
 -- match_history: recent verified matches (Dota 2 via OpenDota, Valorant via

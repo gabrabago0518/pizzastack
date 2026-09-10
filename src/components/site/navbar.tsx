@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Search, Users, GraduationCap, Shield, CircleUserRound } from "lucide-react";
+import { Search, Users, GraduationCap, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/site/logo";
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
+import { getProfile } from "@/lib/queries";
 
 const links = [
   { href: "/teammates", label: "Find Teammates", icon: Users },
@@ -19,6 +21,8 @@ export async function Navbar() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const profile = user ? await getProfile(user.id) : null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -75,8 +79,18 @@ export async function Navbar() {
           </Link>
           {user ? (
             <>
-              <Link href="/profile" aria-label="Profile" title="Profile" className={iconLinkClassName}>
-                <CircleUserRound className="size-[18px]" />
+              <Link
+                href="/profile"
+                aria-label="Profile"
+                title="Profile"
+                className="flex shrink-0 items-center justify-center rounded-full transition-opacity hover:opacity-80"
+              >
+                <AvatarDisplay
+                  url={profile?.avatar_url ?? null}
+                  label={profile?.display_name || profile?.username || "?"}
+                  className="size-9"
+                  textClassName="text-xs"
+                />
               </Link>
               <Button asChild size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>

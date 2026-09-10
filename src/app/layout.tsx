@@ -5,6 +5,7 @@ import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { ChatFab } from "@/components/site/chat-fab";
 import { CookieConsent } from "@/components/site/cookie-consent";
+import { PresenceHeartbeat } from "@/components/site/presence-heartbeat";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveListingIdForUser } from "@/lib/queries";
 
@@ -74,6 +75,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Footer />
         <ChatFab activeListingId={activeListingId} />
         <CookieConsent />
+        {user ? <PresenceHeartbeat /> : null}
       </body>
     </html>
   );

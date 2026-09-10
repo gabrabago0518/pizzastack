@@ -26,6 +26,8 @@ export interface Database {
           valorant_rr: number | null;
           valorant_elo: number | null;
           valorant_rank_synced_at: string | null;
+          is_admin: boolean;
+          last_seen_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -52,6 +54,8 @@ export interface Database {
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;
+          is_admin?: boolean;
+          last_seen_at?: string | null;
         };
         Update: {
           username?: string;
@@ -76,6 +80,8 @@ export interface Database {
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;
+          is_admin?: boolean;
+          last_seen_at?: string | null;
         };
         Relationships: [];
       };

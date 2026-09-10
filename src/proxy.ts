@@ -38,6 +38,7 @@ export async function proxy(request: NextRequest) {
     "/coaches/new",
     "/onboarding",
     "/reset-password",
+    "/admin",
   ];
   const isProtectedRoute = protectedPrefixes.some((prefix) =>
     request.nextUrl.pathname.startsWith(prefix),

@@ -14,6 +14,38 @@ export async function getGames() {
   return data ?? [];
 }
 
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+// "Online now" is approximate — last_seen_at within the last 5 minutes,
+// bumped by a client-side heartbeat (see /api/presence/heartbeat) rather
+// than a real-time presence channel. Good enough for an at-a-glance admin
+// count without holding open a websocket per visitor.
+export async function getAdminStats() {
+  const supabase = await createClient();
+  const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MS).toISOString();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [{ count: totalAccounts }, { count: newToday }, { count: onlineNow }] =
+    await Promise.all([
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", todayStart.toISOString()),
+      supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gte("last_seen_at", onlineSince),
+    ]);
+
+  return {
+    totalAccounts: totalAccounts ?? 0,
+    newToday: newToday ?? 0,
+    onlineNow: onlineNow ?? 0,
+  };
+}
+
 async function resolveGameId(gameSlug?: string) {
   if (!gameSlug || gameSlug === "all") return undefined;
   const supabase = await createClient();

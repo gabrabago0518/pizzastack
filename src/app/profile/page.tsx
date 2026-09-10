@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Award, ExternalLink, Settings } from "lucide-react";
+import { Award, ExternalLink, Settings, ShieldCheck } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
@@ -78,11 +78,20 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <Button asChild variant="outline">
-          <Link href="/profile/settings">
-            <Settings /> Profile settings
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {profile.is_admin ? (
+            <Button asChild variant="outline">
+              <Link href="/admin">
+                <ShieldCheck /> Switch to Admin
+              </Link>
+            </Button>
+          ) : null}
+          <Button asChild variant="outline">
+            <Link href="/profile/settings">
+              <Settings /> Profile settings
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <RankBanner

@@ -92,11 +92,30 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists valorant_rank_synced_at timestamptz;
 
+-- is_admin: grants access to /admin — service-role-only (see the grant
+-- below), so it can't be self-promoted by editing a profile like the
+-- self-reported fields can. Set directly via SQL, not through the app.
+alter table public.profiles
+  add column if not exists is_admin boolean not null default false;
+
+-- last_seen_at: bumped by a lightweight heartbeat (see
+-- /api/presence/heartbeat) while a signed-in user has the site open, so
+-- the admin dashboard can show an approximate "online now" count
+-- (last_seen_at within the last few minutes) without the cost of a real
+-- WebSocket presence channel. Low-stakes if a user pings their own
+-- timestamp directly, so it's fine in the authenticated grant.
+alter table public.profiles
+  add column if not exists last_seen_at timestamptz;
+
 revoke update on public.profiles from authenticated;
 grant update (
   username, display_name, avatar_url, bio, region, onboarded, is_coach,
-  riot_name, riot_tag, riot_region
+  riot_name, riot_tag, riot_region, last_seen_at
 ) on public.profiles to authenticated;
+
+-- One-time grant for the account requested as the site's first admin.
+-- Safe to re-run; no-ops if the username doesn't exist (yet).
+update public.profiles set is_admin = true where username = 'kydothecreator_6a67';
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
 -- Games are picked afterward on the onboarding step (see profile_games and

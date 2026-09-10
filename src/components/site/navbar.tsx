@@ -1,20 +1,15 @@
 import Link from "next/link";
-import { Search, Users, GraduationCap, Shield, Trophy } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo, LogoMark } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { NotificationBell } from "@/components/site/notification-bell";
+import { MobileNav } from "@/components/site/mobile-nav";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
 import { getProfile, getNotifications, getUnreadNotificationCount } from "@/lib/queries";
-
-const links = [
-  { href: "/teammates", label: "Find Teammates", icon: Users },
-  { href: "/coaches", label: "Find Coaches", icon: GraduationCap },
-  { href: "/guilds", label: "Find Guild", icon: Shield },
-  { href: "/tournaments", label: "Tournaments", icon: Trophy },
-];
+import { NAV_LINKS } from "@/lib/nav-links";
 
 const iconLinkClassName =
   "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -64,8 +59,9 @@ export async function Navbar() {
           >
             <Search className="size-4" />
           </Link>
+          <MobileNav />
           <nav className="hidden shrink-0 items-center gap-1 lg:flex">
-            {links.map((link) => (
+            {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

@@ -108,6 +108,7 @@ export function SteamConnect({
               game="Counter-Strike 2"
               rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
               sourceLabel="Verified via Steam"
+              leetifyAttribution
             />
           </div>
           <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">

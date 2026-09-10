@@ -5,18 +5,22 @@ import type { ReactNode } from "react";
 // icon artwork wired up yet (e.g. CS2 shows text-only for now) — pass
 // nothing rather than a placeholder; the card still reads fine without one.
 // `sourceLabel` is required (not defaulted) so every caller states its
-// trust level honestly — e.g. "Verified via Steam" for Dota/CS2 vs.
-// "Via Riot ID" for Valorant, which isn't identity-verified.
+// trust level honestly — e.g. "Verified via Steam" for Dota/CS2.
+// `leetifyAttribution` renders Leetify's required "View on Leetify"
+// link-back wherever their CS2 data is shown, per their API developer
+// guidelines (attribution + link-back required even for their free tier).
 export function RankMedalCard({
   game,
   rankLabel,
   sourceLabel,
   icon,
+  leetifyAttribution = false,
 }: {
   game: string;
   rankLabel: string;
   sourceLabel: string;
   icon?: ReactNode;
+  leetifyAttribution?: boolean;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-card to-secondary/10 px-5 py-4 transition-colors hover:border-secondary/50">
@@ -26,7 +30,18 @@ export function RankMedalCard({
           {game}
         </p>
         <p className="font-display text-xl leading-tight">{rankLabel}</p>
-        <p className="text-xs font-medium text-secondary">{sourceLabel}</p>
+        {leetifyAttribution ? (
+          <a
+            href="https://leetify.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-secondary underline-offset-2 hover:underline"
+          >
+            {sourceLabel} · View on Leetify
+          </a>
+        ) : (
+          <p className="text-xs font-medium text-secondary">{sourceLabel}</p>
+        )}
       </div>
     </div>
   );

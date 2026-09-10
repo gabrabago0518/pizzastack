@@ -40,6 +40,7 @@ export function RankBanner({
             game="Counter-Strike 2"
             rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
             sourceLabel="Verified via Steam"
+            leetifyAttribution
           />
         ) : null}
       </div>

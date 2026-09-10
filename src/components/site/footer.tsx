@@ -40,12 +40,29 @@ export function Footer() {
 
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>&copy; {new Date().getFullYear()} Pizzastack.gg. All rights reserved.</p>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link href="/privacy" className="transition-colors hover:text-foreground">
             Privacy & Cookies
           </Link>
+          <a
+            href="https://leetify.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-foreground"
+          >
+            Data Provided by Leetify
+          </a>
           <p>Squad up. Level up.</p>
         </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-6 pb-6 text-[11px] leading-relaxed text-muted-foreground/70">
+        <p>
+          Pizzastack.gg is not affiliated with, sponsored by, or endorsed by
+          Valve Corporation, Leetify, or Riot Games, Inc. Dota 2, Counter-
+          Strike, Steam, and Valorant are trademarks of their respective
+          owners.
+        </p>
       </div>
     </footer>
   );

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ReportsList } from "@/components/site/reports-list";
 import { CoachApplicationsList } from "@/components/site/coach-applications-list";
+import { ApprovedCoachesList } from "@/components/site/approved-coaches-list";
 import { AccountsList } from "@/components/site/accounts-list";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -15,6 +16,7 @@ import {
   getAdminStats,
   getPlayerReports,
   getPendingCoachApplications,
+  getApprovedCoaches,
   getAllAccounts,
 } from "@/lib/queries";
 
@@ -34,10 +36,11 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const [stats, reports, coachApplications, accounts] = await Promise.all([
+  const [stats, reports, coachApplications, approvedCoaches, accounts] = await Promise.all([
     getAdminStats(),
     getPlayerReports(),
     getPendingCoachApplications(),
+    getApprovedCoaches(),
     getAllAccounts(),
   ]);
 
@@ -95,6 +98,11 @@ export default async function AdminPage() {
           ) : null}
         </div>
         <AccountsList accounts={accounts} />
+      </div>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Coaches</h2>
+        <ApprovedCoachesList coaches={approvedCoaches} />
       </div>
 
       <div className="mt-10 flex flex-col gap-4">

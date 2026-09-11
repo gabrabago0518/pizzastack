@@ -676,6 +676,20 @@ export async function getPendingCoachApplications() {
   return data ?? [];
 }
 
+// Admin-only overview of every currently-live coach listing, so an admin
+// can revoke one after the fact — separate from the pending-review queue
+// above. Newest-approved first, matching the public directory's default.
+export async function getApprovedCoaches() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_profiles")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .returns<CoachProfileWithRelations[]>();
+  return data ?? [];
+}
+
 export interface TournamentFilters {
   status?: Tournament["status"];
 }

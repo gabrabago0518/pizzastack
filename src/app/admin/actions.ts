@@ -62,6 +62,23 @@ export async function reviewCoachApplication(
       .from("profiles")
       .update({ is_coach: true })
       .eq("id", coachProfile.profile_id);
+  } else {
+    // Also used to revoke a previously-approved coach (see the "Coaches"
+    // section of /admin) — a coach can be approved for more than one game,
+    // so is_coach only comes off once none of their coach_profiles are
+    // still approved.
+    const { count } = await serviceClient
+      .from("coach_profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("profile_id", coachProfile.profile_id)
+      .eq("status", "approved");
+
+    if (!count) {
+      await serviceClient
+        .from("profiles")
+        .update({ is_coach: false })
+        .eq("id", coachProfile.profile_id);
+    }
   }
 
   revalidatePath("/admin");

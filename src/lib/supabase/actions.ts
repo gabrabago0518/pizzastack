@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 export interface AuthFormState {
   error?: string;
   info?: string;
+  email?: string;
 }
 
 export async function signUp(
@@ -45,6 +46,7 @@ export async function signUp(
     // into a protected route (proxy.ts would just bounce back to /login).
     return {
       info: "Check your inbox to confirm your email, then log in.",
+      email,
     };
   }
 

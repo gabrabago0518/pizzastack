@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,26 @@ export function AuthForm({ mode, action }: AuthFormProps) {
     action,
     {},
   );
+
+  if (mode === "signup" && state.info) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/20 p-8 text-center">
+        <span className="flex size-12 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+          <Mail className="size-6" />
+        </span>
+        <h2 className="font-display text-lg">Check your email</h2>
+        <p className="text-sm text-muted-foreground">
+          We sent a confirmation link to{" "}
+          {state.email ? (
+            <span className="font-medium text-foreground">{state.email}</span>
+          ) : (
+            "your email"
+          )}
+          . Click it to verify your account, then log in below.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -64,11 +84,6 @@ export function AuthForm({ mode, action }: AuthFormProps) {
       {state.error ? (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {state.error}
-        </p>
-      ) : null}
-      {state.info ? (
-        <p className="rounded-lg bg-secondary/10 px-3 py-2 text-sm text-secondary">
-          {state.info}
         </p>
       ) : null}
 

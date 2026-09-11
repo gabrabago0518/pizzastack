@@ -153,9 +153,13 @@ alter table public.profiles
 alter table public.profiles
   add constraint profiles_account_tier_check check (account_tier in ('standard', 'prime'));
 
+-- is_coach is deliberately left out of this grant — it's now flipped only
+-- by an admin approving a coach_profiles application (see admin/actions.ts
+-- and coach_profiles.status below), not by the applicant's own session,
+-- same trust level as is_admin/account_tier.
 revoke update on public.profiles from authenticated;
 grant update (
-  username, display_name, avatar_url, bio, region, onboarded, is_coach,
+  username, display_name, avatar_url, bio, region, onboarded,
   riot_name, riot_tag, riot_region, last_seen_at,
   show_ranks, show_most_played, show_games, show_listings, show_coaching
 ) on public.profiles to authenticated;
@@ -629,12 +633,34 @@ alter table public.coach_profiles
 alter table public.coach_profiles
   add column if not exists rank_tier smallint;
 
+-- status: a coach application is reviewed by an admin before it's publicly
+-- listed — 'pending' until approved or rejected (see the "Coach
+-- applications" section of /admin and admin/actions.ts, which use the
+-- service-role client to flip this, bypassing the column grant below).
+-- Existing coach listings — live before this review flow shipped — are
+-- grandfathered straight to 'approved' by the backfill below, anchored to
+-- a fixed cutoff rather than a blanket "pending -> approved" so it can
+-- never auto-approve a genuinely new application on a later deploy.
+alter table public.coach_profiles
+  add column if not exists status text not null default 'pending';
+alter table public.coach_profiles
+  drop constraint if exists coach_profiles_status_check;
+alter table public.coach_profiles
+  add constraint coach_profiles_status_check check (status in ('pending', 'approved', 'rejected'));
+update public.coach_profiles
+  set status = 'approved'
+  where status = 'pending' and created_at < '2026-09-11T00:00:00Z';
+
 alter table public.coach_profiles enable row level security;
 
 drop policy if exists "Coach profiles are publicly readable" on public.coach_profiles;
 create policy "Coach profiles are publicly readable"
   on public.coach_profiles for select
-  using (true);
+  using (
+    status = 'approved'
+    or auth.uid() = profile_id
+    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
 
 drop policy if exists "Users can create their own coach profiles" on public.coach_profiles;
 create policy "Users can create their own coach profiles"
@@ -645,6 +671,14 @@ drop policy if exists "Users can update their own coach profiles" on public.coac
 create policy "Users can update their own coach profiles"
   on public.coach_profiles for update
   using (auth.uid() = profile_id);
+
+-- status (and rank/rank_tier, already server-set-only per the comment
+-- above) are left out of this grant so a coach can't self-approve their
+-- own application, or anyone else's, via a direct table update — only the
+-- listing content itself is self-editable. Reviewing an application goes
+-- through the service-role client instead (see admin/actions.ts).
+revoke update on public.coach_profiles from authenticated;
+grant update (headline, bio, rate_note, contact_method) on public.coach_profiles to authenticated;
 
 drop policy if exists "Users can delete their own coach profiles" on public.coach_profiles;
 create policy "Users can delete their own coach profiles"

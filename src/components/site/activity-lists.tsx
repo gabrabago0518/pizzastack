@@ -73,6 +73,17 @@ export function CoachProfilesList({
                   {coach.games?.name}
                 </Badge>
               </div>
+              <Badge
+                variant={
+                  coach.status === "approved"
+                    ? "accent"
+                    : coach.status === "rejected"
+                      ? "muted"
+                      : "outline"
+                }
+              >
+                {coach.status}
+              </Badge>
             </CardContent>
           </Card>
         </li>

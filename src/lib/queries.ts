@@ -169,7 +169,8 @@ export async function getCoachProfiles(
 
   let builder = supabase
     .from("coach_profiles")
-    .select("*, profiles(username, region), games(name, slug)");
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "approved");
 
   if (filters.sort === "rating") {
     builder = builder
@@ -201,6 +202,7 @@ export const getCoachProfileById = cache(async (id: string) => {
     .from("coach_profiles")
     .select("*, profiles(username, region), games(name, slug)")
     .eq("id", id)
+    .eq("status", "approved")
     .maybeSingle()
     .returns<CoachProfileWithRelations>();
   return data;
@@ -617,6 +619,23 @@ export async function getPlayerReports(): Promise<PlayerReportRow[]> {
     status: report.status as "open" | "reviewed",
     createdAt: report.created_at,
   }));
+}
+
+// Admin-only, oldest first — RLS on coach_profiles independently enforces
+// this (the "publicly readable" policy only lets an admin session see
+// another player's pending/rejected row), this is just gated at the page
+// level too so a non-admin never even issues the query. Only one FK to
+// profiles here (unlike player_reports' two), so a normal embedded select
+// is unambiguous.
+export async function getPendingCoachApplications() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_profiles")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .returns<CoachProfileWithRelations[]>();
+  return data ?? [];
 }
 
 export interface TournamentFilters {

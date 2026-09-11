@@ -194,6 +194,7 @@ export interface Database {
           contact_method: string;
           rank: string | null;
           rank_tier: number | null;
+          status: "pending" | "approved" | "rejected";
           avg_rating: number | null;
           review_count: number;
           created_at: string;
@@ -207,6 +208,7 @@ export interface Database {
           contact_method: string;
           rank?: string | null;
           rank_tier?: number | null;
+          status?: "pending" | "approved" | "rejected";
         };
         Update: {
           headline?: string;
@@ -215,6 +217,7 @@ export interface Database {
           contact_method?: string;
           rank?: string | null;
           rank_tier?: number | null;
+          status?: "pending" | "approved" | "rejected";
         };
         Relationships: [
           {

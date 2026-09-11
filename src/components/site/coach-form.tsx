@@ -148,7 +148,7 @@ export function CoachForm({
         className="mt-1 self-start"
       >
         {isPending ? <Loader2 className="animate-spin" /> : null}
-        List me as a coach
+        Submit application
       </Button>
     </form>
   );

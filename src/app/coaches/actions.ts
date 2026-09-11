@@ -77,10 +77,11 @@ export async function createCoachProfile(
     };
   }
 
-  await supabase.from("profiles").update({ is_coach: true }).eq("id", user.id);
-
-  revalidatePath("/coaches");
-  redirect("/coaches");
+  // Doesn't go live yet — an admin reviews it first (see the "Coach
+  // applications" section of /admin). is_coach and the coach directory
+  // listing itself only flip on once approved.
+  revalidatePath("/profile");
+  redirect("/profile");
 }
 
 export interface CoachingRequestFormState {

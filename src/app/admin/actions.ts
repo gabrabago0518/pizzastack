@@ -2,9 +2,71 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export interface AdminActionResult {
   error?: string;
+}
+
+// coach_profiles.status (and profiles.is_coach) are deliberately left out
+// of the authenticated grant — see schema.sql — so flipping them has to go
+// through the service-role client, which bypasses RLS and column grants
+// entirely. That means this action must re-check is_admin itself instead
+// of relying on the caller's own RLS, unlike markReportReviewed below.
+async function requireAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+  return profile?.is_admin ? user : null;
+}
+
+export async function reviewCoachApplication(
+  coachProfileId: string,
+  decision: "approved" | "rejected",
+): Promise<AdminActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return { error: "You need to be an admin to do that." };
+  }
+
+  const serviceClient = createServiceClient();
+  const { data: coachProfile, error: fetchError } = await serviceClient
+    .from("coach_profiles")
+    .select("profile_id")
+    .eq("id", coachProfileId)
+    .maybeSingle();
+
+  if (fetchError || !coachProfile) {
+    return { error: "Coach application not found." };
+  }
+
+  const { error } = await serviceClient
+    .from("coach_profiles")
+    .update({ status: decision })
+    .eq("id", coachProfileId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (decision === "approved") {
+    await serviceClient
+      .from("profiles")
+      .update({ is_coach: true })
+      .eq("id", coachProfile.profile_id);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/coaches");
+  return {};
 }
 
 // RLS restricts this update to admins (see player_reports' "Admins can

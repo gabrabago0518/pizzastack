@@ -6,10 +6,15 @@ import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { createClient } from "@/lib/supabase/client";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import type { GuildMessageWithSender } from "@/lib/supabase/types";
 
-const POLL_INTERVAL_MS = 4000;
+// Realtime (see the guild_messages entry in the supabase_realtime
+// publication, schema.sql) delivers new messages instantly; this is just a
+// backstop in case the socket drops without reconnecting on its own, so a
+// stalled connection doesn't go unnoticed for long.
+const FALLBACK_POLL_INTERVAL_MS = 20000;
 
 export function GuildChat({
   guildId,
@@ -35,9 +40,27 @@ export function GuildChat({
   }, [guildId]);
 
   React.useEffect(() => {
-    const interval = setInterval(refresh, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [refresh]);
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`guild-chat-${guildId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "guild_messages",
+          filter: `guild_id=eq.${guildId}`,
+        },
+        () => refresh(),
+      )
+      .subscribe();
+
+    const interval = setInterval(refresh, FALLBACK_POLL_INTERVAL_MS);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [guildId, refresh]);
 
   React.useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });

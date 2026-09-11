@@ -1852,3 +1852,31 @@ drop policy if exists "Users can delete their own scrimmages" on public.scrimmag
 create policy "Users can delete their own scrimmages"
   on public.scrimmages for delete
   using (auth.uid() = author_id);
+
+-- ---------------------------------------------------------------------------
+-- Realtime: guild chat and party (LFG) chat push new messages to open
+-- clients instead of everyone polling every few seconds (see GuildChat and
+-- ListingChat in src/components/site). Postgres Changes already runs each
+-- change through the table's own select policy for the subscribing user,
+-- so guild_messages/lfg_messages' existing RLS is all the authorization
+-- this needs — no separate setup. Guarded with a pg_publication_tables
+-- check because "alter publication ... add table" errors outright (rather
+-- than no-oping) if the table is already a member, and this file is meant
+-- to be re-run on every deploy.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'guild_messages'
+  ) then
+    alter publication supabase_realtime add table public.guild_messages;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'lfg_messages'
+  ) then
+    alter publication supabase_realtime add table public.lfg_messages;
+  end if;
+end $$;

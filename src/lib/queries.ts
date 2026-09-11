@@ -92,6 +92,44 @@ export async function getAdminStats() {
   };
 }
 
+export interface AdminAccountRow {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  isAdmin: boolean;
+  isCoach: boolean;
+  accountTier: "standard" | "prime";
+}
+
+// profiles are already publicly readable (usernames show up all over the
+// site), so this needs no special RLS — the only "admin-only" part is that
+// this full listing is never rendered anywhere but the is_admin-gated
+// /admin page. Capped at a fixed limit rather than real pagination — fine
+// at the site's current scale; worth revisiting if that stops being true.
+const ADMIN_ACCOUNTS_LIMIT = 200;
+
+export async function getAllAccounts(): Promise<AdminAccountRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, avatar_url, created_at, is_admin, is_coach, account_tier")
+    .order("created_at", { ascending: false })
+    .limit(ADMIN_ACCOUNTS_LIMIT);
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    createdAt: row.created_at,
+    isAdmin: row.is_admin,
+    isCoach: row.is_coach,
+    accountTier: row.account_tier as "standard" | "prime",
+  }));
+}
+
 async function resolveGameId(gameSlug?: string) {
   if (!gameSlug || gameSlug === "all") return undefined;
   const supabase = await createClient();

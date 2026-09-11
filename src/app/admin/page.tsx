@@ -8,12 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ReportsList } from "@/components/site/reports-list";
 import { CoachApplicationsList } from "@/components/site/coach-applications-list";
+import { AccountsList } from "@/components/site/accounts-list";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfile,
   getAdminStats,
   getPlayerReports,
   getPendingCoachApplications,
+  getAllAccounts,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -32,10 +34,11 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const [stats, reports, coachApplications] = await Promise.all([
+  const [stats, reports, coachApplications, accounts] = await Promise.all([
     getAdminStats(),
     getPlayerReports(),
     getPendingCoachApplications(),
+    getAllAccounts(),
   ]);
 
   const tiles = [
@@ -80,6 +83,19 @@ export default async function AdminPage() {
         &ldquo;Online now&rdquo; counts accounts active in the last 5 minutes —
         approximate, not a live connection count.
       </p>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl">Accounts</h2>
+          {stats.totalAccounts > accounts.length ? (
+            <span className="text-xs text-muted-foreground">
+              Showing the {accounts.length.toLocaleString()} most recent of{" "}
+              {stats.totalAccounts.toLocaleString()}
+            </span>
+          ) : null}
+        </div>
+        <AccountsList accounts={accounts} />
+      </div>
 
       <div className="mt-10 flex flex-col gap-4">
         <h2 className="font-display text-xl">Coach applications</h2>

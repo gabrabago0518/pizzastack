@@ -4,6 +4,7 @@ import type {
   CoachProfileWithRelations,
   CoachReviewWithReviewer,
   CoachingRequestWithRelations,
+  LfgPost,
   LfgPostWithRelations,
   JoinRequestWithRequester,
   LfgMessageWithSender,
@@ -971,4 +972,126 @@ export async function getScrimmages(gameSlug?: string, filters: ScrimmageFilters
 
   const { data } = await builder.returns<ScrimmageWithRelations[]>();
   return data ?? [];
+}
+
+const LEADERBOARD_LIMIT = 10;
+
+export interface TopCoachRow {
+  id: string;
+  headline: string;
+  avgRating: number;
+  reviewCount: number;
+  username: string;
+  avatarUrl: string | null;
+  gameName: string | null;
+}
+
+// Ranked by avg_rating then review_count as a tiebreak (a 5.0 from one
+// review shouldn't outrank a 4.9 from twenty) — both are the denormalized
+// aggregates coach_reviews already maintains, so this is one plain select,
+// no aggregation query needed. Unrated coaches (avg_rating null — no
+// reviews yet) are excluded rather than sorted in with a fake score.
+export async function getTopRatedCoaches(): Promise<TopCoachRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("coach_profiles")
+    .select("id, headline, avg_rating, review_count, profiles(username, avatar_url), games(name)")
+    .eq("status", "approved")
+    .not("avg_rating", "is", null)
+    .order("avg_rating", { ascending: false })
+    .order("review_count", { ascending: false })
+    .limit(LEADERBOARD_LIMIT)
+    .returns<
+      {
+        id: string;
+        headline: string;
+        avg_rating: number | null;
+        review_count: number;
+        profiles: { username: string; avatar_url: string | null } | null;
+        games: { name: string } | null;
+      }[]
+    >();
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    headline: row.headline,
+    avgRating: row.avg_rating ?? 0,
+    reviewCount: row.review_count,
+    username: row.profiles?.username ?? "unknown",
+    avatarUrl: row.profiles?.avatar_url ?? null,
+    gameName: row.games?.name ?? null,
+  }));
+}
+
+export interface TopGuildRow {
+  id: string;
+  name: string;
+  tag: string;
+  memberCount: number;
+  gameName: string | null;
+}
+
+// member_count is the denormalized aggregate guild_members' insert/delete
+// trigger already keeps in sync — same "one plain select, no aggregation"
+// shape as getTopRatedCoaches above.
+export async function getMostActiveGuilds(): Promise<TopGuildRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guilds")
+    .select("id, name, tag, member_count, games(name)")
+    .order("member_count", { ascending: false })
+    .limit(LEADERBOARD_LIMIT)
+    .returns<
+      { id: string; name: string; tag: string; member_count: number; games: { name: string } | null }[]
+    >();
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    tag: row.tag,
+    memberCount: row.member_count,
+    gameName: row.games?.name ?? null,
+  }));
+}
+
+export interface TopLfgPostRow {
+  id: string;
+  title: string;
+  requestCount: number;
+  status: LfgPost["status"];
+  username: string;
+  gameName: string | null;
+}
+
+// request_count counts every join request a listing has ever received
+// (any status) — see the column's own comment in schema.sql — so this
+// surfaces the listings that drew the most interest, closed ones included,
+// not just the ones still open.
+export async function getMostRequestedLfgPosts(): Promise<TopLfgPostRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("lfg_posts")
+    .select("id, title, request_count, status, profiles(username), games(name)")
+    .gt("request_count", 0)
+    .order("request_count", { ascending: false })
+    .limit(LEADERBOARD_LIMIT)
+    .returns<
+      {
+        id: string;
+        title: string;
+        request_count: number;
+        status: LfgPost["status"];
+        profiles: { username: string } | null;
+        games: { name: string } | null;
+      }[]
+    >();
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    requestCount: row.request_count,
+    status: row.status,
+    username: row.profiles?.username ?? "unknown",
+    gameName: row.games?.name ?? null,
+  }));
 }

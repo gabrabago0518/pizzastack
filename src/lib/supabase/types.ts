@@ -1111,6 +1111,53 @@ export interface Database {
           },
         ];
       };
+      highlights: {
+        Row: {
+          id: string;
+          profile_id: string;
+          game_id: string | null;
+          title: string;
+          description: string | null;
+          video_url: string;
+          status: "pending" | "approved" | "rejected";
+          rejection_reason: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          game_id?: string | null;
+          title: string;
+          description?: string | null;
+          video_url: string;
+          status?: "pending" | "approved" | "rejected";
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          rejection_reason?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "highlights_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "highlights_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -1141,6 +1188,7 @@ export type TournamentTeam = Database["public"]["Tables"]["tournament_teams"]["R
 export type TournamentTeamMember = Database["public"]["Tables"]["tournament_team_members"]["Row"];
 export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
 export type Scrimmage = Database["public"]["Tables"]["scrimmages"]["Row"];
+export type Highlight = Database["public"]["Tables"]["highlights"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<Profile, "username" | "region"> | null;
@@ -1207,5 +1255,10 @@ export type TournamentTeamMemberWithProfile = TournamentTeamMember & {
 
 export type ScrimmageWithRelations = Scrimmage & {
   profiles: Pick<Profile, "username" | "region"> | null;
+  games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type HighlightWithRelations = Highlight & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
   games: Pick<Game, "name" | "slug"> | null;
 };

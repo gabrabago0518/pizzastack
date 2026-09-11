@@ -86,6 +86,36 @@ export async function reviewCoachApplication(
   return {};
 }
 
+export async function reviewHighlight(
+  highlightId: string,
+  decision: "approved" | "rejected",
+  rejectionReason?: string,
+): Promise<AdminActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return { error: "You need to be an admin to do that." };
+  }
+
+  const serviceClient = createServiceClient();
+  const { error } = await serviceClient
+    .from("highlights")
+    .update({
+      status: decision,
+      rejection_reason: decision === "rejected" ? rejectionReason || null : null,
+      reviewed_by: admin.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", highlightId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/highlights");
+  return {};
+}
+
 // RLS restricts this update to admins (see player_reports' "Admins can
 // update report status" policy), so a non-admin calling it just silently
 // affects zero rows — the button is only ever rendered on /admin, which

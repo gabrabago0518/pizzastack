@@ -12,7 +12,7 @@ import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
 import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
 import { getProfileBackgroundGradient } from "@/lib/profile-backgrounds";
-import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
+import { LfgPostsList, CoachProfilesList, HighlightsList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
@@ -23,6 +23,7 @@ import {
   getGamesForProfile,
   getCommendCount,
   getTopHeroesForProfile,
+  getMyHighlights,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -41,12 +42,13 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles, games, commendCount, topHeroes] = await Promise.all([
+  const [posts, coachProfiles, games, commendCount, topHeroes, highlights] = await Promise.all([
     getLfgPostsByAuthor(user.id),
     getCoachProfilesByAuthor(user.id),
     getGamesForProfile(user.id),
     getCommendCount(user.id),
     getTopHeroesForProfile(user.id),
+    getMyHighlights(user.id),
   ]);
 
   const backgroundGradient = getProfileBackgroundGradient(profile.profile_background);
@@ -180,6 +182,19 @@ export default async function ProfilePage() {
             emptyText="You're not listed as a coach yet."
           />
         </div>
+      </div>
+
+      <div className="mt-8 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-xl">Your highlights</h2>
+          <Link
+            href="/highlights/new"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Upload a highlight
+          </Link>
+        </div>
+        <HighlightsList highlights={highlights} emptyText="You haven't uploaded a highlight yet." />
       </div>
     </Section>
   );

@@ -10,6 +10,7 @@ import { ReportsList } from "@/components/site/reports-list";
 import { CoachApplicationsList } from "@/components/site/coach-applications-list";
 import { ApprovedCoachesList } from "@/components/site/approved-coaches-list";
 import { AccountsList } from "@/components/site/accounts-list";
+import { HighlightModerationList } from "@/components/site/highlight-moderation-list";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfile,
@@ -18,6 +19,7 @@ import {
   getPendingCoachApplications,
   getApprovedCoaches,
   getAllAccounts,
+  getPendingHighlights,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -36,13 +38,15 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const [stats, reports, coachApplications, approvedCoaches, accounts] = await Promise.all([
-    getAdminStats(),
-    getPlayerReports(),
-    getPendingCoachApplications(),
-    getApprovedCoaches(),
-    getAllAccounts(),
-  ]);
+  const [stats, reports, coachApplications, approvedCoaches, accounts, pendingHighlights] =
+    await Promise.all([
+      getAdminStats(),
+      getPlayerReports(),
+      getPendingCoachApplications(),
+      getApprovedCoaches(),
+      getAllAccounts(),
+      getPendingHighlights(),
+    ]);
 
   const tiles = [
     { label: "Total accounts", value: stats.totalAccounts, icon: Users },
@@ -108,6 +112,11 @@ export default async function AdminPage() {
       <div className="mt-10 flex flex-col gap-4">
         <h2 className="font-display text-xl">Coach applications</h2>
         <CoachApplicationsList applications={coachApplications} />
+      </div>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Highlights pending review</h2>
+        <HighlightModerationList highlights={pendingHighlights} />
       </div>
 
       <div className="mt-10 flex flex-col gap-4">

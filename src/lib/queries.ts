@@ -25,6 +25,7 @@ import type {
   TournamentTeamWithRelations,
   TournamentTeamMemberWithProfile,
   ScrimmageWithRelations,
+  HighlightWithRelations,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -1108,4 +1109,64 @@ export async function getMostRequestedLfgPosts(): Promise<TopLfgPostRow[]> {
     username: row.profiles?.username ?? "unknown",
     gameName: row.games?.name ?? null,
   }));
+}
+
+// Newest-approved first, only ever showing rows the RLS policy already
+// scopes to "status = 'approved'" for an anonymous/non-owner viewer — same
+// shape as getCoachProfiles. gameSlug filters to one game's clips.
+export async function getApprovedHighlights(gameSlug?: string) {
+  const supabase = await createClient();
+  const gameId = await resolveGameId(gameSlug);
+
+  let builder = supabase
+    .from("highlights")
+    .select("*, profiles(username, avatar_url), games(name, slug)")
+    .eq("status", "approved")
+    .order("created_at", { ascending: false });
+
+  if (gameId) builder = builder.eq("game_id", gameId);
+
+  const { data } = await builder.returns<HighlightWithRelations[]>();
+  return data ?? [];
+}
+
+// No .eq("status", "approved") here — the highlights select policy already
+// lets the owner and any admin see a pending/rejected clip too, so a direct
+// link to your own unreviewed upload (or an admin's review link) still
+// resolves. Anyone else hitting a non-visible id just gets no row back,
+// which the page turns into notFound() — no separate permission check
+// needed, same pattern as coach_profiles/guilds detail pages.
+export const getHighlightById = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("highlights")
+    .select("*, profiles(username, avatar_url), games(name, slug)")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<HighlightWithRelations>();
+  return data;
+});
+
+export async function getMyHighlights(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("highlights")
+    .select("*, games(name, slug)")
+    .eq("profile_id", userId)
+    .order("created_at", { ascending: false })
+    .returns<HighlightWithRelations[]>();
+  return data ?? [];
+}
+
+// Admin-only moderation queue, oldest first (first uploaded, first
+// reviewed) — mirrors getPendingCoachApplications exactly.
+export async function getPendingHighlights() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("highlights")
+    .select("*, profiles(username, region), games(name, slug)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .returns<HighlightWithRelations[]>();
+  return data ?? [];
 }

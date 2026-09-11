@@ -1958,3 +1958,96 @@ begin
     alter publication supabase_realtime add table public.lfg_messages;
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- highlights: player-uploaded gaming highlight clips ("reels"), reviewed by
+-- an admin/moderator before they're publicly visible — same review-gate
+-- shape as coach_profiles.status (see comment there), reused here instead
+-- of introducing a separate moderator role since is_admin already gates
+-- every other moderation action on the site (coach applications, reports).
+-- ---------------------------------------------------------------------------
+create table if not exists public.highlights (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  game_id uuid references public.games (id),
+  title text not null check (char_length(title) between 1 and 100),
+  description text,
+  video_url text not null,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  rejection_reason text,
+  reviewed_by uuid references public.profiles (id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists highlights_profile_id_idx on public.highlights (profile_id);
+create index if not exists highlights_status_created_at_idx on public.highlights (status, created_at desc);
+
+alter table public.highlights enable row level security;
+
+drop policy if exists "Highlights are publicly readable" on public.highlights;
+create policy "Highlights are publicly readable"
+  on public.highlights for select
+  using (
+    status = 'approved'
+    or auth.uid() = profile_id
+    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Users can upload their own highlights" on public.highlights;
+create policy "Users can upload their own highlights"
+  on public.highlights for insert
+  with check (auth.uid() = profile_id);
+
+drop policy if exists "Users can update their own highlights" on public.highlights;
+create policy "Users can update their own highlights"
+  on public.highlights for update
+  using (auth.uid() = profile_id);
+
+-- status/rejection_reason/reviewed_by/reviewed_at are left out of this
+-- grant, same reasoning as coach_profiles.status above — a player can edit
+-- their own clip's title/description but can't self-approve it (or anyone
+-- else's). Review goes through the service-role client (see admin/actions.ts).
+revoke update on public.highlights from authenticated;
+grant update (title, description) on public.highlights to authenticated;
+
+drop policy if exists "Users can delete their own highlights" on public.highlights;
+create policy "Users can delete their own highlights"
+  on public.highlights for delete
+  using (
+    auth.uid() = profile_id
+    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+-- ---------------------------------------------------------------------------
+-- Storage: highlights bucket. Files are stored at "{user_id}/<uuid>.<ext>" —
+-- unlike avatars there can be many clips per user, so the path is only
+-- pinned to the owning folder, not a fixed filename. file_size_limit/
+-- allowed_mime_types are enforced by Storage itself ahead of any app code.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('highlights', 'highlights', true, 52428800, array['video/mp4', 'video/webm', 'video/quicktime'])
+on conflict (id) do update set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Highlight videos are publicly readable" on storage.objects;
+create policy "Highlight videos are publicly readable"
+  on storage.objects for select
+  using (bucket_id = 'highlights');
+
+drop policy if exists "Users can upload their own highlight videos" on storage.objects;
+create policy "Users can upload their own highlight videos"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'highlights'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "Users can delete their own highlight videos" on storage.objects;
+create policy "Users can delete their own highlight videos"
+  on storage.objects for delete
+  using (
+    bucket_id = 'highlights'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

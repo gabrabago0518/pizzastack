@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/queries";
 
 export const metadata: Metadata = {
-  title: "Premium",
+  title: "Prime",
   description:
     "Unlock profile customization on Pizzastack.gg — choose what shows on your profile, with more perks on the way.",
 };
@@ -33,24 +33,24 @@ const perks = [
   {
     icon: Sparkles,
     title: "Animated avatar borders",
-    description: "Moving avatar borders that show off your Premium status.",
+    description: "Moving avatar borders that show off your Prime status.",
     available: false,
   },
 ];
 
-export default async function PremiumPage() {
+export default async function PrimePage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const profile = user ? await getProfile(user.id) : null;
-  const isPremium = Boolean(profile?.is_premium);
+  const isPrime = profile?.account_tier === "prime";
 
   return (
     <Section className="!pb-24">
       <SectionHeading
-        eyebrow="Pizzastack Premium"
+        eyebrow="Pizzastack Prime"
         title="Make your profile yours"
         description="Control what other players see on your profile, with more ways to stand out coming soon."
         align="center"
@@ -82,10 +82,10 @@ export default async function PremiumPage() {
       </div>
 
       <Reveal className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-xl border border-border bg-muted/20 p-8 text-center">
-        {isPremium ? (
+        {isPrime ? (
           <>
             <Crown className="size-8 text-primary" />
-            <h2 className="font-display text-xl">You&apos;re already Premium</h2>
+            <h2 className="font-display text-xl">You&apos;re already Prime</h2>
             <p className="text-sm text-muted-foreground">
               Manage what shows on your profile from the Edit profile button
               on your profile page.

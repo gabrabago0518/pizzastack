@@ -35,7 +35,7 @@ export interface Database {
           show_games: boolean;
           show_listings: boolean;
           show_coaching: boolean;
-          is_premium: boolean;
+          account_tier: "standard" | "prime";
           created_at: string;
         };
         Insert: {
@@ -71,7 +71,7 @@ export interface Database {
           show_games?: boolean;
           show_listings?: boolean;
           show_coaching?: boolean;
-          is_premium?: boolean;
+          account_tier?: "standard" | "prime";
         };
         Update: {
           username?: string;
@@ -105,7 +105,7 @@ export interface Database {
           show_games?: boolean;
           show_listings?: boolean;
           show_coaching?: boolean;
-          is_premium?: boolean;
+          account_tier?: "standard" | "prime";
         };
         Relationships: [];
       };

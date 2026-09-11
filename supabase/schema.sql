@@ -131,13 +131,27 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists show_coaching boolean not null default true;
 
--- is_premium: unlocks the paid profile-customization dialog (editing which
--- show_* sections appear — see EditProfileDialog). Service-role-only like
--- is_admin: this will eventually be flipped by a Stripe subscription
--- webhook, never set by the user directly, so it's deliberately left out
--- of the authenticated grant below.
+-- is_premium: superseded by account_tier below (kept, unused, rather than
+-- dropped — it already carries a live value on the comped account, same
+-- precedent as tournaments.max_participants elsewhere in this file: no
+-- destructive renames on a column that might already have a value in a
+-- live row).
 alter table public.profiles
   add column if not exists is_premium boolean not null default false;
+
+-- account_tier: 'standard' (default) or 'prime'. Replaces the is_premium
+-- boolean with an explicit two-value account classification — unlocks the
+-- paid profile-customization dialog (editing which show_* sections appear
+-- — see EditProfileDialog), with more Prime-only perks planned. Service-
+-- role-only like is_admin: this will eventually be flipped by a Stripe
+-- subscription webhook, never set by the user directly, so it's
+-- deliberately left out of the authenticated grant below.
+alter table public.profiles
+  add column if not exists account_tier text not null default 'standard';
+alter table public.profiles
+  drop constraint if exists profiles_account_tier_check;
+alter table public.profiles
+  add constraint profiles_account_tier_check check (account_tier in ('standard', 'prime'));
 
 revoke update on public.profiles from authenticated;
 grant update (
@@ -150,9 +164,14 @@ grant update (
 -- Safe to re-run; no-ops if the username doesn't exist (yet).
 update public.profiles set is_admin = true where username = 'kydothecreator_6a67';
 
--- Comps the site owner Premium so they can test/demo profile customization
--- before Stripe billing is wired up. Safe to re-run.
+-- Comps the site owner a Prime account so they can test/demo profile
+-- customization before Stripe billing is wired up. Safe to re-run.
 update public.profiles set is_premium = true where username = 'kydothecreator_6a67';
+
+-- Migrates any account previously comped via the old is_premium flag (the
+-- site owner above included) over to the new account_tier classification.
+-- Safe to re-run.
+update public.profiles set account_tier = 'prime' where is_premium = true;
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
 -- Games are picked afterward on the onboarding step (see profile_games and

@@ -90,7 +90,7 @@ export default async function ProfilePage() {
               </Link>
             </Button>
           ) : null}
-          {profile.is_premium ? (
+          {profile.account_tier === "prime" ? (
             <EditProfileDialog
               username={profile.username}
               initialVisibility={{
@@ -103,8 +103,8 @@ export default async function ProfilePage() {
             />
           ) : (
             <Button asChild variant="outline">
-              <Link href="/premium">
-                <Crown /> Upgrade to Premium
+              <Link href="/prime">
+                <Crown /> Upgrade to Prime
               </Link>
             </Button>
           )}

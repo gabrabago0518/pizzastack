@@ -9,6 +9,9 @@ export const metadata: Metadata = {
     "What Pizzastack.gg stores about you, which cookies we use, the third-party sites we pull verified rank data from, and your data rights.",
 };
 
+// TODO(owner): support@pizzastack.gg is a placeholder — point this at a real
+// inbox you actually monitor once the site is close to launch. It's also
+// the address data-subject and NPC-related requests below get sent to.
 const CONTACT_EMAIL = "support@pizzastack.gg";
 
 export default function PrivacyPage() {
@@ -105,6 +108,29 @@ export default function PrivacyPage() {
           </p>
         </PolicySection>
 
+        <PolicySection title="Data Privacy Act (Philippines)">
+          <p>
+            Pizzastack.gg is operated from the Philippines, so your data is
+            handled under the Data Privacy Act of 2012 (RA 10173). As a data
+            subject, you have the right to be informed of how your data is
+            processed (this page), to access it, to have it corrected, to
+            object to certain processing, and to have it erased or blocked —
+            the &ldquo;Your data rights&rdquo; section below is how you
+            exercise these. If you believe we&apos;ve mishandled your data
+            and we haven&apos;t resolved it directly, you can also file a
+            complaint with the{" "}
+            <a
+              href="https://privacy.gov.ph"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+            >
+              National Privacy Commission
+            </a>
+            .
+          </p>
+        </PolicySection>
+
         <PolicySection title="Your data rights">
           <p>
             You can disconnect Steam or your Riot ID at any time from{" "}
@@ -127,8 +153,8 @@ export default function PrivacyPage() {
           <p>
             For anything this page doesn&apos;t cover — a copy of your data,
             a correction we haven&apos;t given you a self-service way to
-            make, or a request under a data-protection law that applies to
-            you (like GDPR or CCPA) — email{" "}
+            make, or a request under the Data Privacy Act or another
+            data-protection law that applies to you — email{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
               {CONTACT_EMAIL}
             </a>{" "}

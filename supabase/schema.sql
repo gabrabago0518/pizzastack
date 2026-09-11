@@ -1265,6 +1265,151 @@ create policy "Guild leader can delete achievements"
   using (auth.uid() = (select owner_id from public.guilds where id = guild_id));
 
 -- ---------------------------------------------------------------------------
+-- conversations: one row per pair of players who've DMed each other, open
+-- to any two signed-in players (no friend/follow gate, same "no
+-- gatekeeping" bent as guild join or commending). profile_one_id is always
+-- the smaller uuid of the pair — enforced by the check constraint below —
+-- purely so a plain unique constraint can stop (a, b) and (b, a) from ever
+-- both existing, regardless of who messaged first. That same strict "<"
+-- also rules out a self-conversation for free, no separate check needed.
+-- ---------------------------------------------------------------------------
+create table if not exists public.conversations (
+  id uuid primary key default gen_random_uuid(),
+  profile_one_id uuid not null references public.profiles (id) on delete cascade,
+  profile_two_id uuid not null references public.profiles (id) on delete cascade,
+  last_message_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  constraint conversations_ordered_pair check (profile_one_id < profile_two_id),
+  unique (profile_one_id, profile_two_id)
+);
+
+alter table public.conversations enable row level security;
+
+drop policy if exists "Participants can read their conversations" on public.conversations;
+create policy "Participants can read their conversations"
+  on public.conversations for select
+  using (auth.uid() = profile_one_id or auth.uid() = profile_two_id);
+
+drop policy if exists "Users can start a conversation they're part of" on public.conversations;
+create policy "Users can start a conversation they're part of"
+  on public.conversations for insert
+  with check (auth.uid() = profile_one_id or auth.uid() = profile_two_id);
+
+-- ---------------------------------------------------------------------------
+-- direct_messages: messages within a conversation. read means the
+-- recipient has seen it — unambiguous with only two participants, unlike
+-- a group chat, so one boolean is enough (no per-recipient read table).
+-- ---------------------------------------------------------------------------
+create table if not exists public.direct_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references public.conversations (id) on delete cascade,
+  sender_id uuid references public.profiles (id) on delete set null,
+  body text not null check (char_length(body) between 1 and 2000),
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists direct_messages_conversation_id_created_at_idx
+  on public.direct_messages (conversation_id, created_at);
+
+alter table public.direct_messages enable row level security;
+
+drop policy if exists "Participants can read their messages" on public.direct_messages;
+create policy "Participants can read their messages"
+  on public.direct_messages for select
+  using (
+    exists (
+      select 1 from public.conversations
+      where conversations.id = direct_messages.conversation_id
+        and (conversations.profile_one_id = auth.uid() or conversations.profile_two_id = auth.uid())
+    )
+  );
+
+drop policy if exists "Participants can send messages" on public.direct_messages;
+create policy "Participants can send messages"
+  on public.direct_messages for insert
+  with check (
+    sender_id = auth.uid()
+    and exists (
+      select 1 from public.conversations
+      where conversations.id = direct_messages.conversation_id
+        and (conversations.profile_one_id = auth.uid() or conversations.profile_two_id = auth.uid())
+    )
+  );
+
+drop policy if exists "Participants can mark messages read" on public.direct_messages;
+create policy "Participants can mark messages read"
+  on public.direct_messages for update
+  using (
+    exists (
+      select 1 from public.conversations
+      where conversations.id = direct_messages.conversation_id
+        and (conversations.profile_one_id = auth.uid() or conversations.profile_two_id = auth.uid())
+    )
+  );
+
+-- Only "read" is self-service — body/sender_id must stay exactly as sent,
+-- so editing a message after the fact isn't possible via a raw update.
+revoke update on public.direct_messages from authenticated;
+grant update (read) on public.direct_messages to authenticated;
+
+-- Keeps conversations.last_message_at current for sorting the inbox by
+-- recency, same denormalized-aggregate pattern as guilds.member_count.
+create or replace function public.touch_conversation_last_message()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  update public.conversations
+  set last_message_at = new.created_at
+  where id = new.conversation_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists direct_messages_touch_conversation on public.direct_messages;
+create trigger direct_messages_touch_conversation
+  after insert on public.direct_messages
+  for each row execute function public.touch_conversation_last_message();
+
+-- Notifies the other participant of a new message.
+create or replace function public.notify_new_direct_message()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  recipient_id uuid;
+  sender_name text;
+begin
+  select case when profile_one_id = new.sender_id then profile_two_id else profile_one_id end
+    into recipient_id
+    from public.conversations where id = new.conversation_id;
+
+  if recipient_id is null or recipient_id = new.sender_id then
+    return new;
+  end if;
+
+  select username into sender_name from public.profiles where id = new.sender_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    recipient_id,
+    'direct_message',
+    'New message',
+    coalesce('@' || sender_name, 'Someone') || ' sent you a message',
+    '/messages/' || new.conversation_id
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists direct_messages_notify_new on public.direct_messages;
+create trigger direct_messages_notify_new
+  after insert on public.direct_messages
+  for each row execute function public.notify_new_direct_message();
+
+-- ---------------------------------------------------------------------------
 -- player_reports: moderation data, not public — only admins can read it
 -- (checked against profiles.is_admin, same service-role-adjacent trust
 -- level as everything else admin-only on this site). Any signed-in player

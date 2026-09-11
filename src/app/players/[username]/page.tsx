@@ -12,6 +12,7 @@ import {
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
+import { MessageButton } from "@/components/site/message-button";
 import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +110,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
           {viewer && !isOwnProfile ? (
             <div className="flex items-center gap-2">
+              <MessageButton profileId={profile.id} />
               <CommendToggleButton />
               <ReportPlayerDialog profileId={profile.id} username={profile.username} />
             </div>

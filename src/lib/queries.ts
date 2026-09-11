@@ -15,6 +15,8 @@ import type {
   GuildMessageWithSender,
   GuildAnnouncementWithAuthor,
   GuildAchievement,
+  Conversation,
+  DirectMessageWithSender,
   Game,
   Tournament,
   TournamentMatch,
@@ -637,6 +639,108 @@ export async function getGuildAchievements(guildId: string) {
     .order("created_at", { ascending: false })
     .returns<GuildAchievement[]>();
   return data ?? [];
+}
+
+export interface ConversationRow {
+  id: string;
+  otherUsername: string;
+  otherAvatarUrl: string | null;
+  lastMessageBody: string | null;
+  lastMessageAt: string;
+  hasUnread: boolean;
+}
+
+// Two plain queries + a JS merge, same reasoning as getPlayerReports —
+// "the other participant" is whichever of profile_one_id/profile_two_id
+// isn't the viewer, which Postgrest can't express as a single embed.
+export async function getConversations(profileId: string): Promise<ConversationRow[]> {
+  const supabase = await createClient();
+  const { data: conversations } = await supabase
+    .from("conversations")
+    .select("id, profile_one_id, profile_two_id, last_message_at")
+    .order("last_message_at", { ascending: false });
+
+  if (!conversations || conversations.length === 0) return [];
+
+  const otherIds = conversations.map((conversation) =>
+    conversation.profile_one_id === profileId
+      ? conversation.profile_two_id
+      : conversation.profile_one_id,
+  );
+  const conversationIds = conversations.map((conversation) => conversation.id);
+
+  const [{ data: profiles }, { data: messages }] = await Promise.all([
+    supabase.from("profiles").select("id, username, avatar_url").in("id", otherIds),
+    supabase
+      .from("direct_messages")
+      .select("conversation_id, sender_id, body, read")
+      .in("conversation_id", conversationIds)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+  const lastBodyByConversation = new Map<string, string>();
+  const unreadConversations = new Set<string>();
+  for (const message of messages ?? []) {
+    if (!lastBodyByConversation.has(message.conversation_id)) {
+      lastBodyByConversation.set(message.conversation_id, message.body);
+    }
+    if (!message.read && message.sender_id !== profileId) {
+      unreadConversations.add(message.conversation_id);
+    }
+  }
+
+  return conversations.map((conversation) => {
+    const otherId =
+      conversation.profile_one_id === profileId
+        ? conversation.profile_two_id
+        : conversation.profile_one_id;
+    const other = profileById.get(otherId);
+    return {
+      id: conversation.id,
+      otherUsername: other?.username ?? "unknown",
+      otherAvatarUrl: other?.avatar_url ?? null,
+      lastMessageBody: lastBodyByConversation.get(conversation.id) ?? null,
+      lastMessageAt: conversation.last_message_at,
+      hasUnread: unreadConversations.has(conversation.id),
+    };
+  });
+}
+
+// Wrapped in React's cache() so generateMetadata and the page body (which
+// both need this) share one query per request instead of two.
+export const getConversationById = cache(async (id: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle()
+    .returns<Conversation>();
+  return data;
+});
+
+export async function getDirectMessages(conversationId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("direct_messages")
+    .select("*, profiles(username, avatar_url)")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true })
+    .returns<DirectMessageWithSender[]>();
+  return data ?? [];
+}
+
+// RLS on direct_messages already scopes visible rows to conversations the
+// caller is a participant of, so no extra join is needed here.
+export async function getUnreadDmCount(profileId: string) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("direct_messages")
+    .select("*", { count: "exact", head: true })
+    .eq("read", false)
+    .neq("sender_id", profileId);
+  return count ?? 0;
 }
 
 export interface PlayerReportRow {

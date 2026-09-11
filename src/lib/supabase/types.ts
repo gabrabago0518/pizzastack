@@ -687,6 +687,71 @@ export interface Database {
           },
         ];
       };
+      conversations: {
+        Row: {
+          id: string;
+          profile_one_id: string;
+          profile_two_id: string;
+          last_message_at: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_one_id: string;
+          profile_two_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "conversations_profile_one_id_fkey";
+            columns: ["profile_one_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversations_profile_two_id_fkey";
+            columns: ["profile_two_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      direct_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string | null;
+          body: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          conversation_id: string;
+          sender_id?: string | null;
+          body: string;
+          read?: boolean;
+        };
+        Update: {
+          read?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "direct_messages_sender_id_fkey";
+            columns: ["sender_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       player_reports: {
         Row: {
           id: string;
@@ -1026,6 +1091,8 @@ export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
 export type GuildAnnouncement = Database["public"]["Tables"]["guild_announcements"]["Row"];
 export type GuildAchievement = Database["public"]["Tables"]["guild_achievements"]["Row"];
+export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
+export type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
 export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"];
 export type TournamentTeam = Database["public"]["Tables"]["tournament_teams"]["Row"];
@@ -1068,6 +1135,10 @@ export type GuildMessageWithSender = GuildMessage & {
 };
 
 export type GuildAnnouncementWithAuthor = GuildAnnouncement & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type DirectMessageWithSender = DirectMessage & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 

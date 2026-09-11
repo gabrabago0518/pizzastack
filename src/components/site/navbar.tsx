@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo, LogoMark } from "@/components/site/logo";
@@ -8,7 +8,12 @@ import { NotificationBell } from "@/components/site/notification-bell";
 import { MobileNav } from "@/components/site/mobile-nav";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
-import { getProfile, getNotifications, getUnreadNotificationCount } from "@/lib/queries";
+import {
+  getProfile,
+  getNotifications,
+  getUnreadNotificationCount,
+  getUnreadDmCount,
+} from "@/lib/queries";
 import { NAV_LINKS } from "@/lib/nav-links";
 
 const iconLinkClassName =
@@ -21,9 +26,13 @@ export async function Navbar() {
   } = await supabase.auth.getUser();
 
   const profile = user ? await getProfile(user.id) : null;
-  const [notifications, unreadCount] = user
-    ? await Promise.all([getNotifications(user.id), getUnreadNotificationCount(user.id)])
-    : [[], 0];
+  const [notifications, unreadCount, unreadDmCount] = user
+    ? await Promise.all([
+        getNotifications(user.id),
+        getUnreadNotificationCount(user.id),
+        getUnreadDmCount(user.id),
+      ])
+    : [[], 0, 0];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
@@ -75,6 +84,17 @@ export async function Navbar() {
           </nav>
           {user ? (
             <>
+              <Link
+                href="/messages"
+                aria-label={unreadDmCount > 0 ? `Messages, ${unreadDmCount} unread` : "Messages"}
+                title="Messages"
+                className={`${iconLinkClassName} relative`}
+              >
+                <MessageCircle className="size-[18px]" />
+                {unreadDmCount > 0 ? (
+                  <span className="absolute top-1 right-1 flex size-2.5 items-center justify-center rounded-full bg-destructive" />
+                ) : null}
+              </Link>
               <NotificationBell
                 initialNotifications={notifications}
                 initialUnreadCount={unreadCount}

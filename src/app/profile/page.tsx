@@ -8,6 +8,7 @@ import { AvatarDisplay } from "@/components/site/avatar-display";
 import { RankBanner } from "@/components/site/rank-banner";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { EditProfileDialog } from "@/components/site/edit-profile-dialog";
+import { PrimeBadge } from "@/components/site/prime-badge";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,9 +55,12 @@ export default async function ProfilePage() {
             label={profile.display_name || profile.username}
           />
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
-            <h1 className="font-display text-3xl">
-              {profile.display_name || `@${profile.username}`}
-            </h1>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <h1 className="font-display text-3xl">
+                {profile.display_name || `@${profile.username}`}
+              </h1>
+              {profile.account_tier === "prime" ? <PrimeBadge /> : null}
+            </div>
             <p className="text-muted-foreground">@{profile.username}</p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
               {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}

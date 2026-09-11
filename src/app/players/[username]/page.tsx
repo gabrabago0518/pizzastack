@@ -12,6 +12,7 @@ import {
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
+import { PrimeBadge } from "@/components/site/prime-badge";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -83,7 +84,10 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
             <AvatarDisplay url={profile.avatar_url} label={label} />
             <div className="flex flex-col items-center gap-1.5 sm:items-start">
-              <h1 className="font-display text-3xl">{label}</h1>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <h1 className="font-display text-3xl">{label}</h1>
+                {profile.account_tier === "prime" ? <PrimeBadge /> : null}
+              </div>
               <p className="text-muted-foreground">@{profile.username}</p>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">
                 {profile.region ? <Badge variant="muted">{profile.region}</Badge> : null}

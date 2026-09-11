@@ -5,8 +5,12 @@ import Link from "next/link";
 import { MessageCircle, X, Bot, Users, Gamepad2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { cn } from "@/lib/utils";
+
+const PREVIEW_DISMISSED_KEY = "chat-fab-preview-dismissed";
+const PREVIEW_DELAY_MS = 1500;
 
 function FabRow({
   icon: Icon,
@@ -49,6 +53,49 @@ function FabRow({
   );
 }
 
+// A proactive preview bubble above the FAB, styled like a chat widget's
+// greeting popup (avatar + name header, a message bubble, a CTA button) —
+// draws the eye to the FAB instead of it just sitting there waiting to be
+// clicked.
+function ChatFabPreview({
+  message,
+  cta,
+  onDismiss,
+}: {
+  message: string;
+  cta: React.ReactNode;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="w-72 animate-fade-up overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+      <div className="flex items-center gap-3 bg-primary px-4 py-3 text-primary-foreground">
+        <span className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15">
+          <Gamepad2 className="size-5" />
+          <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-primary bg-accent" />
+        </span>
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate font-medium">Pizzastack</span>
+          <span className="truncate text-xs text-primary-foreground/80">Community</span>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="ml-auto shrink-0 text-primary-foreground/70 transition-colors hover:text-primary-foreground"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+      <div className="flex flex-col gap-3 bg-muted/30 p-4">
+        <p className="w-fit max-w-[85%] rounded-xl rounded-tl-none bg-background px-3 py-2 text-sm shadow-sm">
+          {message}
+        </p>
+        {cta}
+      </div>
+    </div>
+  );
+}
+
 export function ChatFab({
   activeListingId,
   pendingRequestCount = 0,
@@ -61,10 +108,35 @@ export function ChatFab({
   guildId?: string | null;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [previewVisible, setPreviewVisible] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const hasPendingRequests = pendingRequestCount > 0;
   const hasUnreadDms = unreadDmCount > 0;
   const badgeCount = pendingRequestCount + unreadDmCount;
+
+  const dismissPreview = React.useCallback(() => {
+    setPreviewVisible(false);
+    try {
+      sessionStorage.setItem(PREVIEW_DISMISSED_KEY, "1");
+    } catch {
+      // Storage unavailable — worst case the preview shows again next load.
+    }
+  }, []);
+
+  // Surfaces the preview bubble once, a beat after the page settles, unless
+  // it's already been dismissed this tab session.
+  React.useEffect(() => {
+    let alreadyDismissed = false;
+    try {
+      alreadyDismissed = sessionStorage.getItem(PREVIEW_DISMISSED_KEY) === "1";
+    } catch {
+      // Storage unavailable — fall through and just show it this load.
+    }
+    if (alreadyDismissed) return;
+
+    const timer = setTimeout(() => setPreviewVisible(true), PREVIEW_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   React.useEffect(() => {
     if (!open) return;
@@ -81,6 +153,37 @@ export function ChatFab({
 
   return (
     <div ref={containerRef} className="fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
+      {!open && previewVisible ? (
+        <ChatFabPreview
+          message={
+            hasUnreadDms
+              ? `You have ${unreadDmCount} unread message${unreadDmCount === 1 ? "" : "s"} waiting.`
+              : "Looking to squad up? Say hi in chat."
+          }
+          onDismiss={dismissPreview}
+          cta={
+            hasUnreadDms ? (
+              <Button asChild size="sm" onClick={dismissPreview}>
+                <Link href="/messages">
+                  <MessageCircle className="size-3.5" /> View messages
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  dismissPreview();
+                  setOpen(true);
+                }}
+              >
+                <MessageCircle className="size-3.5" /> Open chat
+              </Button>
+            )
+          }
+        />
+      ) : null}
+
       {open ? (
         <div className="flex flex-col items-end gap-2">
           <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.15} />
@@ -125,7 +228,10 @@ export function ChatFab({
 
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => {
+          setOpen((prev) => !prev);
+          dismissPreview();
+        }}
         aria-label={
           open
             ? "Close chat menu"

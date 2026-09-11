@@ -676,18 +676,53 @@ export async function getPendingCoachApplications() {
   return data ?? [];
 }
 
-// Admin-only overview of every currently-live coach listing, so an admin
-// can revoke one after the fact — separate from the pending-review queue
-// above. Newest-approved first, matching the public directory's default.
-export async function getApprovedCoaches() {
+export interface AdminCoachRow {
+  id: string;
+  gameName: string | null;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  joinedAt: string;
+  lastSeenAt: string | null;
+}
+
+// Admin-only overview of every currently-live coach listing, styled like
+// getAllAccounts' rows (avatar, username, joined/last-online) rather than
+// getCoachProfiles' public-directory shape — so an admin can revoke one
+// after the fact, separate from the pending-review queue above.
+// Newest-approved first, matching the public directory's default.
+export async function getApprovedCoaches(): Promise<AdminCoachRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("coach_profiles")
-    .select("*, profiles(username, region), games(name, slug)")
+    .select(
+      "id, profiles(username, display_name, avatar_url, created_at, last_seen_at), games(name)",
+    )
     .eq("status", "approved")
     .order("created_at", { ascending: false })
-    .returns<CoachProfileWithRelations[]>();
-  return data ?? [];
+    .returns<
+      {
+        id: string;
+        profiles: {
+          username: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          created_at: string;
+          last_seen_at: string | null;
+        } | null;
+        games: { name: string } | null;
+      }[]
+    >();
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    gameName: row.games?.name ?? null,
+    username: row.profiles?.username ?? "unknown",
+    displayName: row.profiles?.display_name ?? null,
+    avatarUrl: row.profiles?.avatar_url ?? null,
+    joinedAt: row.profiles?.created_at ?? "",
+    lastSeenAt: row.profiles?.last_seen_at ?? null,
+  }));
 }
 
 export interface TournamentFilters {

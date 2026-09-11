@@ -4,17 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { Loader2, Ban } from "lucide-react";
 
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { reviewCoachApplication } from "@/app/admin/actions";
-import type { CoachProfileWithRelations } from "@/lib/supabase/types";
+import { formatRelativeTime } from "@/lib/utils";
+import type { AdminCoachRow } from "@/lib/queries";
 
-export function ApprovedCoachesList({
-  coaches,
-}: {
-  coaches: CoachProfileWithRelations[];
-}) {
+export function ApprovedCoachesList({ coaches }: { coaches: AdminCoachRow[] }) {
   const [list, setList] = React.useState(coaches);
   const [pendingId, setPendingId] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -48,37 +46,44 @@ export function ApprovedCoachesList({
           <Card key={coach.id}>
             <CardContent className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge variant="muted">{coach.games?.name ?? "Unknown game"}</Badge>
-                    <span className="font-medium">{coach.headline}</span>
+                <div className="flex items-center gap-3">
+                  <AvatarDisplay
+                    url={coach.avatarUrl}
+                    label={coach.displayName || coach.username}
+                    className="size-9"
+                    textClassName="text-sm"
+                  />
+                  <div className="flex flex-col">
+                    <Link
+                      href={`/players/${coach.username}`}
+                      className="font-medium hover:text-primary"
+                    >
+                      @{coach.username}
+                    </Link>
+                    <span className="text-xs text-muted-foreground">
+                      Joined {formatRelativeTime(coach.joinedAt)} · Last online{" "}
+                      {coach.lastSeenAt
+                        ? formatRelativeTime(coach.lastSeenAt)
+                        : "never"}
+                    </span>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {coach.profiles?.username ? (
-                      <Link
-                        href={`/players/${coach.profiles.username}`}
-                        className="hover:text-foreground"
-                      >
-                        @{coach.profiles.username}
-                      </Link>
-                    ) : (
-                      "unknown"
-                    )}
-                  </span>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleRevoke(coach.id)}
-                  disabled={isPending}
-                >
-                  {isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Ban className="size-3.5" />
-                  )}
-                  Revoke
-                </Button>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Badge variant="muted">{coach.gameName ?? "Unknown game"}</Badge>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRevoke(coach.id)}
+                    disabled={isPending}
+                  >
+                    {isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Ban className="size-3.5" />
+                    )}
+                    Revoke
+                  </Button>
+                </div>
               </div>
               {errors[coach.id] ? (
                 <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

@@ -14,10 +14,23 @@ export function DmThread({
   conversationId,
   viewerId,
   initialMessages,
+  embedded = false,
+  autoRefreshOnMount = false,
 }: {
   conversationId: string;
   viewerId: string;
   initialMessages: DirectMessageWithSender[];
+  // Strips the standalone card chrome (border/background/padding) and fills
+  // its parent's height instead of capping its own — for embedding inside
+  // another container that already provides the frame, like the floating
+  // messages panel in ChatFab, rather than the full /messages/[id] page.
+  embedded?: boolean;
+  // The full page already has server-rendered initialMessages, so its
+  // first refresh can wait for the regular poll interval. The floating
+  // panel remounts this with an empty initialMessages every time the
+  // viewer switches conversations, so it needs to fetch immediately
+  // instead of showing a stale/empty thread for up to 4 seconds.
+  autoRefreshOnMount?: boolean;
 }) {
   const [messages, setMessages] = React.useState(initialMessages);
   const [input, setInput] = React.useState("");
@@ -37,6 +50,23 @@ export function DmThread({
     const interval = setInterval(refresh, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refresh]);
+
+  // Separate from the polling effect above so it can be cancelled if the
+  // conversation changes again before the fetch resolves — the floating
+  // panel remounts this per conversation, so a slow response for a thread
+  // the viewer has already clicked away from should never land.
+  React.useEffect(() => {
+    if (!autoRefreshOnMount) return;
+    let cancelled = false;
+    fetch(`/api/messages/${conversationId}`)
+      .then((response) => response.json())
+      .then((data: { messages: DirectMessageWithSender[] }) => {
+        if (!cancelled) setMessages(data.messages);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, autoRefreshOnMount]);
 
   React.useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -72,8 +102,19 @@ export function DmThread({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <div ref={listRef} className="flex max-h-[28rem] min-h-64 flex-col gap-2 overflow-y-auto">
+    <div
+      className={cn(
+        "flex flex-col gap-3",
+        embedded ? "h-full" : "rounded-lg border border-border bg-muted/20 p-3",
+      )}
+    >
+      <div
+        ref={listRef}
+        className={cn(
+          "flex flex-col gap-2 overflow-y-auto",
+          embedded ? "min-h-0 flex-1" : "max-h-[28rem] min-h-64",
+        )}
+      >
         {messages.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No messages yet — say hello.

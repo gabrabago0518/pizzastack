@@ -7,6 +7,7 @@ import { MessageCircle, X, Bot, Users, Gamepad2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
+import { ChatMessagesPanel } from "@/components/site/chat-messages-panel";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_DISMISSED_KEY = "chat-fab-preview-dismissed";
@@ -101,13 +102,16 @@ export function ChatFab({
   pendingRequestCount = 0,
   unreadDmCount = 0,
   guildId = null,
+  viewerId = null,
 }: {
   activeListingId: string | null;
   pendingRequestCount?: number;
   unreadDmCount?: number;
   guildId?: string | null;
+  viewerId?: string | null;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [panel, setPanel] = React.useState<"messages" | null>(null);
   const [previewVisible, setPreviewVisible] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const hasPendingRequests = pendingRequestCount > 0;
@@ -144,6 +148,7 @@ export function ChatFab({
     function handleClickOutside(event: MouseEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        setPanel(null);
       }
     }
 
@@ -162,7 +167,19 @@ export function ChatFab({
           }
           onDismiss={dismissPreview}
           cta={
-            hasUnreadDms ? (
+            hasUnreadDms && viewerId ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  dismissPreview();
+                  setOpen(true);
+                  setPanel("messages");
+                }}
+              >
+                <MessageCircle className="size-3.5" /> View messages
+              </Button>
+            ) : hasUnreadDms ? (
               <Button asChild size="sm" onClick={dismissPreview}>
                 <Link href="/messages">
                   <MessageCircle className="size-3.5" /> View messages
@@ -184,18 +201,32 @@ export function ChatFab({
         />
       ) : null}
 
-      {open ? (
+      {open && panel === "messages" && viewerId ? (
+        <ChatMessagesPanel viewerId={viewerId} onBack={() => setPanel(null)} />
+      ) : open ? (
         <div className="flex flex-col items-end gap-2">
           <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.15} />
-          <Link href="/messages" onClick={() => setOpen(false)}>
-            <FabRow
-              icon={MessageCircle}
-              label="Messages"
-              badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
-              badgeVariant="default"
-              delay={0.1}
-            />
-          </Link>
+          {viewerId ? (
+            <button type="button" onClick={() => setPanel("messages")}>
+              <FabRow
+                icon={MessageCircle}
+                label="Messages"
+                badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
+                badgeVariant="default"
+                delay={0.1}
+              />
+            </button>
+          ) : (
+            <Link href="/messages" onClick={() => setOpen(false)}>
+              <FabRow
+                icon={MessageCircle}
+                label="Messages"
+                badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
+                badgeVariant="default"
+                delay={0.1}
+              />
+            </Link>
+          )}
           {guildId ? (
             <Link href={`/guilds/${guildId}`} onClick={() => setOpen(false)}>
               <FabRow icon={Users} label="Guild chat" delay={0.05} />
@@ -229,7 +260,9 @@ export function ChatFab({
       <button
         type="button"
         onClick={() => {
-          setOpen((prev) => !prev);
+          const next = !open;
+          setOpen(next);
+          if (!next) setPanel(null);
           dismissPreview();
         }}
         aria-label={

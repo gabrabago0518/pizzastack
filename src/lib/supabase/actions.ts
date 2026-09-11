@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface AuthFormState {
   error?: string;
+  errorField?: "username" | "email" | "password";
   info?: string;
   email?: string;
 }
@@ -18,16 +19,23 @@ export async function signUp(
   const password = String(formData.get("password") ?? "");
   const username = String(formData.get("username") ?? "").trim();
 
-  if (!email || !password || !username) {
-    return { error: "Fill in every field to create your account." };
+  if (!username || !email || !password) {
+    return {
+      error: "Fill in every field to create your account.",
+      errorField: !username ? "username" : !email ? "email" : "password",
+    };
   }
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
     return {
       error: "Username must be 3-20 characters: letters, numbers, underscores only.",
+      errorField: "username",
     };
   }
   if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+    return {
+      error: "Password must be at least 8 characters.",
+      errorField: "password",
+    };
   }
 
   const supabase = await createClient();
@@ -38,7 +46,16 @@ export async function signUp(
   });
 
   if (error) {
-    return { error: error.message };
+    // Supabase's own message doesn't tag a field — guess from its wording
+    // (e.g. "User already registered" or a password-policy rejection) so
+    // only the field actually at fault gets cleared, not the whole form.
+    const message = error.message.toLowerCase();
+    const errorField = message.includes("password")
+      ? "password"
+      : message.includes("email") || message.includes("registered")
+        ? "email"
+        : undefined;
+    return { error: error.message, errorField };
   }
 
   if (!data.session) {

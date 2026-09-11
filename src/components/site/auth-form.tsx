@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,21 @@ export function AuthForm({ mode, action }: AuthFormProps) {
     action,
     {},
   );
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Controlled fields so a failed submission only clears the field that
+  // was actually wrong (per errorField) instead of React's default form
+  // action behavior, which resets every uncontrolled field on completion.
+  const [lastState, setLastState] = useState(state);
+  if (state !== lastState) {
+    setLastState(state);
+    if (state.errorField === "username") setUsername("");
+    if (state.errorField === "email") setEmail("");
+    if (state.errorField === "password") setPassword("");
+  }
 
   if (mode === "signup" && state.info) {
     return (
@@ -52,6 +67,8 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             maxLength={20}
             placeholder="frag_master"
             autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
       ) : null}
@@ -65,6 +82,8 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           required
           placeholder="you@example.com"
           autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 
@@ -78,6 +97,8 @@ export function AuthForm({ mode, action }: AuthFormProps) {
           minLength={8}
           placeholder="••••••••"
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
       </div>
 

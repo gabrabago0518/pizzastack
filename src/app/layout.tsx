@@ -7,7 +7,12 @@ import { ChatFab } from "@/components/site/chat-fab";
 import { CookieConsent } from "@/components/site/cookie-consent";
 import { PresenceHeartbeat } from "@/components/site/presence-heartbeat";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveListingIdForUser, getPendingJoinRequestCountForUser } from "@/lib/queries";
+import {
+  getActiveListingIdForUser,
+  getPendingJoinRequestCountForUser,
+  getUnreadDmCount,
+  getMyGuildMembership,
+} from "@/lib/queries";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -64,6 +69,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   } = await supabase.auth.getUser();
   const activeListingId = user ? await getActiveListingIdForUser(user.id) : null;
   const pendingRequestCount = user ? await getPendingJoinRequestCountForUser(user.id) : 0;
+  const unreadDmCount = user ? await getUnreadDmCount(user.id) : 0;
+  const myGuildMembership = user ? await getMyGuildMembership(user.id) : null;
 
   return (
     <html
@@ -74,7 +81,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
-        <ChatFab activeListingId={activeListingId} pendingRequestCount={pendingRequestCount} />
+        <ChatFab
+          activeListingId={activeListingId}
+          pendingRequestCount={pendingRequestCount}
+          unreadDmCount={unreadDmCount}
+          guildId={myGuildMembership?.guilds?.id ?? null}
+        />
         <CookieConsent />
         {user ? <PresenceHeartbeat /> : null}
       </body>

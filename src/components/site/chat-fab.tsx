@@ -52,13 +52,19 @@ function FabRow({
 export function ChatFab({
   activeListingId,
   pendingRequestCount = 0,
+  unreadDmCount = 0,
+  guildId = null,
 }: {
   activeListingId: string | null;
   pendingRequestCount?: number;
+  unreadDmCount?: number;
+  guildId?: string | null;
 }) {
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const hasPendingRequests = pendingRequestCount > 0;
+  const hasUnreadDms = unreadDmCount > 0;
+  const badgeCount = pendingRequestCount + unreadDmCount;
 
   React.useEffect(() => {
     if (!open) return;
@@ -77,8 +83,23 @@ export function ChatFab({
     <div ref={containerRef} className="fixed right-6 bottom-6 z-50 flex flex-col items-end gap-3">
       {open ? (
         <div className="flex flex-col items-end gap-2">
-          <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.1} />
-          <FabRow icon={Users} label="Guild chat" badge="Coming soon" disabled delay={0.05} />
+          <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.15} />
+          <Link href="/messages" onClick={() => setOpen(false)}>
+            <FabRow
+              icon={MessageCircle}
+              label="Messages"
+              badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
+              badgeVariant="default"
+              delay={0.1}
+            />
+          </Link>
+          {guildId ? (
+            <Link href={`/guilds/${guildId}`} onClick={() => setOpen(false)}>
+              <FabRow icon={Users} label="Guild chat" delay={0.05} />
+            </Link>
+          ) : (
+            <FabRow icon={Users} label="Guild chat" badge="Not in a guild" disabled delay={0.05} />
+          )}
           {activeListingId ? (
             <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>
               <FabRow
@@ -108,17 +129,17 @@ export function ChatFab({
         aria-label={
           open
             ? "Close chat menu"
-            : hasPendingRequests
-              ? `Open chat menu, ${pendingRequestCount} pending join ${pendingRequestCount === 1 ? "request" : "requests"}`
+            : badgeCount > 0
+              ? `Open chat menu, ${badgeCount} unread`
               : "Open chat menu"
         }
         aria-expanded={open}
         className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 active:scale-95"
       >
         {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
-        {!open && hasPendingRequests ? (
+        {!open && badgeCount > 0 ? (
           <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-[10px] font-bold text-destructive-foreground">
-            {pendingRequestCount > 9 ? "9+" : pendingRequestCount}
+            {badgeCount > 9 ? "9+" : badgeCount}
           </span>
         ) : null}
       </button>

@@ -317,3 +317,169 @@ export async function deleteGuildAchievement(
   revalidatePath("/guilds/[id]", "page");
   return {};
 }
+
+const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export interface GuildAvatarFormState {
+  error?: string;
+  avatarUrl?: string;
+}
+
+// Same upload flow as a player avatar (see profile/actions.ts's
+// uploadAvatar) — crop client-side, upload to the shared "avatars"
+// bucket, just at "guilds/{guildId}/avatar.<ext>" instead of
+// "{user_id}/avatar.<ext>". Storage RLS (schema.sql) already restricts
+// that path to the guild's own leader; the ownership check below is just
+// for a clean error message instead of a silent storage rejection.
+export async function uploadGuildAvatar(
+  guildId: string,
+  _prevState: GuildAvatarFormState,
+  formData: FormData,
+): Promise<GuildAvatarFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { data: guild } = await supabase
+    .from("guilds")
+    .select("owner_id")
+    .eq("id", guildId)
+    .maybeSingle();
+
+  if (!guild || guild.owner_id !== user.id) {
+    return { error: "Only the guild leader can change the guild avatar." };
+  }
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose an image to upload." };
+  }
+
+  const extension = ALLOWED_AVATAR_TYPES[file.type];
+  if (!extension) {
+    return { error: "Use a PNG, JPEG, WEBP, or GIF image." };
+  }
+  if (file.size > MAX_AVATAR_BYTES) {
+    return { error: "Image must be under 4MB." };
+  }
+
+  const path = `guilds/${guildId}/avatar.${extension}`;
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    return { error: uploadError.message };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+  // Bust caches on the public URL since the path itself doesn't change
+  // between uploads (upsert overwrites the same file).
+  const bustedUrl = `${publicUrl}?v=${Date.now()}`;
+
+  const { error: updateError } = await supabase
+    .from("guilds")
+    .update({ avatar_url: bustedUrl })
+    .eq("id", guildId);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  revalidatePath(`/guilds/${guildId}`);
+  revalidatePath(`/guilds/${guildId}/settings`);
+  revalidatePath("/guilds");
+  return { avatarUrl: bustedUrl };
+}
+
+export interface GuildSettingsFormState {
+  error?: string;
+  success?: boolean;
+}
+
+export async function updateGuildSettings(
+  guildId: string,
+  _prevState: GuildSettingsFormState,
+  formData: FormData,
+): Promise<GuildSettingsFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const region = String(formData.get("region") ?? "").trim();
+
+  const { error } = await supabase
+    .from("guilds")
+    .update({ region: region || null })
+    .eq("id", guildId)
+    .eq("owner_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/guilds/${guildId}`);
+  revalidatePath(`/guilds/${guildId}/settings`);
+  revalidatePath("/guilds");
+  return { success: true };
+}
+
+export interface ToggleGuildGameResult {
+  error?: string;
+}
+
+export async function toggleGuildGame(
+  guildId: string,
+  gameId: string,
+  selected: boolean,
+): Promise<ToggleGuildGameResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  if (selected) {
+    const { error } = await supabase
+      .from("guild_games")
+      .insert({ guild_id: guildId, game_id: gameId });
+    // 23505 = unique_violation (already added) — treat as a no-op success.
+    if (error && error.code !== "23505") {
+      return { error: error.message };
+    }
+  } else {
+    const { error } = await supabase
+      .from("guild_games")
+      .delete()
+      .eq("guild_id", guildId)
+      .eq("game_id", gameId);
+    if (error) {
+      return { error: error.message };
+    }
+  }
+
+  revalidatePath(`/guilds/${guildId}`);
+  revalidatePath(`/guilds/${guildId}/settings`);
+  return {};
+}

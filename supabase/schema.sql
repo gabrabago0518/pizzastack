@@ -1079,6 +1079,13 @@ create table if not exists public.guilds (
   unique (tag)
 );
 
+-- avatar_url: a guild's own logo, set from /guilds/[id]/settings — same
+-- upload flow as a player avatar (crop client-side, upload to the shared
+-- "avatars" bucket), just keyed by guild id instead of profile id. See the
+-- storage policies below.
+alter table public.guilds
+  add column if not exists avatar_url text;
+
 alter table public.guilds enable row level security;
 
 drop policy if exists "Guilds are publicly readable" on public.guilds;
@@ -1100,6 +1107,77 @@ drop policy if exists "Guild owners can delete their guild" on public.guilds;
 create policy "Guild owners can delete their guild"
   on public.guilds for delete
   using (auth.uid() = owner_id);
+
+-- ---------------------------------------------------------------------------
+-- guild_games: extra games a guild is tagged with, alongside its primary
+-- game_id (set at creation, still what /guilds?game=... filters on — left
+-- untouched so the directory filter doesn't need to change). Same
+-- many-to-many shape as profile_games, editable from /guilds/[id]/settings,
+-- leader-only to write.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guild_games (
+  guild_id uuid not null references public.guilds (id) on delete cascade,
+  game_id uuid not null references public.games (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (guild_id, game_id)
+);
+
+alter table public.guild_games enable row level security;
+
+drop policy if exists "Guild games are publicly readable" on public.guild_games;
+create policy "Guild games are publicly readable"
+  on public.guild_games for select
+  using (true);
+
+drop policy if exists "Guild leader can add guild games" on public.guild_games;
+create policy "Guild leader can add guild games"
+  on public.guild_games for insert
+  with check (auth.uid() = (select owner_id from public.guilds where id = guild_id));
+
+drop policy if exists "Guild leader can remove guild games" on public.guild_games;
+create policy "Guild leader can remove guild games"
+  on public.guild_games for delete
+  using (auth.uid() = (select owner_id from public.guilds where id = guild_id));
+
+-- Storage: guild avatars, in the same "avatars" bucket as player avatars
+-- (already public/created above) but at "guilds/{guild_id}/avatar.<ext>"
+-- instead of "{user_id}/avatar.<ext>" — the leading "guilds" segment is
+-- what tells these policies apart from the player-avatar ones on the same
+-- bucket, and ownership is checked against guilds.owner_id rather than the
+-- path segment matching auth.uid() directly, since the uploader isn't the
+-- path owner here.
+drop policy if exists "Guild leaders can upload their guild avatar" on storage.objects;
+create policy "Guild leaders can upload their guild avatar"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = 'guilds'
+    and auth.uid() = (
+      select owner_id from public.guilds where id = ((storage.foldername(name))[2])::uuid
+    )
+  );
+
+drop policy if exists "Guild leaders can update their guild avatar" on storage.objects;
+create policy "Guild leaders can update their guild avatar"
+  on storage.objects for update
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = 'guilds'
+    and auth.uid() = (
+      select owner_id from public.guilds where id = ((storage.foldername(name))[2])::uuid
+    )
+  );
+
+drop policy if exists "Guild leaders can delete their guild avatar" on storage.objects;
+create policy "Guild leaders can delete their guild avatar"
+  on storage.objects for delete
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = 'guilds'
+    and auth.uid() = (
+      select owner_id from public.guilds where id = ((storage.foldername(name))[2])::uuid
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- guild_members: profile_id is the primary key, not (guild_id, profile_id)

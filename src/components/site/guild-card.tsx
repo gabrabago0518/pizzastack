@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
 
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { GuildWithRelations } from "@/lib/supabase/types";
@@ -10,10 +11,18 @@ export function GuildCard({ guild }: { guild: GuildWithRelations }) {
     <Link href={`/guilds/${guild.id}`}>
       <Card className="transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
         <CardContent className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">[{guild.tag}]</Badge>
-            {guild.games?.name ? <Badge variant="muted">{guild.games.name}</Badge> : null}
-            {guild.region ? <Badge variant="outline">{guild.region}</Badge> : null}
+          <div className="flex items-center gap-3">
+            <AvatarDisplay
+              url={guild.avatar_url}
+              label={guild.name}
+              className="size-11"
+              textClassName="text-base"
+            />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="secondary">[{guild.tag}]</Badge>
+              {guild.games?.name ? <Badge variant="muted">{guild.games.name}</Badge> : null}
+              {guild.region ? <Badge variant="outline">{guild.region}</Badge> : null}
+            </div>
           </div>
           <h3 className="font-display text-lg leading-snug">{guild.name}</h3>
           {guild.description ? (

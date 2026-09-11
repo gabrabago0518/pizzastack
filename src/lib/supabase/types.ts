@@ -538,6 +538,7 @@ export interface Database {
           region: string | null;
           owner_id: string;
           member_count: number;
+          avatar_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -554,6 +555,7 @@ export interface Database {
           description?: string | null;
           game_id?: string | null;
           region?: string | null;
+          avatar_url?: string | null;
         };
         Relationships: [
           {
@@ -565,6 +567,34 @@ export interface Database {
           },
           {
             foreignKeyName: "guilds_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guild_games: {
+        Row: {
+          guild_id: string;
+          game_id: string;
+          created_at: string;
+        };
+        Insert: {
+          guild_id: string;
+          game_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "guild_games_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guild_games_game_id_fkey";
             columns: ["game_id"];
             isOneToOne: false;
             referencedRelation: "games";

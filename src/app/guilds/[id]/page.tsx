@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, MapPin } from "lucide-react";
+import { ArrowLeft, Users, MapPin, Settings } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
@@ -20,6 +20,7 @@ import {
   getGuildMessages,
   getGuildAnnouncements,
   getGuildAchievements,
+  getGamesForGuild,
   getMyGuildMembership,
 } from "@/lib/queries";
 
@@ -48,9 +49,10 @@ export default async function GuildPage({ params }: GuildPageProps) {
     data: { user: viewer },
   } = await supabase.auth.getUser();
 
-  const [members, myMembership] = await Promise.all([
+  const [members, myMembership, extraGames] = await Promise.all([
     getGuildMembers(guild.id),
     viewer ? getMyGuildMembership(viewer.id) : null,
+    getGamesForGuild(guild.id),
   ]);
 
   const isMember = members.some((member) => member.profile_id === viewer?.id);
@@ -76,7 +78,7 @@ export default async function GuildPage({ params }: GuildPageProps) {
 
       <div className="mb-8 flex flex-col items-center justify-between gap-6 sm:flex-row">
         <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <AvatarDisplay url={null} label={guild.name} />
+          <AvatarDisplay url={guild.avatar_url} label={guild.name} />
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <h1 className="font-display text-3xl">{guild.name}</h1>
@@ -88,6 +90,11 @@ export default async function GuildPage({ params }: GuildPageProps) {
             </span>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
               {guild.games?.name ? <Badge variant="muted">{guild.games.name}</Badge> : null}
+              {extraGames.map((game) => (
+                <Badge key={game.id} variant="muted">
+                  {game.name}
+                </Badge>
+              ))}
               {guild.region ? (
                 <Badge variant="outline">
                   <MapPin className="size-3" /> {guild.region}
@@ -99,7 +106,14 @@ export default async function GuildPage({ params }: GuildPageProps) {
 
         {viewer ? (
           isLeader ? (
-            <DeleteGuildButton guildId={guild.id} />
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/guilds/${guild.id}/settings`}>
+                  <Settings className="size-3.5" /> Edit guild
+                </Link>
+              </Button>
+              <DeleteGuildButton guildId={guild.id} />
+            </div>
           ) : (
             <GuildJoinButton
               guildId={guild.id}

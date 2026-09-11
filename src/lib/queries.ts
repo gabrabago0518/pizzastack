@@ -592,6 +592,20 @@ export async function getGuildMembers(guildId: string) {
   return data ?? [];
 }
 
+// Extra games a guild is tagged with (guild_games), on top of its primary
+// game_id — same shape as getGamesForProfile.
+export async function getGamesForGuild(guildId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_games")
+    .select("games(*)")
+    .eq("guild_id", guildId)
+    .returns<{ games: Game | null }[]>();
+  return (data ?? [])
+    .map((row) => row.games)
+    .filter((game): game is Game => game !== null);
+}
+
 // A player can only be in one guild at a time (guild_members.profile_id is
 // its primary key), so this is at most one row — used to gate "Create a
 // guild" and to show "You're already in a guild" states.

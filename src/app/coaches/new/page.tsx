@@ -27,7 +27,7 @@ export default async function NewCoachProfilePage() {
         <p className="mb-8 text-muted-foreground">
           List yourself in the coach directory for a game you know well.
           Players will see your contact info directly — no booking system,
-          no fees.
+          your rates are up to you.
         </p>
         <CoachForm
           games={games}

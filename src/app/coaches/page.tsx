@@ -12,7 +12,7 @@ import { getGames, getCoachProfiles } from "@/lib/queries";
 export const metadata: Metadata = {
   title: "Coaches",
   description:
-    "Browse players who coach your game and reach out directly — no fees, no booking system.",
+    "Browse players who coach your game and reach out directly — no booking system.",
   alternates: { canonical: "/coaches" },
 };
 
@@ -43,7 +43,7 @@ export default async function CoachesPage({
         <SectionHeading
           eyebrow="Level up"
           title="Coaches"
-          description="Connect directly with players who coach — no fees, just reach out."
+          description="Connect directly with players who coach — just reach out."
           className="mb-0"
         />
         <div className="flex flex-wrap gap-3">

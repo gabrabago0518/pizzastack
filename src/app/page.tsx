@@ -29,7 +29,7 @@ const features = [
     icon: GraduationCap,
     title: "Browse coaches",
     description:
-      "Browse players who coach your game and reach out directly. No fees, no booking system.",
+      "Browse players who coach your game and reach out directly. No booking system.",
     href: "/coaches",
   },
   {

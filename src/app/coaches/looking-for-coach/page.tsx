@@ -39,7 +39,7 @@ export default async function LookingForCoachPage({
         <SectionHeading
           eyebrow="Level up"
           title="Looking for a coach"
-          description="Post what you need and let coaches come to you — no fees, just reach out."
+          description="Post what you need and let coaches come to you — just reach out."
           className="mb-0"
         />
         <div className="flex flex-wrap gap-3">

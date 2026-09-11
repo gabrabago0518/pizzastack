@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Megaphone, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,10 +54,6 @@ export function GuildAnnouncements({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <p className="flex items-center gap-1.5 text-sm font-medium">
-        <Megaphone className="size-4" /> Announcements
-      </p>
-
       {isLeader ? (
         <form onSubmit={handlePost} className="flex items-center gap-2">
           <Input

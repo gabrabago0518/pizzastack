@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Users, MapPin } from "lucide-react";
 
 import { Section } from "@/components/site/section";
+import { AvatarDisplay } from "@/components/site/avatar-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { GuildJoinButton } from "@/components/site/guild-join-button";
 import { GuildMemberList } from "@/components/site/guild-member-list";
 import { GuildChat } from "@/components/site/guild-chat";
@@ -67,83 +67,93 @@ export default async function GuildPage({ params }: GuildPageProps) {
 
   return (
     <Section className="!pb-24">
-      <div className="mx-auto max-w-2xl">
-        <Link
-          href="/guilds"
-          className="mb-6 flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" /> Back to guilds
-        </Link>
+      <Link
+        href="/guilds"
+        className="mb-6 flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" /> Back to guilds
+      </Link>
 
-        <Card>
-          <CardContent className="flex flex-col gap-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">[{guild.tag}]</Badge>
-                  {guild.games?.name ? <Badge variant="muted">{guild.games.name}</Badge> : null}
-                  {guild.region ? (
-                    <Badge variant="outline">
-                      <MapPin className="size-3" /> {guild.region}
-                    </Badge>
-                  ) : null}
-                </div>
-                <h1 className="font-display text-2xl leading-snug">{guild.name}</h1>
-                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Users className="size-3.5" />
-                  {guild.member_count} {guild.member_count === 1 ? "member" : "members"}
-                </span>
-              </div>
-
-              {viewer ? (
-                isLeader ? (
-                  <DeleteGuildButton guildId={guild.id} />
-                ) : (
-                  <GuildJoinButton
-                    guildId={guild.id}
-                    isMember={isMember}
-                    alreadyInAnotherGuild={alreadyInAnotherGuild}
-                  />
-                )
-              ) : (
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/login">Log in to join</Link>
-                </Button>
-              )}
+      <div className="mb-8 flex flex-col items-center justify-between gap-6 sm:flex-row">
+        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
+          <AvatarDisplay url={null} label={guild.name} />
+          <div className="flex flex-col items-center gap-1.5 sm:items-start">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <h1 className="font-display text-3xl">{guild.name}</h1>
+              <Badge variant="secondary">[{guild.tag}]</Badge>
             </div>
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              <Users className="size-3.5" />
+              {guild.member_count} {guild.member_count === 1 ? "member" : "members"}
+            </span>
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+              {guild.games?.name ? <Badge variant="muted">{guild.games.name}</Badge> : null}
+              {guild.region ? (
+                <Badge variant="outline">
+                  <MapPin className="size-3" /> {guild.region}
+                </Badge>
+              ) : null}
+            </div>
+          </div>
+        </div>
 
-            {guild.description ? (
-              <p className="leading-relaxed text-muted-foreground">{guild.description}</p>
-            ) : null}
+        {viewer ? (
+          isLeader ? (
+            <DeleteGuildButton guildId={guild.id} />
+          ) : (
+            <GuildJoinButton
+              guildId={guild.id}
+              isMember={isMember}
+              alreadyInAnotherGuild={alreadyInAnotherGuild}
+            />
+          )
+        ) : (
+          <Button asChild size="sm" variant="outline">
+            <Link href="/login">Log in to join</Link>
+          </Button>
+        )}
+      </div>
 
-            <div className="flex flex-col gap-3 border-t border-border/60 pt-4">
-              <h2 className="text-sm font-medium">Roster</h2>
-              <GuildMemberList
+      {guild.description ? (
+        <p className="mx-auto mb-10 max-w-2xl text-center text-muted-foreground sm:mx-0 sm:text-left">
+          {guild.description}
+        </p>
+      ) : null}
+
+      <div className="mb-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Roster</h2>
+        <GuildMemberList
+          guildId={guild.id}
+          members={members}
+          viewerId={viewer?.id}
+          isLeader={isLeader}
+        />
+      </div>
+
+      {isMember && viewer ? (
+        <div className="flex flex-col gap-8">
+          <div className="grid gap-8 lg:grid-cols-2">
+            <div className="flex flex-col gap-4">
+              <h2 className="font-display text-xl">Announcements</h2>
+              <GuildAnnouncements
                 guildId={guild.id}
-                members={members}
-                viewerId={viewer?.id}
+                announcements={announcements}
                 isLeader={isLeader}
               />
             </div>
+            <div className="flex flex-col gap-4">
+              <h2 className="font-display text-xl">Achievements</h2>
+              <GuildAchievements
+                guildId={guild.id}
+                achievements={achievements}
+                isLeader={isLeader}
+              />
+            </div>
+          </div>
 
-            {isMember && viewer ? (
-              <>
-                <GuildAnnouncements
-                  guildId={guild.id}
-                  announcements={announcements}
-                  isLeader={isLeader}
-                />
-                <GuildAchievements
-                  guildId={guild.id}
-                  achievements={achievements}
-                  isLeader={isLeader}
-                />
-                <GuildChat guildId={guild.id} viewerId={viewer.id} initialMessages={messages} />
-              </>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
+          <GuildChat guildId={guild.id} viewerId={viewer.id} initialMessages={messages} />
+        </div>
+      ) : null}
     </Section>
   );
 }

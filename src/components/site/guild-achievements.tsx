@@ -53,10 +53,6 @@ export function GuildAchievements({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <p className="flex items-center gap-1.5 text-sm font-medium">
-        <Medal className="size-4" /> Achievements
-      </p>
-
       {isLeader ? (
         <form onSubmit={handleAdd} className="flex flex-col gap-2">
           <Input

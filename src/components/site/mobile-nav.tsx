@@ -13,10 +13,11 @@ import {
 } from "@/components/ui/sheet";
 import { NAV_LINKS } from "@/lib/nav-links";
 
-// Below `lg`, the header has no room for the desktop icon row (see
-// Navbar), so those links live here instead — a hamburger that opens a
-// full list with labels, not just icons, since a drawer has the space an
-// icon-only strip on a phone screen doesn't.
+// The section-directory links (Teammates, Coaches, Guilds, etc.) used to
+// sit inline as an icon row on wide screens, which got crowded as more
+// sections were added — this hamburger now replaces that row at every
+// width, not just below `lg`, so the header always shows one menu button
+// instead of a growing strip of icons.
 export function MobileNav() {
   const [open, setOpen] = React.useState(false);
 
@@ -26,7 +27,7 @@ export function MobileNav() {
         <button
           type="button"
           aria-label="Menu"
-          className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <Menu className="size-5" />
         </button>

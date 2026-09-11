@@ -14,7 +14,6 @@ import {
   getUnreadNotificationCount,
   getUnreadDmCount,
 } from "@/lib/queries";
-import { NAV_LINKS } from "@/lib/nav-links";
 
 const iconLinkClassName =
   "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
@@ -37,6 +36,8 @@ export async function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-18 max-w-6xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 md:gap-6">
+        <MobileNav />
+
         <Link
           href="/"
           aria-label="Pizzastack.gg"
@@ -68,20 +69,6 @@ export async function Navbar() {
           >
             <Search className="size-4" />
           </Link>
-          <MobileNav />
-          <nav className="hidden shrink-0 items-center gap-1 lg:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-label={link.label}
-                title={link.label}
-                className={iconLinkClassName}
-              >
-                <link.icon className="size-[18px]" />
-              </Link>
-            ))}
-          </nav>
           {user ? (
             <>
               <Link

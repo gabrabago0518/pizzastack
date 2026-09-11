@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { syncValorantRank } from "@/lib/rank-sync";
 import { isValorantRegion } from "@/lib/valorant-rank";
 import { PROFILE_BACKGROUNDS, type ProfileBackgroundKey } from "@/lib/profile-backgrounds";
@@ -302,4 +304,37 @@ export async function connectRiotAccount(
   revalidatePath("/profile");
   revalidatePath("/profile/settings");
   return { success: true };
+}
+
+export interface DeleteAccountResult {
+  error?: string;
+}
+
+// Self-service account deletion (Privacy Policy "Your data rights"). Deletes
+// the auth.users row via the service-role admin API — every table that
+// references profiles.id does so "on delete cascade" (see schema.sql), so
+// this alone removes the profile and everything tied to it: listings, coach
+// profiles, messages, highlights, guild memberships, etc. Note the one
+// non-obvious side effect: a guild's owner_id also cascades, so a guild
+// leader deleting their account deletes the guild itself, not just their
+// membership in it — DeleteAccountButton warns about this before confirming.
+export async function deleteAccount(): Promise<DeleteAccountResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const serviceClient = createServiceClient();
+  const { error } = await serviceClient.auth.admin.deleteUser(user.id);
+  if (error) {
+    return { error: error.message };
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/");
 }

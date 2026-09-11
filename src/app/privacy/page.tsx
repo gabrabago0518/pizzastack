@@ -1,29 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Section, SectionHeading } from "@/components/site/section";
+import { PolicySection } from "@/components/site/policy-section";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "What Pizzastack.gg stores about you, which cookies we use, and the third-party sites we pull verified rank data from.",
+    "What Pizzastack.gg stores about you, which cookies we use, the third-party sites we pull verified rank data from, and your data rights.",
 };
 
-function PolicySection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <h2 className="font-display text-xl">{title}</h2>
-      <div className="flex flex-col gap-3 text-sm leading-relaxed text-muted-foreground">
-        {children}
-      </div>
-    </div>
-  );
-}
+const CONTACT_EMAIL = "support@pizzastack.gg";
 
 export default function PrivacyPage() {
   return (
@@ -50,8 +36,31 @@ export default function PrivacyPage() {
           <p>
             Your account (email, username, display name, bio, region, avatar)
             and anything you post — teammate listings, coach applications,
-            messages, and commendations. If you connect Steam or a Riot ID,
-            we also store the verified rank data described below.
+            guild content, chat messages, commendations, and uploaded
+            highlight clips. If you connect Steam or a Riot ID, we also store
+            the verified rank data described below.
+          </p>
+          <p>
+            All of this — your account record and any file you upload
+            (avatars, guild avatars, highlight videos) — is hosted on our
+            infrastructure provider, Supabase (database, authentication, and
+            file storage). We don&apos;t sell or share it with data brokers or
+            advertisers.
+          </p>
+        </PolicySection>
+
+        <PolicySection title="Content moderation">
+          <p>
+            Highlight clips are reviewed by an admin before they&apos;re shown
+            to anyone besides you — see our{" "}
+            <Link href="/terms" className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
+              Terms of Use
+            </Link>{" "}
+            for what&apos;s allowed. While a clip is pending or if it&apos;s
+            rejected, it&apos;s visible only to you and to admins doing the
+            review; a rejected clip also stores the reason so you can see why.
+            Reports you file against another player, and reports filed
+            against you, are visible only to admins.
           </p>
         </PolicySection>
 
@@ -96,14 +105,44 @@ export default function PrivacyPage() {
           </p>
         </PolicySection>
 
-        <PolicySection title="Your choices">
+        <PolicySection title="Your data rights">
           <p>
             You can disconnect Steam or your Riot ID at any time from{" "}
             <Link href="/profile/settings" className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
               profile settings
             </Link>
-            , which stops future rank syncs. Deleting your account removes
-            your profile and everything tied to it.
+            , which stops future rank syncs, and you can edit or delete most
+            of what you&apos;ve posted (listings, guild content, highlights)
+            yourself from wherever it&apos;s shown.
+          </p>
+          <p>
+            The same profile settings page has a &ldquo;Delete account&rdquo;
+            option that permanently deletes your account, profile, and
+            everything tied to it — listings, coach applications, messages,
+            and highlights. This can&apos;t be undone. If you lead a guild,
+            deleting your account also deletes that guild for its other
+            members, since a guild only exists tied to its owner — the delete
+            button warns you about this before you confirm.
+          </p>
+          <p>
+            For anything this page doesn&apos;t cover — a copy of your data,
+            a correction we haven&apos;t given you a self-service way to
+            make, or a request under a data-protection law that applies to
+            you (like GDPR or CCPA) — email{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
+              {CONTACT_EMAIL}
+            </a>{" "}
+            and we&apos;ll handle it directly.
+          </p>
+        </PolicySection>
+
+        <PolicySection title="Questions">
+          <p>
+            Reach us at{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-foreground underline underline-offset-4 hover:text-primary">
+              {CONTACT_EMAIL}
+            </a>{" "}
+            for anything about this policy or your data.
           </p>
         </PolicySection>
       </div>

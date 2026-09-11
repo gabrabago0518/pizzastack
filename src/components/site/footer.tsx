@@ -44,6 +44,9 @@ export function Footer() {
           <Link href="/privacy" className="transition-colors hover:text-foreground">
             Privacy & Cookies
           </Link>
+          <Link href="/terms" className="transition-colors hover:text-foreground">
+            Terms of Use
+          </Link>
           <a
             href="https://leetify.com"
             target="_blank"

@@ -7,6 +7,7 @@ import { Section } from "@/components/site/section";
 import { AvatarUpload } from "@/components/site/avatar-upload";
 import { ProfileForm } from "@/components/site/profile-form";
 import { SteamConnect } from "@/components/site/steam-connect";
+import { DeleteAccountButton } from "@/components/site/delete-account-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
@@ -34,9 +35,10 @@ export default async function ProfileSettingsPage({
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [allGames, myGames] = await Promise.all([
+  const [allGames, myGames, { count: ownedGuildCount }] = await Promise.all([
     getGames(),
     getGamesForProfile(user.id),
+    supabase.from("guilds").select("*", { count: "exact", head: true }).eq("owner_id", user.id),
   ]);
 
   return (
@@ -84,6 +86,18 @@ export default async function ProfileSettingsPage({
             }
             statusParam={steam}
           />
+        </div>
+
+        <div className="mt-10 flex flex-col gap-3 rounded-xl border border-destructive/30 p-5">
+          <div>
+            <h2 className="font-display text-lg">Danger zone</h2>
+            <p className="text-sm text-muted-foreground">
+              Permanently delete your account and everything tied to it.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <DeleteAccountButton isGuildLeader={Boolean(ownedGuildCount)} />
+          </div>
         </div>
       </div>
     </Section>

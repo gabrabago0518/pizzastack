@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { syncValorantRank } from "@/lib/rank-sync";
 import { isValorantRegion } from "@/lib/valorant-rank";
+import { PROFILE_BACKGROUNDS, type ProfileBackgroundKey } from "@/lib/profile-backgrounds";
 import type { Database } from "@/lib/supabase/types";
 
 export interface ProfileFormState {
@@ -191,6 +192,55 @@ export async function setProfileVisibility(
     ProfileVisibilityField
   >;
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/profile");
+  revalidatePath(`/players/${username}`);
+  return {};
+}
+
+export interface BackgroundResult {
+  error?: string;
+}
+
+// Prime perk (see /prime) — profile_background itself stays a plain
+// self-editable column like show_*, but this is a paid feature being
+// introduced fresh, not grandfathered like those, so it's worth actually
+// checking account_tier here rather than trusting the UI gate alone.
+export async function setProfileBackground(
+  key: ProfileBackgroundKey | null,
+  username: string,
+): Promise<BackgroundResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to edit your profile." };
+  }
+
+  if (key && !PROFILE_BACKGROUNDS.some((background) => background.key === key)) {
+    return { error: "That's not a valid background." };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("account_tier")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.account_tier !== "prime") {
+    return { error: "Profile backgrounds are a Prime perk." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ profile_background: key })
+    .eq("id", user.id);
 
   if (error) {
     return { error: error.message };

@@ -28,13 +28,13 @@ const perks = [
     icon: ImageIcon,
     title: "Profile backgrounds",
     description: "Pick a background for your profile page to stand out.",
-    available: false,
+    available: true,
   },
   {
     icon: Sparkles,
     title: "Animated avatar borders",
-    description: "Moving avatar borders that show off your Prime status.",
-    available: false,
+    description: "A rotating gradient ring around your avatar that shows off your Prime status.",
+    available: true,
   },
 ];
 

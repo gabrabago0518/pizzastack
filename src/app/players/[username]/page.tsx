@@ -15,6 +15,8 @@ import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
 import { MessageButton } from "@/components/site/message-button";
 import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
+import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
+import { getProfileBackgroundGradient } from "@/lib/profile-backgrounds";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -74,6 +76,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
     ]);
 
   const label = profile.display_name || profile.username;
+  const backgroundGradient = getProfileBackgroundGradient(profile.profile_background);
 
   return (
     <Section className="!pb-24">
@@ -82,9 +85,26 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
         initialCommended={viewerHasCommended}
         initialCount={commendCount}
       >
-        <div className="mb-8 flex flex-col items-center justify-between gap-6 sm:flex-row">
+        <div
+          className={
+            backgroundGradient
+              ? "relative mb-8 overflow-hidden rounded-2xl p-6"
+              : "mb-8"
+          }
+          style={backgroundGradient ? { background: backgroundGradient } : undefined}
+        >
+        {backgroundGradient ? (
+          <div className="absolute inset-0 bg-background/70" />
+        ) : null}
+        <div className="relative flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-            <AvatarDisplay url={profile.avatar_url} label={label} />
+            {profile.account_tier === "prime" ? (
+              <PrimeAvatarFrame>
+                <AvatarDisplay url={profile.avatar_url} label={label} />
+              </PrimeAvatarFrame>
+            ) : (
+              <AvatarDisplay url={profile.avatar_url} label={label} />
+            )}
             <div className="flex flex-col items-center gap-1.5 sm:items-start">
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="font-display text-3xl">{label}</h1>
@@ -115,6 +135,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               <ReportPlayerDialog profileId={profile.id} username={profile.username} />
             </div>
           ) : null}
+        </div>
         </div>
       </CommendProvider>
 

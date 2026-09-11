@@ -36,6 +36,7 @@ export interface Database {
           show_listings: boolean;
           show_coaching: boolean;
           account_tier: "standard" | "prime";
+          profile_background: "sunset" | "aurora" | "midnight" | "ember" | "violet" | null;
           created_at: string;
         };
         Insert: {
@@ -72,6 +73,7 @@ export interface Database {
           show_listings?: boolean;
           show_coaching?: boolean;
           account_tier?: "standard" | "prime";
+          profile_background?: "sunset" | "aurora" | "midnight" | "ember" | "violet" | null;
         };
         Update: {
           username?: string;
@@ -106,6 +108,7 @@ export interface Database {
           show_listings?: boolean;
           show_coaching?: boolean;
           account_tier?: "standard" | "prime";
+          profile_background?: "sunset" | "aurora" | "midnight" | "ember" | "violet" | null;
         };
         Relationships: [];
       };

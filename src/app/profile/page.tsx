@@ -10,6 +10,8 @@ import { MostPlayedList } from "@/components/site/most-played-list";
 import { EditProfileDialog } from "@/components/site/edit-profile-dialog";
 import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
+import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
+import { getProfileBackgroundGradient } from "@/lib/profile-backgrounds";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,14 +49,36 @@ export default async function ProfilePage() {
     getTopHeroesForProfile(user.id),
   ]);
 
+  const backgroundGradient = getProfileBackgroundGradient(profile.profile_background);
+
   return (
     <Section className="!pb-24">
-      <div className="mb-10 flex flex-col items-center justify-between gap-6 sm:flex-row">
+      <div
+        className={
+          backgroundGradient
+            ? "relative mb-10 overflow-hidden rounded-2xl p-6"
+            : "mb-10"
+        }
+        style={backgroundGradient ? { background: backgroundGradient } : undefined}
+      >
+        {backgroundGradient ? (
+          <div className="absolute inset-0 bg-background/70" />
+        ) : null}
+        <div className="relative flex flex-col items-center justify-between gap-6 sm:flex-row">
         <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:text-left">
-          <AvatarDisplay
-            url={profile.avatar_url}
-            label={profile.display_name || profile.username}
-          />
+          {profile.account_tier === "prime" ? (
+            <PrimeAvatarFrame>
+              <AvatarDisplay
+                url={profile.avatar_url}
+                label={profile.display_name || profile.username}
+              />
+            </PrimeAvatarFrame>
+          ) : (
+            <AvatarDisplay
+              url={profile.avatar_url}
+              label={profile.display_name || profile.username}
+            />
+          )}
           <div className="flex flex-col items-center gap-1.5 sm:items-start">
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <h1 className="font-display text-3xl">
@@ -106,6 +130,7 @@ export default async function ProfilePage() {
                 show_listings: profile.show_listings,
                 show_coaching: profile.show_coaching,
               }}
+              initialBackground={profile.profile_background}
             />
           ) : (
             <Button asChild variant="outline">
@@ -119,6 +144,7 @@ export default async function ProfilePage() {
               <Settings /> Profile settings
             </Link>
           </Button>
+        </div>
         </div>
       </div>
 

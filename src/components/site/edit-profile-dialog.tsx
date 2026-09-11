@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Pencil, Loader2, Check } from "lucide-react";
+import { Pencil, Loader2, Check, Ban } from "lucide-react";
 
 import {
   Dialog,
@@ -11,7 +11,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { setProfileVisibility, type ProfileVisibilityField } from "@/app/profile/actions";
+import {
+  setProfileVisibility,
+  setProfileBackground,
+  type ProfileVisibilityField,
+} from "@/app/profile/actions";
+import { PROFILE_BACKGROUNDS, type ProfileBackgroundKey } from "@/lib/profile-backgrounds";
 import { cn } from "@/lib/utils";
 
 interface VisibilityOption {
@@ -51,15 +56,20 @@ const OPTIONS: VisibilityOption[] = [
 export function EditProfileDialog({
   username,
   initialVisibility,
+  initialBackground,
 }: {
   username: string;
   initialVisibility: Record<ProfileVisibilityField, boolean>;
+  initialBackground: ProfileBackgroundKey | null;
 }) {
   const [open, setOpen] = React.useState(false);
   const [visibility, setVisibility] = React.useState(initialVisibility);
   const [pendingFields, setPendingFields] = React.useState<Set<ProfileVisibilityField>>(
     () => new Set(),
   );
+  const [background, setBackground] = React.useState(initialBackground);
+  const [backgroundPending, setBackgroundPending] = React.useState(false);
+  const [backgroundError, setBackgroundError] = React.useState<string | null>(null);
 
   function handleToggle(field: ProfileVisibilityField) {
     const next = !visibility[field];
@@ -74,6 +84,21 @@ export function EditProfileDialog({
       });
       if (result.error) {
         setVisibility((prev) => ({ ...prev, [field]: !next }));
+      }
+    });
+  }
+
+  function handleBackground(key: ProfileBackgroundKey | null) {
+    const previous = background;
+    setBackground(key);
+    setBackgroundPending(true);
+    setBackgroundError(null);
+
+    setProfileBackground(key, username).then((result) => {
+      setBackgroundPending(false);
+      if (result.error) {
+        setBackground(previous);
+        setBackgroundError(result.error);
       }
     });
   }
@@ -94,7 +119,7 @@ export function EditProfileDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-1 px-6 pb-6">
+          <div className="flex flex-col gap-1 px-6 pb-2">
             {OPTIONS.map((option) => {
               const active = visibility[option.field];
               const isPending = pendingFields.has(option.field);
@@ -130,6 +155,46 @@ export function EditProfileDialog({
                 </button>
               );
             })}
+          </div>
+
+          <div className="border-t border-border/60 px-6 py-4">
+            <p className="mb-2.5 text-sm font-medium">Profile background</p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => handleBackground(null)}
+                disabled={backgroundPending}
+                aria-label="No background"
+                title="None"
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-full border-2 bg-muted text-muted-foreground transition-colors disabled:pointer-events-none disabled:opacity-60",
+                  background === null ? "border-primary" : "border-transparent",
+                )}
+              >
+                <Ban className="size-4" />
+              </button>
+              {PROFILE_BACKGROUNDS.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => handleBackground(option.key)}
+                  disabled={backgroundPending}
+                  aria-label={option.label}
+                  title={option.label}
+                  style={{ background: option.gradient }}
+                  className={cn(
+                    "size-9 shrink-0 rounded-full border-2 transition-colors disabled:pointer-events-none disabled:opacity-60",
+                    background === option.key ? "border-primary" : "border-transparent",
+                  )}
+                />
+              ))}
+              {backgroundPending ? (
+                <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+              ) : null}
+            </div>
+            {backgroundError ? (
+              <p className="mt-2 text-xs text-destructive">{backgroundError}</p>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>

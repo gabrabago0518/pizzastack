@@ -153,6 +153,22 @@ alter table public.profiles
 alter table public.profiles
   add constraint profiles_account_tier_check check (account_tier in ('standard', 'prime'));
 
+-- profile_background: one of the presets in src/lib/profile-backgrounds.ts,
+-- or null for none — a Prime perk (see /prime), but soft-gated the same
+-- way as the show_* columns above rather than enforced by the database:
+-- setProfileBackground checks account_tier itself before writing, but the
+-- column stays a plain self-editable field like bio/region rather than
+-- being pulled into service-role-only territory like is_coach/account_tier
+-- — getting this wrong only lets someone pick a free background, not
+-- anything that misrepresents a verified fact about them.
+alter table public.profiles
+  add column if not exists profile_background text;
+alter table public.profiles
+  drop constraint if exists profiles_profile_background_check;
+alter table public.profiles
+  add constraint profiles_profile_background_check
+  check (profile_background is null or profile_background in ('sunset', 'aurora', 'midnight', 'ember', 'violet'));
+
 -- is_coach is deliberately left out of this grant — it's now flipped only
 -- by an admin approving a coach_profiles application (see admin/actions.ts
 -- and coach_profiles.status below), not by the applicant's own session,
@@ -161,7 +177,8 @@ revoke update on public.profiles from authenticated;
 grant update (
   username, display_name, avatar_url, bio, region, onboarded,
   riot_name, riot_tag, riot_region, last_seen_at,
-  show_ranks, show_most_played, show_games, show_listings, show_coaching
+  show_ranks, show_most_played, show_games, show_listings, show_coaching,
+  profile_background
 ) on public.profiles to authenticated;
 
 -- One-time grant for the account requested as the site's first admin.

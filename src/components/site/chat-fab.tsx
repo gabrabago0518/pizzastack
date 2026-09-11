@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { MessageCircle, X, Bot, Users, Gamepad2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { ChatMessagesPanel } from "@/components/site/chat-messages-panel";
@@ -14,42 +13,81 @@ import { cn } from "@/lib/utils";
 const PREVIEW_DISMISSED_KEY = "chat-fab-preview-dismissed";
 const PREVIEW_DELAY_MS = 1500;
 
-function FabRow({
+// How far each menu item sits from the FAB's center once fanned out. Sized
+// for RadialButton's 48px circles (spacing them ~62px apart along the
+// arc) — a labeled pill needs much more room per item than a plain circle
+// does, which is why the menu is icon-only here rather than reusing the
+// old full-width row style.
+const RADIAL_RADIUS = 118;
+
+// Positions a menu item along the quarter-circle arc above and to the left
+// of the FAB — the only two directions guaranteed not to run off-screen
+// from a bottom-right-anchored button. angleDeg is measured the usual
+// math way (0 = right, 90 = straight up, 180 = straight left), so 90-180
+// sweeps from "up" to "left". Center-anchored (translate -50%,-50%) since
+// every item is the same small, symmetric circle — unlike a wide labeled
+// pill, there's no risk of it growing back off the right edge of the
+// screen.
+//
+// Deliberately has no animation of its own on this element: the
+// fade-up keyframes animate `transform`, and a CSS animation's value for
+// a property wins over an inline style on that *same* element for as
+// long as (and after) it runs — so pairing the position transform here
+// with the entrance animation here would make every item's fade-up
+// silently erase its own arc position once the animation settled. The
+// child (RadialButton) carries the animation instead, on its own
+// element, where it can't touch this transform.
+function RadialItem({ angle, children }: { angle: number; children: React.ReactNode }) {
+  const rad = (angle * Math.PI) / 180;
+  const x = Math.cos(rad) * RADIAL_RADIUS;
+  const y = -Math.sin(rad) * RADIAL_RADIUS;
+  return (
+    <div
+      className="absolute top-1/2 left-1/2"
+      style={{ transform: `translate(-50%, -50%) translate(${x}px, ${y}px)` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// A single fanned-out menu item — icon-only (a text pill this size just
+// doesn't fit cleanly on a circular arc), with the label as a native
+// tooltip/aria-label for discoverability and a small numeric badge for
+// counts that actually matter (unread DMs, pending requests). Non-count
+// states ("Join a guild", "Coming soon") are conveyed by the tooltip and
+// the disabled styling instead of an on-circle badge, since there's no
+// room for text here.
+function RadialButton({
   icon: Icon,
   label,
-  badge,
-  badgeVariant = "muted",
+  badgeCount,
   disabled,
   delay,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  badge?: string;
-  badgeVariant?: React.ComponentProps<typeof Badge>["variant"];
+  badgeCount?: number;
   disabled?: boolean;
   delay: number;
 }) {
   return (
     <span
+      title={label}
+      aria-label={label}
       className={cn(
-        "flex animate-fade-up items-center gap-2.5 rounded-full border border-border bg-card py-2 pr-4 pl-3 text-sm font-medium shadow-md",
-        disabled ? "text-muted-foreground" : "text-foreground hover:border-primary/40",
+        "relative flex size-12 animate-fade-up items-center justify-center rounded-full border border-border shadow-md transition-colors",
+        disabled
+          ? "bg-muted text-muted-foreground"
+          : "bg-card text-foreground hover:border-primary/50 hover:text-primary",
       )}
       style={{ animationDelay: `${delay}s` }}
     >
-      <span
-        className={cn(
-          "flex size-7 shrink-0 items-center justify-center rounded-full",
-          disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
-        )}
-      >
-        <Icon className="size-4" />
-      </span>
-      {label}
-      {badge ? (
-        <Badge variant={badgeVariant} className="ml-auto">
-          {badge}
-        </Badge>
+      <Icon className="size-5" />
+      {badgeCount ? (
+        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full border-2 border-background bg-destructive text-[9px] font-bold text-destructive-foreground">
+          {badgeCount > 9 ? "9+" : badgeCount}
+        </span>
       ) : null}
     </span>
   );
@@ -216,93 +254,95 @@ export function ChatFab({
           viewerId={viewerId}
           onBack={() => setPanel(null)}
         />
-      ) : open ? (
-        <div className="flex flex-col items-end gap-2">
-          <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.15} />
-          {viewerId ? (
-            <button type="button" onClick={() => setPanel("messages")}>
-              <FabRow
-                icon={MessageCircle}
-                label="Messages"
-                badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
-                badgeVariant="default"
-                delay={0.1}
-              />
-            </button>
-          ) : (
-            <Link href="/messages" onClick={() => setOpen(false)}>
-              <FabRow
-                icon={MessageCircle}
-                label="Messages"
-                badge={hasUnreadDms ? `${unreadDmCount} new` : undefined}
-                badgeVariant="default"
-                delay={0.1}
-              />
-            </Link>
-          )}
-          {guildId && guildName && guildTag && viewerId ? (
-            <button type="button" onClick={() => setPanel("guild")}>
-              <FabRow icon={Users} label="Guild chat" delay={0.05} />
-            </button>
-          ) : (
-            <Link href="/guilds" onClick={() => setOpen(false)}>
-              <FabRow
-                icon={Users}
-                label="Guild chat"
-                badge="Join a guild"
-                badgeVariant="secondary"
-                delay={0.05}
-              />
-            </Link>
-          )}
-          {activeListingId ? (
-            <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>
-              <FabRow
-                icon={Gamepad2}
-                label="Current listing"
-                badge={hasPendingRequests ? `${pendingRequestCount} new` : undefined}
-                badgeVariant="default"
-                delay={0}
-              />
-              <ListingLoadingOverlay />
-            </Link>
-          ) : (
-            <FabRow
-              icon={Gamepad2}
-              label="Current listing"
-              badge="None active"
-              disabled
-              delay={0}
-            />
-          )}
-        </div>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => {
-          const next = !open;
-          setOpen(next);
-          if (!next) setPanel(null);
-          dismissPreview();
-        }}
-        aria-label={
-          open
-            ? "Close chat menu"
-            : badgeCount > 0
-              ? `Open chat menu, ${badgeCount} unread`
-              : "Open chat menu"
-        }
-        aria-expanded={open}
-        className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 active:scale-95"
-      >
-        {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
-        {!open && badgeCount > 0 ? (
-          <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-[10px] font-bold text-destructive-foreground">
-            {badgeCount > 9 ? "9+" : badgeCount}
-          </span>
+      {/* Everything below shares one 56px reference box (the FAB's own
+          footprint) so RadialItem's angle math and the button's center
+          line up exactly, whether or not the fanned-out menu is showing. */}
+      <div className="relative size-14">
+        {open && !panel ? (
+          <>
+            <RadialItem angle={180}>
+              {activeListingId ? (
+                <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>
+                  <RadialButton
+                    icon={Gamepad2}
+                    label={
+                      hasPendingRequests
+                        ? `Current listing, ${pendingRequestCount} new`
+                        : "Current listing"
+                    }
+                    badgeCount={pendingRequestCount}
+                    delay={0}
+                  />
+                  <ListingLoadingOverlay />
+                </Link>
+              ) : (
+                <RadialButton icon={Gamepad2} label="No active listing" disabled delay={0} />
+              )}
+            </RadialItem>
+
+            <RadialItem angle={150}>
+              {guildId && guildName && guildTag && viewerId ? (
+                <button type="button" onClick={() => setPanel("guild")}>
+                  <RadialButton icon={Users} label="Guild chat" delay={0.05} />
+                </button>
+              ) : (
+                <Link href="/guilds" onClick={() => setOpen(false)}>
+                  <RadialButton icon={Users} label="Join a guild" delay={0.05} />
+                </Link>
+              )}
+            </RadialItem>
+
+            <RadialItem angle={120}>
+              {viewerId ? (
+                <button type="button" onClick={() => setPanel("messages")}>
+                  <RadialButton
+                    icon={MessageCircle}
+                    label={hasUnreadDms ? `Messages, ${unreadDmCount} new` : "Messages"}
+                    badgeCount={unreadDmCount}
+                    delay={0.1}
+                  />
+                </button>
+              ) : (
+                <Link href="/messages" onClick={() => setOpen(false)}>
+                  <RadialButton icon={MessageCircle} label="Messages" delay={0.1} />
+                </Link>
+              )}
+            </RadialItem>
+
+            <RadialItem angle={90}>
+              <RadialButton icon={Bot} label="AI customer support (coming soon)" disabled delay={0.15} />
+            </RadialItem>
+          </>
         ) : null}
-      </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            const next = !open;
+            setOpen(next);
+            if (!next) setPanel(null);
+            dismissPreview();
+          }}
+          aria-label={
+            open
+              ? "Close chat menu"
+              : badgeCount > 0
+                ? `Open chat menu, ${badgeCount} unread`
+                : "Open chat menu"
+          }
+          aria-expanded={open}
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 active:scale-95"
+        >
+          {open ? <X className="size-6" /> : <MessageCircle className="size-6" />}
+          {!open && badgeCount > 0 ? (
+            <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-[10px] font-bold text-destructive-foreground">
+              {badgeCount > 9 ? "9+" : badgeCount}
+            </span>
+          ) : null}
+        </button>
+      </div>
     </div>
   );
 }

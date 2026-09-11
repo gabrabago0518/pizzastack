@@ -9,6 +9,7 @@ import { RankBanner } from "@/components/site/rank-banner";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { EditProfileDialog } from "@/components/site/edit-profile-dialog";
 import { PrimeBadge } from "@/components/site/prime-badge";
+import { CoachBadge } from "@/components/site/coach-badge";
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,7 @@ export default async function ProfilePage() {
                 {profile.display_name || `@${profile.username}`}
               </h1>
               {profile.account_tier === "prime" ? <PrimeBadge /> : null}
+              {profile.is_coach ? <CoachBadge /> : null}
             </div>
             <p className="text-muted-foreground">@{profile.username}</p>
             <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">

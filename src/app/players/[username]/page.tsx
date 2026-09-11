@@ -13,6 +13,7 @@ import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-list
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
 import { PrimeBadge } from "@/components/site/prime-badge";
+import { CoachBadge } from "@/components/site/coach-badge";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -87,6 +88,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
               <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="font-display text-3xl">{label}</h1>
                 {profile.account_tier === "prime" ? <PrimeBadge /> : null}
+                {profile.is_coach ? <CoachBadge /> : null}
               </div>
               <p className="text-muted-foreground">@{profile.username}</p>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-3 sm:justify-start">

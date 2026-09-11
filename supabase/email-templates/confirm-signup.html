@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="supported-color-schemes" content="dark light" />
+    <title>Confirm your email</title>
+    <!--[if mso]>
+    <noscript>
+      <xml>
+        <o:OfficeDocumentSettings>
+          <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+      </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+      body, table, td { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { border: 0; line-height: 100%; outline: none; text-decoration: none; }
+      body { margin: 0; padding: 0; width: 100% !important; background-color: #090811; }
+      a { color: #f6339b; }
+      @media screen and (max-width: 480px) {
+        .container { width: 100% !important; }
+        .px { padding-left: 24px !important; padding-right: 24px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0; padding:0; background-color:#090811;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+      Confirm your email to activate your Pizzastack.gg account.
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#090811;">
+      <tr>
+        <td align="center" style="padding: 40px 16px;">
+          <table role="presentation" class="container" width="480" cellpadding="0" cellspacing="0" border="0" style="width:480px; max-width:480px;">
+            <!-- Logo -->
+            <tr>
+              <td align="center" style="padding-bottom: 28px;">
+                <span style="font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">
+                  <span style="color:#f2f0f9;">PIZZA</span><span style="color:#f6339b;">STACK</span><span style="color:#9896a4; font-size:13px; font-weight:600;">.GG</span>
+                </span>
+              </td>
+            </tr>
+
+            <!-- Card -->
+            <tr>
+              <td class="px" style="background-color:#14121d; border:1px solid #2b2936; border-radius:16px; padding:40px 36px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" style="padding-bottom: 18px;">
+                      <div style="width:56px; height:56px; border-radius:9999px; background-color:#1f1e28; text-align:center; line-height:56px; font-size:26px;">
+                        &#9993;
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:22px; font-weight:700; color:#f2f0f9; padding-bottom:10px;">
+                      Confirm your email
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:15px; line-height:1.6; color:#9896a4; padding-bottom:28px;">
+                      Thanks for signing up for Pizzastack.gg — squad up, post what you're looking for, and connect with coaches. Confirm your email to activate your account.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-bottom: 24px;">
+                      <!--[if mso]>
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="50%" fillcolor="#f6339b" stroke="f">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Confirm email</center>
+                      </v:roundrect>
+                      <![endif]-->
+                      <!--[if !mso]><!-->
+                      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup"
+                         style="display:inline-block; background-color:#f6339b; color:#ffffff; font-family: Arial, Helvetica, sans-serif; font-size:15px; font-weight:700; text-decoration:none; padding:14px 32px; border-radius:9999px;">
+                        Confirm email
+                      </a>
+                      <!--<![endif]-->
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:12px; line-height:1.6; color:#9896a4;">
+                      Button not working? Copy and paste this link into your browser:
+                      <br />
+                      <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup" style="color:#f6339b; word-break:break-all;">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=signup</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="font-family: Arial, Helvetica, sans-serif; font-size:12px; line-height:1.6; color:#9896a4; padding: 24px 20px 0;">
+                If you didn't create a Pizzastack.gg account, you can safely ignore this email.
+                <br />
+                &copy; 2026 Pizzastack.gg
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

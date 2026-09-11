@@ -20,10 +20,23 @@ export function GuildChat({
   guildId,
   viewerId,
   initialMessages,
+  embedded = false,
+  autoRefreshOnMount = false,
 }: {
   guildId: string;
   viewerId: string;
   initialMessages: GuildMessageWithSender[];
+  // Strips the standalone card chrome (border/background/padding, the
+  // internal "Guild chat" title) and fills its parent's height instead of
+  // capping its own — for embedding inside another container that already
+  // provides the frame, like the floating guild panel in ChatFab, rather
+  // than the full /guilds/[id] page.
+  embedded?: boolean;
+  // The full guild page already has server-rendered initialMessages, so
+  // its first update can wait for realtime/the fallback poll. The floating
+  // panel remounts this with an empty initialMessages every time it opens,
+  // so it needs to fetch immediately instead of showing an empty thread.
+  autoRefreshOnMount?: boolean;
 }) {
   const [messages, setMessages] = React.useState(initialMessages);
   const [input, setInput] = React.useState("");
@@ -66,6 +79,21 @@ export function GuildChat({
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages.length]);
 
+  // Separate from the realtime/fallback-poll effect above so it can be
+  // cancelled if the panel closes again before the fetch resolves.
+  React.useEffect(() => {
+    if (!autoRefreshOnMount) return;
+    let cancelled = false;
+    fetch(`/api/guilds/${guildId}/messages`)
+      .then((response) => response.json())
+      .then((data: { messages: GuildMessageWithSender[] }) => {
+        if (!cancelled) setMessages(data.messages);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [guildId, autoRefreshOnMount]);
+
   function handleSend(event: React.FormEvent) {
     event.preventDefault();
     const text = input.trim();
@@ -89,10 +117,21 @@ export function GuildChat({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3">
-      <p className="text-sm font-medium">Guild chat</p>
+    <div
+      className={cn(
+        "flex flex-col gap-3",
+        embedded ? "h-full" : "rounded-lg border border-border bg-muted/20 p-3",
+      )}
+    >
+      {embedded ? null : <p className="text-sm font-medium">Guild chat</p>}
 
-      <div ref={listRef} className="flex max-h-96 flex-col gap-2 overflow-y-auto">
+      <div
+        ref={listRef}
+        className={cn(
+          "flex flex-col gap-2 overflow-y-auto",
+          embedded ? "min-h-0 flex-1" : "max-h-96",
+        )}
+      >
         {messages.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No messages yet — say hi to your guild.

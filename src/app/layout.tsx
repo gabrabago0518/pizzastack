@@ -86,6 +86,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           pendingRequestCount={pendingRequestCount}
           unreadDmCount={unreadDmCount}
           guildId={myGuildMembership?.guilds?.id ?? null}
+          guildName={myGuildMembership?.guilds?.name ?? null}
+          guildTag={myGuildMembership?.guilds?.tag ?? null}
           viewerId={user?.id ?? null}
         />
         <CookieConsent />

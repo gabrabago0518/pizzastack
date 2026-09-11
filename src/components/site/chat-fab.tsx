@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { ChatMessagesPanel } from "@/components/site/chat-messages-panel";
+import { ChatGuildPanel } from "@/components/site/chat-guild-panel";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_DISMISSED_KEY = "chat-fab-preview-dismissed";
@@ -102,16 +103,20 @@ export function ChatFab({
   pendingRequestCount = 0,
   unreadDmCount = 0,
   guildId = null,
+  guildName = null,
+  guildTag = null,
   viewerId = null,
 }: {
   activeListingId: string | null;
   pendingRequestCount?: number;
   unreadDmCount?: number;
   guildId?: string | null;
+  guildName?: string | null;
+  guildTag?: string | null;
   viewerId?: string | null;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [panel, setPanel] = React.useState<"messages" | null>(null);
+  const [panel, setPanel] = React.useState<"messages" | "guild" | null>(null);
   const [previewVisible, setPreviewVisible] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const hasPendingRequests = pendingRequestCount > 0;
@@ -203,6 +208,14 @@ export function ChatFab({
 
       {open && panel === "messages" && viewerId ? (
         <ChatMessagesPanel viewerId={viewerId} onBack={() => setPanel(null)} />
+      ) : open && panel === "guild" && viewerId && guildId && guildName && guildTag ? (
+        <ChatGuildPanel
+          guildId={guildId}
+          guildName={guildName}
+          guildTag={guildTag}
+          viewerId={viewerId}
+          onBack={() => setPanel(null)}
+        />
       ) : open ? (
         <div className="flex flex-col items-end gap-2">
           <FabRow icon={Bot} label="AI customer support" badge="Coming soon" disabled delay={0.15} />
@@ -227,12 +240,20 @@ export function ChatFab({
               />
             </Link>
           )}
-          {guildId ? (
-            <Link href={`/guilds/${guildId}`} onClick={() => setOpen(false)}>
+          {guildId && guildName && guildTag && viewerId ? (
+            <button type="button" onClick={() => setPanel("guild")}>
               <FabRow icon={Users} label="Guild chat" delay={0.05} />
-            </Link>
+            </button>
           ) : (
-            <FabRow icon={Users} label="Guild chat" badge="Not in a guild" disabled delay={0.05} />
+            <Link href="/guilds" onClick={() => setOpen(false)}>
+              <FabRow
+                icon={Users}
+                label="Guild chat"
+                badge="Join a guild"
+                badgeVariant="secondary"
+                delay={0.05}
+              />
+            </Link>
           )}
           {activeListingId ? (
             <Link href={`/teammates/${activeListingId}`} onClick={() => setOpen(false)}>

@@ -1186,6 +1186,85 @@ create policy "Guild members can send guild chat"
   );
 
 -- ---------------------------------------------------------------------------
+-- guild_announcements: leader-posted news for the guild, visible only to
+-- members — same member-only read shape as guild_messages, but a
+-- persistent pinned-style feed rather than a scrolling chat, so it gets
+-- its own table. Posting/deleting is leader-only: guild_members.role has
+-- an 'officer' value but nothing in the app grants it yet, so this
+-- mirrors the leader-only gate already used for kicking members and
+-- deleting the guild rather than half-wiring officer permissions here.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guild_announcements (
+  id uuid primary key default gen_random_uuid(),
+  guild_id uuid not null references public.guilds (id) on delete cascade,
+  author_id uuid references public.profiles (id) on delete set null,
+  body text not null check (char_length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+
+alter table public.guild_announcements enable row level security;
+
+drop policy if exists "Guild members can read announcements" on public.guild_announcements;
+create policy "Guild members can read announcements"
+  on public.guild_announcements for select
+  using (
+    exists (
+      select 1 from public.guild_members
+      where guild_members.guild_id = guild_announcements.guild_id
+        and guild_members.profile_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Guild leader can post announcements" on public.guild_announcements;
+create policy "Guild leader can post announcements"
+  on public.guild_announcements for insert
+  with check (
+    author_id = auth.uid()
+    and auth.uid() = (select owner_id from public.guilds where id = guild_id)
+  );
+
+drop policy if exists "Guild leader can delete announcements" on public.guild_announcements;
+create policy "Guild leader can delete announcements"
+  on public.guild_announcements for delete
+  using (auth.uid() = (select owner_id from public.guilds where id = guild_id));
+
+-- ---------------------------------------------------------------------------
+-- guild_achievements: a leader-maintained log of what the guild has
+-- accomplished — same member-only visibility and leader-only write model
+-- as guild_announcements above.
+-- ---------------------------------------------------------------------------
+create table if not exists public.guild_achievements (
+  id uuid primary key default gen_random_uuid(),
+  guild_id uuid not null references public.guilds (id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 100),
+  description text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.guild_achievements enable row level security;
+
+drop policy if exists "Guild members can read achievements" on public.guild_achievements;
+create policy "Guild members can read achievements"
+  on public.guild_achievements for select
+  using (
+    exists (
+      select 1 from public.guild_members
+      where guild_members.guild_id = guild_achievements.guild_id
+        and guild_members.profile_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Guild leader can add achievements" on public.guild_achievements;
+create policy "Guild leader can add achievements"
+  on public.guild_achievements for insert
+  with check (auth.uid() = (select owner_id from public.guilds where id = guild_id));
+
+drop policy if exists "Guild leader can delete achievements" on public.guild_achievements;
+create policy "Guild leader can delete achievements"
+  on public.guild_achievements for delete
+  using (auth.uid() = (select owner_id from public.guilds where id = guild_id));
+
+-- ---------------------------------------------------------------------------
 -- player_reports: moderation data, not public — only admins can read it
 -- (checked against profiles.is_admin, same service-role-adjacent trust
 -- level as everything else admin-only on this site). Any signed-in player

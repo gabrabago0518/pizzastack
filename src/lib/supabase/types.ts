@@ -632,6 +632,61 @@ export interface Database {
           },
         ];
       };
+      guild_announcements: {
+        Row: {
+          id: string;
+          guild_id: string;
+          author_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          guild_id: string;
+          author_id?: string | null;
+          body: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "guild_announcements_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "guild_announcements_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      guild_achievements: {
+        Row: {
+          id: string;
+          guild_id: string;
+          title: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          guild_id: string;
+          title: string;
+          description?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "guild_achievements_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       player_reports: {
         Row: {
           id: string;
@@ -969,6 +1024,8 @@ export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Guild = Database["public"]["Tables"]["guilds"]["Row"];
 export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
+export type GuildAnnouncement = Database["public"]["Tables"]["guild_announcements"]["Row"];
+export type GuildAchievement = Database["public"]["Tables"]["guild_achievements"]["Row"];
 export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
 export type Tournament = Database["public"]["Tables"]["tournaments"]["Row"];
 export type TournamentTeam = Database["public"]["Tables"]["tournament_teams"]["Row"];
@@ -1007,6 +1064,10 @@ export type GuildMemberWithProfile = GuildMember & {
 };
 
 export type GuildMessageWithSender = GuildMessage & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type GuildAnnouncementWithAuthor = GuildAnnouncement & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 

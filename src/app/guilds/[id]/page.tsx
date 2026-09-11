@@ -10,12 +10,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { GuildJoinButton } from "@/components/site/guild-join-button";
 import { GuildMemberList } from "@/components/site/guild-member-list";
 import { GuildChat } from "@/components/site/guild-chat";
+import { GuildAnnouncements } from "@/components/site/guild-announcements";
+import { GuildAchievements } from "@/components/site/guild-achievements";
 import { DeleteGuildButton } from "@/components/site/delete-guild-button";
 import { createClient } from "@/lib/supabase/server";
 import {
   getGuildById,
   getGuildMembers,
   getGuildMessages,
+  getGuildAnnouncements,
+  getGuildAchievements,
   getMyGuildMembership,
 } from "@/lib/queries";
 
@@ -53,7 +57,13 @@ export default async function GuildPage({ params }: GuildPageProps) {
   const isLeader = viewer?.id === guild.owner_id;
   const alreadyInAnotherGuild = Boolean(myMembership && myMembership.guild_id !== guild.id);
 
-  const messages = isMember ? await getGuildMessages(guild.id) : [];
+  const [messages, announcements, achievements] = isMember
+    ? await Promise.all([
+        getGuildMessages(guild.id),
+        getGuildAnnouncements(guild.id),
+        getGuildAchievements(guild.id),
+      ])
+    : [[], [], []];
 
   return (
     <Section className="!pb-24">
@@ -117,7 +127,19 @@ export default async function GuildPage({ params }: GuildPageProps) {
             </div>
 
             {isMember && viewer ? (
-              <GuildChat guildId={guild.id} viewerId={viewer.id} initialMessages={messages} />
+              <>
+                <GuildAnnouncements
+                  guildId={guild.id}
+                  announcements={announcements}
+                  isLeader={isLeader}
+                />
+                <GuildAchievements
+                  guildId={guild.id}
+                  achievements={achievements}
+                  isLeader={isLeader}
+                />
+                <GuildChat guildId={guild.id} viewerId={viewer.id} initialMessages={messages} />
+              </>
             ) : null}
           </CardContent>
         </Card>

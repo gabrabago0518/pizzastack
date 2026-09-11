@@ -13,6 +13,8 @@ import type {
   GuildWithRelations,
   GuildMemberWithProfile,
   GuildMessageWithSender,
+  GuildAnnouncementWithAuthor,
+  GuildAchievement,
   Game,
   Tournament,
   TournamentMatch,
@@ -609,6 +611,31 @@ export async function getGuildMessages(guildId: string) {
     .eq("guild_id", guildId)
     .order("created_at", { ascending: true })
     .returns<GuildMessageWithSender[]>();
+  return data ?? [];
+}
+
+// Member-only — RLS on guild_announcements independently enforces this, the
+// page just avoids issuing the query at all for a non-member.
+export async function getGuildAnnouncements(guildId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_announcements")
+    .select("*, profiles(username, avatar_url)")
+    .eq("guild_id", guildId)
+    .order("created_at", { ascending: false })
+    .returns<GuildAnnouncementWithAuthor[]>();
+  return data ?? [];
+}
+
+// Member-only, same as getGuildAnnouncements above.
+export async function getGuildAchievements(guildId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("guild_achievements")
+    .select("*")
+    .eq("guild_id", guildId)
+    .order("created_at", { ascending: false })
+    .returns<GuildAchievement[]>();
   return data ?? [];
 }
 

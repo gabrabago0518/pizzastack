@@ -198,3 +198,122 @@ export async function deleteGuild(guildId: string): Promise<GuildActionResult> {
   revalidatePath("/guilds");
   redirect("/guilds");
 }
+
+// RLS restricts posting to the guild's leader, so a non-leader calling this
+// gets an actual insert error back (a with-check violation), not a silent
+// no-op like the delete actions below.
+export async function postGuildAnnouncement(
+  guildId: string,
+  body: string,
+): Promise<GuildActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const trimmed = body.trim();
+  if (!trimmed) {
+    return { error: "Write something to post." };
+  }
+
+  const { error } = await supabase
+    .from("guild_announcements")
+    .insert({ guild_id: guildId, author_id: user.id, body: trimmed });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/guilds/[id]", "page");
+  return {};
+}
+
+// RLS restricts this delete to the guild's leader, so a non-leader calling
+// it just silently affects zero rows — same defense-in-depth backstop as
+// kickMember above.
+export async function deleteGuildAnnouncement(
+  announcementId: string,
+): Promise<GuildActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("guild_announcements")
+    .delete()
+    .eq("id", announcementId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/guilds/[id]", "page");
+  return {};
+}
+
+export async function addGuildAchievement(
+  guildId: string,
+  title: string,
+  description: string,
+): Promise<GuildActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    return { error: "Give the achievement a title." };
+  }
+
+  const { error } = await supabase.from("guild_achievements").insert({
+    guild_id: guildId,
+    title: trimmedTitle,
+    description: description.trim() || null,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/guilds/[id]", "page");
+  return {};
+}
+
+export async function deleteGuildAchievement(
+  achievementId: string,
+): Promise<GuildActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("guild_achievements")
+    .delete()
+    .eq("id", achievementId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/guilds/[id]", "page");
+  return {};
+}

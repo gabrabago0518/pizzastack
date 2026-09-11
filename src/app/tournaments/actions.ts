@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getTournamentTeams } from "@/lib/queries";
+import { getTournamentTeams, getGuildMembers } from "@/lib/queries";
 import { generateBracket } from "@/lib/bracket";
 
 export interface TournamentActionResult {
@@ -154,6 +154,128 @@ export async function createTeam(
 
   revalidatePath(`/tournaments/${tournamentId}`);
   return { teamId: team.id };
+}
+
+export interface RegisterGuildTeamResult extends TeamActionResult {
+  registeredCount?: number;
+  skippedCount?: number;
+}
+
+// Lets a guild's leader register the guild's existing roster as a
+// tournament team in one shot, instead of every member individually
+// finding and joining a freshly created team. The leader becomes captain
+// (they're already on the roster as its owner) and the team is tagged
+// with guild_id so it shows up as a guild team in the UI and so the guild
+// can't register twice for the same tournament (see the unique constraint
+// in schema.sql). Capped at the tournament's team_size — guild members
+// beyond that, or already registered on another team here, are skipped
+// rather than blocking the whole registration.
+export async function registerGuildAsTeam(
+  tournamentId: string,
+): Promise<RegisterGuildTeamResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { data: guild } = await supabase
+    .from("guilds")
+    .select("id, name")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (!guild) {
+    return { error: "Only a guild leader can register a guild for a tournament." };
+  }
+
+  const { data: tournament } = await supabase
+    .from("tournaments")
+    .select("status, max_teams, team_size")
+    .eq("id", tournamentId)
+    .maybeSingle();
+
+  if (!tournament) {
+    return { error: "That tournament no longer exists." };
+  }
+  if (tournament.status !== "open") {
+    return { error: "Registration for this tournament is closed." };
+  }
+  if (tournament.max_teams) {
+    const { count } = await supabase
+      .from("tournament_teams")
+      .select("*", { count: "exact", head: true })
+      .eq("tournament_id", tournamentId);
+    if ((count ?? 0) >= tournament.max_teams) {
+      return { error: "This tournament already has its max number of teams." };
+    }
+  }
+
+  const members = await getGuildMembers(guild.id);
+  if (members.length === 0) {
+    return { error: "Your guild has no members to register." };
+  }
+
+  const { data: existingRegs } = await supabase
+    .from("tournament_team_members")
+    .select("profile_id")
+    .eq("tournament_id", tournamentId)
+    .in(
+      "profile_id",
+      members.map((member) => member.profile_id),
+    );
+  const alreadyRegistered = new Set((existingRegs ?? []).map((row) => row.profile_id));
+  const eligible = members.filter((member) => !alreadyRegistered.has(member.profile_id));
+
+  if (eligible.length === 0) {
+    return { error: "Every member of your guild is already registered in this tournament." };
+  }
+
+  const roster = eligible.slice(0, tournament.team_size);
+
+  const { data: team, error } = await supabase
+    .from("tournament_teams")
+    .insert({ tournament_id: tournamentId, name: guild.name, captain_id: user.id, guild_id: guild.id })
+    .select("id")
+    .single();
+
+  if (error || !team) {
+    return {
+      error:
+        error?.code === "23505"
+          ? "Your guild is already registered for this tournament, or its name clashes with an existing team."
+          : (error?.message ?? "Couldn't register your guild."),
+    };
+  }
+
+  const { error: memberError } = await supabase.from("tournament_team_members").insert(
+    roster.map((member) => ({
+      team_id: team.id,
+      tournament_id: tournamentId,
+      profile_id: member.profile_id,
+    })),
+  );
+
+  if (memberError) {
+    // Roll back the now-rosterless team rather than leave an orphan.
+    await supabase.from("tournament_teams").delete().eq("id", team.id);
+    return {
+      error:
+        memberError.code === "23505"
+          ? "One or more guild members are already on a team in this tournament."
+          : memberError.message,
+    };
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}`);
+  return {
+    teamId: team.id,
+    registeredCount: roster.length,
+    skippedCount: eligible.length - roster.length,
+  };
 }
 
 export async function joinTeam(

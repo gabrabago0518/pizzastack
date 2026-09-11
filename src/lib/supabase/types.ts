@@ -888,6 +888,7 @@ export interface Database {
           name: string;
           captain_id: string;
           seed: number | null;
+          guild_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -895,6 +896,7 @@ export interface Database {
           name: string;
           captain_id: string;
           seed?: number | null;
+          guild_id?: string | null;
         };
         Update: {
           name?: string;
@@ -913,6 +915,13 @@ export interface Database {
             columns: ["captain_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tournament_teams_guild_id_fkey";
+            columns: ["guild_id"];
+            isOneToOne: false;
+            referencedRelation: "guilds";
             referencedColumns: ["id"];
           },
         ];
@@ -1158,6 +1167,7 @@ export type TournamentWithRelations = Tournament & {
 
 export type TournamentTeamWithRelations = TournamentTeam & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
+  guilds: Pick<Guild, "name" | "tag"> | null;
   tournament_team_members: { count: number }[];
 };
 

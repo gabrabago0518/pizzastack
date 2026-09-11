@@ -1547,6 +1547,19 @@ create table if not exists public.tournament_teams (
   unique (tournament_id, name)
 );
 
+-- guild_id: set when this team was registered directly from a guild's
+-- roster (see registerGuildAsTeam) rather than built ad hoc — nullable
+-- since most teams have no guild behind them. A plain unique(tournament_id,
+-- guild_id) stops one guild registering twice for the same tournament
+-- while leaving ad-hoc teams (guild_id null) unrestricted, since Postgres
+-- never treats two nulls as equal for uniqueness purposes.
+alter table public.tournament_teams
+  add column if not exists guild_id uuid references public.guilds (id) on delete set null;
+alter table public.tournament_teams
+  drop constraint if exists tournament_teams_tournament_guild_unique;
+alter table public.tournament_teams
+  add constraint tournament_teams_tournament_guild_unique unique (tournament_id, guild_id);
+
 alter table public.tournament_teams enable row level security;
 
 drop policy if exists "Tournament teams are publicly readable" on public.tournament_teams;
@@ -1556,12 +1569,18 @@ create policy "Tournament teams are publicly readable"
 
 -- Team creation only while the tournament is still open, and only up to
 -- max_teams (unenforced/null = unlimited). The app checks both up front
--- for a friendly error message; this is the backstop.
+-- for a friendly error message; this is the backstop. When guild_id is
+-- set, also requires the caller to actually lead that guild, so nobody can
+-- claim a team was registered from a guild they don't own.
 drop policy if exists "Players can create a team" on public.tournament_teams;
 create policy "Players can create a team"
   on public.tournament_teams for insert
   with check (
     auth.uid() = captain_id
+    and (
+      guild_id is null
+      or auth.uid() = (select owner_id from public.guilds where id = guild_id)
+    )
     and exists (
       select 1 from public.tournaments t
       where t.id = tournament_id
@@ -1617,20 +1636,39 @@ create policy "Team rosters are publicly readable"
   on public.tournament_team_members for select
   using (true);
 
--- Self-join only while the tournament is open and the team has room
--- (capped at the tournament's team_size). No captain-adds-others path —
--- a player joins themselves, same consent model as everything else on
--- this site that isn't an explicit invite.
+-- Self-join while the tournament is open and the team has room (capped at
+-- the tournament's team_size) — a player joins themselves, same consent
+-- model as everything else on this site that isn't an explicit invite.
+-- The second branch is the one exception: a guild's leader bulk-adding
+-- their own guild's members onto a team registered from that guild (see
+-- registerGuildAsTeam) — allowed only when the team is actually tagged
+-- with a guild the caller owns, and only for profiles who are genuinely
+-- on that guild's roster, so a leader still can't add an arbitrary player.
 drop policy if exists "Players can join a team themselves" on public.tournament_team_members;
 create policy "Players can join a team themselves"
   on public.tournament_team_members for insert
   with check (
-    auth.uid() = profile_id
-    and exists (
+    (
+      auth.uid() = profile_id
+      and exists (
+        select 1 from public.tournament_teams team
+        join public.tournaments t on t.id = team.tournament_id
+        where team.id = team_id
+          and t.status = 'open'
+          and (select count(*) from public.tournament_team_members m where m.team_id = team.id) < t.team_size
+      )
+    )
+    or exists (
       select 1 from public.tournament_teams team
       join public.tournaments t on t.id = team.tournament_id
+      join public.guilds g on g.id = team.guild_id
       where team.id = team_id
+        and g.owner_id = auth.uid()
         and t.status = 'open'
+        and exists (
+          select 1 from public.guild_members gm
+          where gm.guild_id = g.id and gm.profile_id = profile_id
+        )
         and (select count(*) from public.tournament_team_members m where m.team_id = team.id) < t.team_size
     )
   );

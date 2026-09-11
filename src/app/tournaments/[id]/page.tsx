@@ -17,6 +17,7 @@ import {
   getTournamentTeamMembers,
   getTournamentMatches,
   getMyTournamentTeam,
+  getMyGuildMembership,
 } from "@/lib/queries";
 import type { TournamentTeamMemberWithProfile } from "@/lib/supabase/types";
 
@@ -45,11 +46,17 @@ export default async function TournamentPage({ params }: TournamentPageProps) {
     data: { user: viewer },
   } = await supabase.auth.getUser();
 
-  const [teams, matches, myTeam] = await Promise.all([
+  const [teams, matches, myTeam, myGuildMembership] = await Promise.all([
     getTournamentTeams(tournament.id),
     tournament.status === "open" ? Promise.resolve([]) : getTournamentMatches(tournament.id),
     viewer ? getMyTournamentTeam(tournament.id, viewer.id) : null,
+    viewer ? getMyGuildMembership(viewer.id) : null,
   ]);
+
+  const myLedGuild =
+    myGuildMembership?.role === "leader" && myGuildMembership.guilds
+      ? { id: myGuildMembership.guilds.id, name: myGuildMembership.guilds.name }
+      : null;
 
   const membersByTeamEntries = await Promise.all(
     teams.map(async (team) => [team.id, await getTournamentTeamMembers(team.id)] as const),
@@ -140,6 +147,7 @@ export default async function TournamentPage({ params }: TournamentPageProps) {
             teamSize={tournament.team_size}
             viewerId={viewer?.id}
             myTeamId={myTeam?.teamId ?? null}
+            myLedGuild={myLedGuild}
             isOrganizer={isOrganizer}
             canCreateTeam={!isFull}
           />

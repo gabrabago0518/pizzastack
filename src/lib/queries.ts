@@ -897,7 +897,7 @@ export async function getTournamentTeams(tournamentId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("tournament_teams")
-    .select("*, profiles(username, avatar_url), tournament_team_members(count)")
+    .select("*, profiles(username, avatar_url), guilds(name, tag), tournament_team_members(count)")
     .eq("tournament_id", tournamentId)
     .order("seed", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true })

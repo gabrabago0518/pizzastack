@@ -3,9 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, X, Crown, Shuffle, Plus, LogOut, Ban } from "lucide-react";
+import { Loader2, X, Crown, Shuffle, Plus, LogOut, Ban, Shield } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +17,7 @@ import {
   kickTeamMember,
   setTeamSeed,
   randomizeSeeds,
+  registerGuildAsTeam,
 } from "@/app/tournaments/actions";
 import type {
   TournamentTeamWithRelations,
@@ -79,6 +81,51 @@ function CreateTeamForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function RegisterGuildTeamButton({
+  tournamentId,
+  guildName,
+  onRegistered,
+}: {
+  tournamentId: string;
+  guildName: string;
+  onRegistered: () => void;
+}) {
+  const [error, setError] = React.useState<string | null>(null);
+  const [notice, setNotice] = React.useState<string | null>(null);
+  const [isPending, startTransition] = React.useTransition();
+
+  function handleClick() {
+    setError(null);
+    setNotice(null);
+    startTransition(async () => {
+      const result = await registerGuildAsTeam(tournamentId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.skippedCount) {
+        setNotice(
+          `Registered ${result.registeredCount} of ${
+            (result.registeredCount ?? 0) + result.skippedCount
+          } guild members — the rest were already on a team elsewhere in this tournament or didn't fit the roster size.`,
+        );
+      }
+      onRegistered();
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button type="button" size="sm" variant="outline" onClick={handleClick} disabled={isPending}>
+        {isPending ? <Loader2 className="animate-spin" /> : <Shield className="size-3.5" />}
+        Register {guildName} as a team
+      </Button>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {notice ? <p className="max-w-xs text-xs text-muted-foreground">{notice}</p> : null}
+    </div>
   );
 }
 
@@ -193,6 +240,7 @@ function TeamCard({
             </span>
           ) : null}
           <span className="font-display text-lg">{team.name}</span>
+          {team.guilds ? <Badge variant="secondary">[{team.guilds.tag}]</Badge> : null}
           <span className="text-xs text-muted-foreground">
             {members.length}/{teamSize}
           </span>
@@ -296,6 +344,7 @@ export function TournamentTeamList({
   teamSize,
   viewerId,
   myTeamId,
+  myLedGuild,
   isOrganizer,
   canCreateTeam,
 }: {
@@ -305,6 +354,7 @@ export function TournamentTeamList({
   teamSize: number;
   viewerId?: string;
   myTeamId: string | null;
+  myLedGuild: { id: string; name: string } | null;
   isOrganizer: boolean;
   canCreateTeam: boolean;
 }) {
@@ -322,7 +372,16 @@ export function TournamentTeamList({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {viewerId && !myTeamId && canCreateTeam ? (
-          <CreateTeamForm tournamentId={tournamentId} onCreated={() => router.refresh()} />
+          <div className="flex flex-wrap items-start gap-2">
+            <CreateTeamForm tournamentId={tournamentId} onCreated={() => router.refresh()} />
+            {myLedGuild ? (
+              <RegisterGuildTeamButton
+                tournamentId={tournamentId}
+                guildName={myLedGuild.name}
+                onRegistered={() => router.refresh()}
+              />
+            ) : null}
+          </div>
         ) : viewerId && !myTeamId ? (
           <p className="text-sm text-muted-foreground">
             This tournament already has its max number of teams — you can still join one that has room.

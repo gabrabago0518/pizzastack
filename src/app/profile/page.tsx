@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Award, ExternalLink, Settings, ShieldCheck, Crown } from "lucide-react";
+import { Award, ExternalLink, Settings, ShieldCheck } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
@@ -134,13 +134,7 @@ export default async function ProfilePage() {
               }}
               initialBackground={profile.profile_background}
             />
-          ) : (
-            <Button asChild variant="outline">
-              <Link href="/prime">
-                <Crown /> Upgrade to Prime
-              </Link>
-            </Button>
-          )}
+          ) : null}
           <Button asChild variant="outline">
             <Link href="/profile/settings">
               <Settings /> Profile settings
@@ -167,7 +161,12 @@ export default async function ProfilePage() {
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      {/* Coaches and Highlights aren't promoted on the profile page right
+          now (see lib/nav-links.ts) — these two sections only show up for
+          someone who already has existing content there, so past coach
+          listings/highlights stay visible and manageable without a "create
+          new" upsell pushing everyone else toward a deprioritized feature. */}
+      <div className={coachProfiles.length > 0 ? "grid gap-8 lg:grid-cols-2" : undefined}>
         <div className="flex flex-col gap-4">
           <h2 className="font-display text-xl">Your listings</h2>
           <LfgPostsList
@@ -175,27 +174,20 @@ export default async function ProfilePage() {
             emptyText="You haven't posted a listing yet."
           />
         </div>
-        <div className="flex flex-col gap-4">
-          <h2 className="font-display text-xl">Your coach listings</h2>
-          <CoachProfilesList
-            coachProfiles={coachProfiles}
-            emptyText="You're not listed as a coach yet."
-          />
-        </div>
+        {coachProfiles.length > 0 ? (
+          <div className="mt-8 flex flex-col gap-4 lg:mt-0">
+            <h2 className="font-display text-xl">Your coach listings</h2>
+            <CoachProfilesList coachProfiles={coachProfiles} emptyText="" />
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-8 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+      {highlights.length > 0 ? (
+        <div className="mt-8 flex flex-col gap-4">
           <h2 className="font-display text-xl">Your highlights</h2>
-          <Link
-            href="/highlights/new"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Upload a highlight
-          </Link>
+          <HighlightsList highlights={highlights} emptyText="" />
         </div>
-        <HighlightsList highlights={highlights} emptyText="You haven't uploaded a highlight yet." />
-      </div>
+      ) : null}
     </Section>
   );
 }

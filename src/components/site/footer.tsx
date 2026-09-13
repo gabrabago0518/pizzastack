@@ -10,8 +10,7 @@ export function Footer() {
           <Logo id="footer" className="h-8 w-auto" />
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
             The hub for squading up. Post what you&apos;re looking for, find
-            players who play your way, and connect with coaches to close the
-            gap.
+            players who play your way, and line up your next scrim.
           </p>
         </div>
 
@@ -20,8 +19,8 @@ export function Footer() {
           <Link href="/teammates" className="text-muted-foreground transition-colors hover:text-foreground">
             Teammates
           </Link>
-          <Link href="/coaches" className="text-muted-foreground transition-colors hover:text-foreground">
-            Coaches
+          <Link href="/scrims" className="text-muted-foreground transition-colors hover:text-foreground">
+            Scrimmages
           </Link>
         </div>
 

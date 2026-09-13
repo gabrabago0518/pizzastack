@@ -1,14 +1,5 @@
 import Link from "next/link";
-import {
-  Users,
-  GraduationCap,
-  Gamepad2,
-  ArrowRight,
-  MessageCircleQuestion,
-  Shield,
-  Trophy,
-  Swords,
-} from "lucide-react";
+import { Users, Gamepad2, ArrowRight, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +8,10 @@ import { Section, SectionHeading } from "@/components/site/section";
 import { Reveal } from "@/components/site/reveal";
 import { createClient } from "@/lib/supabase/server";
 
+// Coaches/Guilds/Tournaments/Leaderboard/Highlights feature cards are
+// deliberately left out here while the homepage focuses on the core
+// teammates + scrims loop — see NAV_LINKS_HIDDEN in lib/nav-links.ts for
+// why. Nothing about those features was removed, just unpromoted.
 const features = [
   {
     icon: Users,
@@ -24,34 +19,6 @@ const features = [
     description:
       "Looking for a 5th, a duo, or a whole roster? Post a listing with your game, rank, and roles needed.",
     href: "/teammates/new",
-  },
-  {
-    icon: GraduationCap,
-    title: "Browse coaches",
-    description:
-      "Browse players who coach your game and reach out directly. No booking system.",
-    href: "/coaches",
-  },
-  {
-    icon: MessageCircleQuestion,
-    title: "Looking for a coach?",
-    description:
-      "Post your game, rank, region, and what you want to learn — coaches come to you instead.",
-    href: "/coaches/looking-for-coach",
-  },
-  {
-    icon: Shield,
-    title: "Form a guild",
-    description:
-      "Create or join a persistent squad with a shared roster and its own built-in chat.",
-    href: "/guilds",
-  },
-  {
-    icon: Trophy,
-    title: "Run a tournament",
-    description:
-      "Create teams, generate a bracket automatically, and report results as you go — single elimination.",
-    href: "/tournaments",
   },
   {
     icon: Swords,
@@ -71,20 +38,23 @@ const features = [
 
 export default async function Home() {
   const supabase = await createClient();
-  const [{ count: gameCount }, { count: postCount }, { count: coachCount }] =
+  const [{ count: gameCount }, { count: postCount }, { count: scrimCount }] =
     await Promise.all([
       supabase.from("games").select("*", { count: "exact", head: true }),
       supabase
         .from("lfg_posts")
         .select("*", { count: "exact", head: true })
         .eq("status", "open"),
-      supabase.from("coach_profiles").select("*", { count: "exact", head: true }),
+      supabase
+        .from("scrimmages")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open"),
     ]);
 
   const stats = [
     { label: "games supported", value: gameCount ?? 0 },
     { label: "open listings", value: postCount ?? 0 },
-    { label: "coaches listed", value: coachCount ?? 0 },
+    { label: "open scrims", value: scrimCount ?? 0 },
   ];
 
   return (
@@ -101,15 +71,14 @@ export default async function Home() {
           >
             Find your next <span className="text-gradient">teammate</span>.
             <br />
-            Find your next <span className="text-gradient">coach</span>.
+            Find your next <span className="text-gradient">scrim</span>.
           </h1>
           <p
             className="animate-fade-up max-w-xl text-balance text-lg leading-relaxed text-muted-foreground"
             style={{ animationDelay: "0.1s" }}
           >
             Pizzastack.gg is a community hub for gamers — post what you&apos;re
-            looking for, browse coaches who know your game, and squad up
-            faster.
+            looking for, find players who play your way, and squad up faster.
           </p>
           <div
             className="animate-fade-up flex flex-wrap justify-center gap-3"

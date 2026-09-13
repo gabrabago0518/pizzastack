@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { MessageCircle, X, Bot, Users, Gamepad2 } from "lucide-react";
+import { MessageCircle, X, Bot, Gamepad2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
@@ -282,37 +282,30 @@ export function ChatFab({
               )}
             </RadialItem>
 
-            <RadialItem angle={150}>
-              {guildId && guildName && guildTag && viewerId ? (
-                <button type="button" onClick={() => setPanel("guild")}>
-                  <RadialButton icon={Users} label="Guild chat" delay={0.05} />
-                </button>
-              ) : (
-                <Link href="/guilds" onClick={() => setOpen(false)}>
-                  <RadialButton icon={Users} label="Join a guild" delay={0.05} />
-                </Link>
-              )}
-            </RadialItem>
+            {/* Guild chat's radial entry point is hidden along with Guilds
+                itself (see lib/nav-links.ts) — ChatGuildPanel and the
+                guildId/guildName/guildTag plumbing above are untouched, so
+                restoring this is just adding the RadialItem back. */}
 
-            <RadialItem angle={120}>
+            <RadialItem angle={135}>
               {viewerId ? (
                 <button type="button" onClick={() => setPanel("messages")}>
                   <RadialButton
                     icon={MessageCircle}
                     label={hasUnreadDms ? `Messages, ${unreadDmCount} new` : "Messages"}
                     badgeCount={unreadDmCount}
-                    delay={0.1}
+                    delay={0.05}
                   />
                 </button>
               ) : (
                 <Link href="/messages" onClick={() => setOpen(false)}>
-                  <RadialButton icon={MessageCircle} label="Messages" delay={0.1} />
+                  <RadialButton icon={MessageCircle} label="Messages" delay={0.05} />
                 </Link>
               )}
             </RadialItem>
 
             <RadialItem angle={90}>
-              <RadialButton icon={Bot} label="AI customer support (coming soon)" disabled delay={0.15} />
+              <RadialButton icon={Bot} label="AI customer support (coming soon)" disabled delay={0.1} />
             </RadialItem>
           </>
         ) : null}

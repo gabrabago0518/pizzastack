@@ -26,12 +26,12 @@ const inter = Inter({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://pizzastack.gg";
 const siteDescription =
-  "A community hub for gamers to squad up for their next match and connect with coaches who can level up their game.";
+  "A community hub for gamers to squad up for their next match — post what you're looking for, find players who play your way, and line up your next scrim.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Pizzastack.gg — Find teammates. Find coaches.",
+    default: "Pizzastack.gg — Find teammates. Find scrims.",
     template: "%s — Pizzastack.gg",
   },
   description: siteDescription,
@@ -41,19 +41,18 @@ export const metadata: Metadata = {
     "LFG",
     "gaming community",
     "squad finder",
-    "esports coaching",
-    "game coach",
+    "find a scrim",
   ],
   openGraph: {
     type: "website",
     siteName: "Pizzastack.gg",
-    title: "Pizzastack.gg — Find teammates. Find coaches.",
+    title: "Pizzastack.gg — Find teammates. Find scrims.",
     description: siteDescription,
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pizzastack.gg — Find teammates. Find coaches.",
+    title: "Pizzastack.gg — Find teammates. Find scrims.",
     description: siteDescription,
   },
   robots: {

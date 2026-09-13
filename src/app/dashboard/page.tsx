@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Users, GraduationCap, UserCog, Plus } from "lucide-react";
+import { Users, Swords, UserCog, Plus } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,10 +28,10 @@ const actions = [
     description: "Browse open listings from other players.",
   },
   {
-    href: "/coaches",
-    icon: GraduationCap,
-    title: "Coaches",
-    description: "Connect with players who coach your game.",
+    href: "/scrims",
+    icon: Swords,
+    title: "Scrimmages",
+    description: "Browse open scrims or post one of your own.",
   },
   {
     href: "/profile",
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className={myCoachProfiles.length > 0 ? "grid gap-8 lg:grid-cols-2" : undefined}>
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-xl">Your listings</h2>
@@ -105,20 +105,16 @@ export default async function DashboardPage() {
           <LfgPostsList posts={myPosts} emptyText="You haven't posted a listing yet." />
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+        {/* Coaches isn't promoted on the dashboard right now (see
+            lib/nav-links.ts), so this column only shows up for someone who
+            already has a coach listing from before — nothing to manage,
+            nothing shown, rather than a "become a coach" upsell here. */}
+        {myCoachProfiles.length > 0 ? (
+          <div className="mt-8 flex flex-col gap-4 lg:mt-0">
             <h2 className="font-display text-xl">Your coach listings</h2>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/coaches/new">
-                <Plus /> New listing
-              </Link>
-            </Button>
+            <CoachProfilesList coachProfiles={myCoachProfiles} emptyText="" />
           </div>
-          <CoachProfilesList
-            coachProfiles={myCoachProfiles}
-            emptyText="You're not listed as a coach yet."
-          />
-        </div>
+        ) : null}
       </div>
     </Section>
   );

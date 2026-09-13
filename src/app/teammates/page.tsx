@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 
 import { Section, SectionHeading } from "@/components/site/section";
 import { GamePosterCard } from "@/components/site/game-poster-card";
@@ -30,9 +30,10 @@ export default async function TeammatesPage({
     mode?: string;
     region?: string;
     sort?: string;
+    posted?: string;
   }>;
 }) {
-  const { game, rank, role, mode, region, sort } = await searchParams;
+  const { game, rank, role, mode, region, sort, posted } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user: viewer },
@@ -75,6 +76,12 @@ export default async function TeammatesPage({
 
   return (
     <Section className="!pb-24">
+      {posted ? (
+        <p className="mb-6 flex items-center gap-1.5 rounded-lg bg-accent/10 px-3 py-2 text-sm text-accent">
+          <Check className="size-4" /> Listing created — it&apos;s live on the board.
+        </p>
+      ) : null}
+
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHeading
           eyebrow="Squad up"

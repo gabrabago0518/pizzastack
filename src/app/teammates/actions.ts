@@ -102,5 +102,5 @@ export async function createLfgPost(
   }
 
   revalidatePath("/teammates");
-  redirect("/teammates");
+  redirect("/teammates?posted=1");
 }

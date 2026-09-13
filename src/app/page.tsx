@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Gamepad2, ArrowRight, Swords } from "lucide-react";
+import { Users, ArrowRight, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Section, SectionHeading } from "@/components/site/section";
 import { Reveal } from "@/components/site/reveal";
 import { createClient } from "@/lib/supabase/server";
+import { SUPPORTED_GAME_SLUGS } from "@/lib/queries";
 
 // Coaches/Guilds/Tournaments/Leaderboard/Highlights feature cards are
 // deliberately left out here while the homepage focuses on the core
@@ -27,20 +28,16 @@ const features = [
       "Post your game, region, and when you're free to play — or browse open slots and reach out directly.",
     href: "/scrims",
   },
-  {
-    icon: Gamepad2,
-    title: "Any game, one hub",
-    description:
-      "Valorant, League, CS2, Apex, and more. One profile, every game you play.",
-    href: "/signup",
-  },
 ];
 
 export default async function Home() {
   const supabase = await createClient();
   const [{ count: gameCount }, { count: postCount }, { count: scrimCount }] =
     await Promise.all([
-      supabase.from("games").select("*", { count: "exact", head: true }),
+      supabase
+        .from("games")
+        .select("*", { count: "exact", head: true })
+        .in("slug", SUPPORTED_GAME_SLUGS),
       supabase
         .from("lfg_posts")
         .select("*", { count: "exact", head: true })
@@ -117,7 +114,7 @@ export default async function Home() {
           description="Build a profile once, then use it across every game you play."
           align="center"
         />
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl gap-6 sm:grid-cols-2">
           {features.map((feature, i) => (
             <Reveal key={feature.title} delay={i * 100}>
               <Link href={feature.href} className="block h-full">

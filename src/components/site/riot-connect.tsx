@@ -1,13 +1,13 @@
 "use client";
 
-// Currently unused — not rendered from /profile/settings. HenrikDev's
-// unofficial API requires a paid Patreon tier for any project with a paid
-// tier of its own, and Riot's API Terms separately require their prior
-// written approval before charging for anything tied to Valorant game
-// data; neither has been sought, so the Riot ID connect flow is disabled
-// for now. Left in place (along with syncValorantRank in rank-sync.ts and
-// the /api/valorant/refresh-rank route) so re-enabling is just re-adding
-// the import and this component to the settings page.
+// Re-enabled on /profile/settings now that the site has no paid tier of
+// its own (Prime was a manually-set flag, never real billing — see
+// DeleteAccountButton/profile actions — and it's unlinked from nav besides).
+// This flow was previously held back over HenrikDev's unofficial API
+// requiring a paid Patreon tier for any project with a paid tier of its
+// own, plus Riot's API Terms requiring their prior written approval before
+// charging for anything tied to Valorant data — worth re-checking HenrikDev
+// and Riot's current terms if that ever changes again.
 import * as React from "react";
 import { useActionState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";

@@ -60,9 +60,23 @@ export async function getTopHeroesForProfile(profileId: string): Promise<TopHero
   }));
 }
 
+// Filtered to the games the site is actively supporting right now — the
+// `games` table itself keeps every row (League of Legends, Overwatch 2,
+// Apex Legends, Rocket League, Fortnite included) so nothing already
+// referencing one of those rows (a listing, a profile's picked games,
+// etc.) breaks; this is the single query every game picker/filter in the
+// app goes through, so narrowing it here is enough to hide the rest from
+// every dropdown without touching the data. Add a slug back here to
+// re-offer that game.
+export const SUPPORTED_GAME_SLUGS = ["dota-2", "valorant", "mobile-legends", "cs2"] as const;
+
 export async function getGames() {
   const supabase = await createClient();
-  const { data } = await supabase.from("games").select("*").order("name");
+  const { data } = await supabase
+    .from("games")
+    .select("*")
+    .in("slug", SUPPORTED_GAME_SLUGS)
+    .order("name");
   return data ?? [];
 }
 

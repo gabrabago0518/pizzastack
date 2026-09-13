@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Logo, LogoMark } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { NotificationBell } from "@/components/site/notification-bell";
-import { MobileNav } from "@/components/site/mobile-nav";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
+import { NAV_LINKS } from "@/lib/nav-links";
 import {
   getProfile,
   getNotifications,
@@ -36,8 +36,6 @@ export async function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex h-18 max-w-6xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-6 md:gap-6">
-        <MobileNav />
-
         <Link
           href="/"
           aria-label="Pizzastack.gg"
@@ -61,7 +59,15 @@ export async function Navbar() {
           />
         </form>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
+          {NAV_LINKS.map((link) => (
+            <Button key={link.href} asChild variant="ghost" size="sm" className="px-2.5 sm:px-4">
+              <Link href={link.href}>
+                <link.icon className="size-4 sm:hidden" />
+                <span className="hidden sm:inline">{link.label}</span>
+              </Link>
+            </Button>
+          ))}
           <Link
             href="/search"
             aria-label="Search"

@@ -3,15 +3,13 @@ import type { Database } from "@/lib/supabase/types";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
 
-// Valorant intentionally isn't a verified-rank game here — its rank came
-// from the Riot ID connect flow (see riot-connect.tsx), which is currently
-// disabled: HenrikDev's unofficial API requires a paid Patreon tier for
-// any project with a paid tier of its own, on top of Riot's API Terms
-// requiring their prior written approval before charging for anything
-// tied to Valorant game data. Neither has been sought. The underlying
-// sync code (rank-sync.ts's syncValorantRank, /api/valorant/refresh-rank)
-// is left in place, just unreachable from the UI, so re-enabling later is
-// cheap if that changes.
+// Valorant intentionally isn't a verified-rank game here even though its
+// rank is fetched (see riot-connect.tsx) — unlike Steam's OpenID login for
+// Dota/CS2, there's no Riot login flow wired up, so a Riot ID is
+// self-entered rather than proven to belong to the account holder. The
+// rank value itself is still pulled from real HenrikDev data, just without
+// the same identity guarantee, so it's shown as "Via Riot ID" rather than
+// folded into this list or RankBanner's "Verified ranks" section.
 export const VERIFIED_RANK_GAME_SLUGS = ["dota-2", "cs2"] as const;
 
 export type VerifiedRankResult =

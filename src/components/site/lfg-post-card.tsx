@@ -32,7 +32,7 @@ export function LfgPostCard({
   const isFull = partyMembers.length >= post.players_needed;
 
   return (
-    <Card className="relative transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
+    <Card className="relative min-w-0 transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
       <Link
         href={`/teammates/${post.id}`}
         className="absolute inset-0 rounded-[inherit]"
@@ -40,15 +40,15 @@ export function LfgPostCard({
       >
         <ListingLoadingOverlay />
       </Link>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex min-w-0 flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">{post.games?.name ?? "Unknown game"}</Badge>
               {post.mode ? <Badge variant="outline">{post.mode}</Badge> : null}
               {post.rank ? <Badge variant="muted">{post.rank}</Badge> : null}
             </div>
-            <h3 className="font-display text-lg leading-snug">{post.title}</h3>
+            <h3 className="font-display text-lg leading-snug break-words">{post.title}</h3>
           </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatRelativeTime(post.created_at)}
@@ -56,7 +56,7 @@ export function LfgPostCard({
         </div>
 
         {post.description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-sm leading-relaxed break-words text-muted-foreground">
             {post.description}
           </p>
         ) : null}
@@ -71,7 +71,7 @@ export function LfgPostCard({
           </div>
         ) : null}
 
-        <div className="flex items-center gap-4 border-t border-border/60 pt-3 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border/60 pt-3 text-sm text-muted-foreground">
           {post.profiles?.username ? (
             <Link
               href={`/players/${post.profiles.username}`}

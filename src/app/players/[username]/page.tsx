@@ -12,7 +12,7 @@ import {
 import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
-import { MessageButton } from "@/components/site/message-button";
+import { BuddyButton } from "@/components/site/buddy-button";
 import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
 import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
@@ -27,6 +27,7 @@ import {
   getCommendCount,
   hasCommended,
   getTopHeroesForProfile,
+  getBuddyStatus,
 } from "@/lib/queries";
 
 interface PlayerPageProps {
@@ -65,7 +66,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
   const isOwnProfile = viewer?.id === profile.id;
 
-  const [posts, coachProfiles, games, commendCount, viewerHasCommended, topHeroes] =
+  const [posts, coachProfiles, games, commendCount, viewerHasCommended, topHeroes, buddyStatus] =
     await Promise.all([
       getLfgPostsByAuthor(profile.id),
       getCoachProfilesByAuthor(profile.id),
@@ -73,6 +74,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
       getCommendCount(profile.id),
       viewer && !isOwnProfile ? hasCommended(profile.id, viewer.id) : false,
       getTopHeroesForProfile(profile.id),
+      viewer && !isOwnProfile ? getBuddyStatus(viewer.id, profile.id) : Promise.resolve("none" as const),
     ]);
 
   const label = profile.display_name || profile.username;
@@ -130,7 +132,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
           {viewer && !isOwnProfile ? (
             <div className="flex items-center gap-2">
-              <MessageButton profileId={profile.id} />
+              <BuddyButton profileId={profile.id} initialStatus={buddyStatus} />
               <CommendToggleButton />
               <ReportPlayerDialog profileId={profile.id} username={profile.username} />
             </div>

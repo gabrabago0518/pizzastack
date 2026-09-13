@@ -768,6 +768,39 @@ export interface Database {
           },
         ];
       };
+      buddy_requests: {
+        Row: {
+          id: string;
+          requester_id: string;
+          recipient_id: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          requester_id: string;
+          recipient_id: string;
+          status?: string;
+        };
+        Update: {
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "buddy_requests_requester_id_fkey";
+            columns: ["requester_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "buddy_requests_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversations: {
         Row: {
           id: string;
@@ -1312,6 +1345,7 @@ export type GuildMember = Database["public"]["Tables"]["guild_members"]["Row"];
 export type GuildMessage = Database["public"]["Tables"]["guild_messages"]["Row"];
 export type GuildAnnouncement = Database["public"]["Tables"]["guild_announcements"]["Row"];
 export type GuildAchievement = Database["public"]["Tables"]["guild_achievements"]["Row"];
+export type BuddyRequest = Database["public"]["Tables"]["buddy_requests"]["Row"];
 export type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
 export type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 export type CoachingRequest = Database["public"]["Tables"]["coaching_requests"]["Row"];
@@ -1323,7 +1357,17 @@ export type Scrimmage = Database["public"]["Tables"]["scrimmages"]["Row"];
 export type Highlight = Database["public"]["Tables"]["highlights"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
-  profiles: Pick<Profile, "username" | "region"> | null;
+  profiles: Pick<
+    Profile,
+    | "username"
+    | "region"
+    | "steam_id"
+    | "steam_persona_name"
+    | "riot_name"
+    | "riot_tag"
+    | "mlbb_user_id"
+    | "mlbb_server"
+  > | null;
   games: Pick<Game, "name" | "slug"> | null;
 };
 
@@ -1362,6 +1406,11 @@ export type GuildAnnouncementWithAuthor = GuildAnnouncement & {
 
 export type DirectMessageWithSender = DirectMessage & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type BuddyRequestWithProfiles = BuddyRequest & {
+  requester: Pick<Profile, "username" | "avatar_url"> | null;
+  recipient: Pick<Profile, "username" | "avatar_url"> | null;
 };
 
 export type CoachingRequestWithRelations = CoachingRequest & {

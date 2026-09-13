@@ -18,6 +18,7 @@ import type {
   GuildAchievement,
   Conversation,
   DirectMessageWithSender,
+  BuddyRequest,
   Game,
   Tournament,
   TournamentMatch,
@@ -178,7 +179,9 @@ export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {
 
   let builder = supabase
     .from("lfg_posts")
-    .select("*, profiles(username, region), games(name, slug)")
+    .select(
+      "*, profiles(username, region, steam_id, steam_persona_name, riot_name, riot_tag, mlbb_user_id, mlbb_server), games(name, slug)",
+    )
     .eq("status", "open");
 
   // request_count is a trigger-maintained total of every join request the
@@ -208,7 +211,9 @@ export const getLfgPostById = cache(async (id: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lfg_posts")
-    .select("*, profiles(username, region), games(name, slug)")
+    .select(
+      "*, profiles(username, region, steam_id, steam_persona_name, riot_name, riot_tag, mlbb_user_id, mlbb_server), games(name, slug)",
+    )
     .eq("id", id)
     .maybeSingle()
     .returns<LfgPostWithRelations>();
@@ -402,7 +407,9 @@ export async function searchLfgPosts(query: string, limit = 12) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lfg_posts")
-    .select("*, profiles(username, region), games(name, slug)")
+    .select(
+      "*, profiles(username, region, steam_id, steam_persona_name, riot_name, riot_tag, mlbb_user_id, mlbb_server), games(name, slug)",
+    )
     .eq("status", "open")
     .or(`title.ilike.%${term}%,description.ilike.%${term}%`)
     .order("created_at", { ascending: false })
@@ -774,6 +781,98 @@ export async function getUnreadDmCount(profileId: string) {
     .eq("read", false)
     .neq("sender_id", profileId);
   return count ?? 0;
+}
+
+export type BuddyStatus = "none" | "pending_sent" | "pending_received" | "buddies";
+
+// Whichever of the two possible (requester, recipient) rows exists between
+// this pair, read from the viewer's side — used to decide what a
+// BuddyButton on a player's profile should render.
+export async function getBuddyStatus(
+  viewerId: string,
+  otherProfileId: string,
+): Promise<BuddyStatus> {
+  if (viewerId === otherProfileId) return "none";
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("buddy_requests")
+    .select("requester_id, status")
+    .or(
+      `and(requester_id.eq.${viewerId},recipient_id.eq.${otherProfileId}),and(requester_id.eq.${otherProfileId},recipient_id.eq.${viewerId})`,
+    )
+    .maybeSingle<Pick<BuddyRequest, "requester_id" | "status">>();
+
+  if (!data) return "none";
+  if (data.status === "accepted") return "buddies";
+  return data.requester_id === viewerId ? "pending_sent" : "pending_received";
+}
+
+export interface BuddyProfile {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export async function getBuddies(profileId: string): Promise<BuddyProfile[]> {
+  const supabase = await createClient();
+  const { data: requests } = await supabase
+    .from("buddy_requests")
+    .select("requester_id, recipient_id")
+    .eq("status", "accepted")
+    .or(`requester_id.eq.${profileId},recipient_id.eq.${profileId}`);
+
+  if (!requests || requests.length === 0) return [];
+
+  const otherIds = requests.map((request) =>
+    request.requester_id === profileId ? request.recipient_id : request.requester_id,
+  );
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username, avatar_url")
+    .in("id", otherIds);
+  return profiles ?? [];
+}
+
+export interface PendingBuddyRequest {
+  id: string;
+  requesterId: string;
+  username: string;
+  avatarUrl: string | null;
+  createdAt: string;
+}
+
+// Incoming requests only — two plain queries + a JS merge rather than an
+// embedded select, same reasoning as getPlayerReports: buddy_requests has
+// two FKs to profiles, so a bare embed can't tell which one to join on.
+export async function getPendingBuddyRequests(
+  profileId: string,
+): Promise<PendingBuddyRequest[]> {
+  const supabase = await createClient();
+  const { data: requests } = await supabase
+    .from("buddy_requests")
+    .select("id, requester_id, created_at")
+    .eq("recipient_id", profileId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (!requests || requests.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username, avatar_url")
+    .in(
+      "id",
+      requests.map((request) => request.requester_id),
+    );
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+  return requests.map((request) => ({
+    id: request.id,
+    requesterId: request.requester_id,
+    username: profileById.get(request.requester_id)?.username ?? "unknown",
+    avatarUrl: profileById.get(request.requester_id)?.avatar_url ?? null,
+    createdAt: request.created_at,
+  }));
 }
 
 export interface PlayerReportRow {

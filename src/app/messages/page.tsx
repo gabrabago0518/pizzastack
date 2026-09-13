@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 
 import { Section, SectionHeading } from "@/components/site/section";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { BuddiesPanel } from "@/components/site/buddies-panel";
 import { createClient } from "@/lib/supabase/server";
-import { getConversations } from "@/lib/queries";
+import { getConversations, getBuddies, getPendingBuddyRequests } from "@/lib/queries";
 import { formatRelativeTime } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -20,7 +21,11 @@ export default async function MessagesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const conversations = await getConversations(user.id);
+  const [conversations, buddies, pendingRequests] = await Promise.all([
+    getConversations(user.id),
+    getBuddies(user.id),
+    getPendingBuddyRequests(user.id),
+  ]);
 
   return (
     <Section className="!pb-24">
@@ -30,6 +35,8 @@ export default async function MessagesPage() {
         description="Your direct messages with other players."
         className="mb-8"
       />
+
+      <BuddiesPanel buddies={buddies} pendingRequests={pendingRequests} />
 
       {conversations.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border py-16 text-center text-muted-foreground">

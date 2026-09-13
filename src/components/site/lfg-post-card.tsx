@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MapPin, UserPlus, Flame } from "lucide-react";
+import { Users, MapPin, UserPlus, Flame, Hash } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { formatRelativeTime } from "@/lib/utils";
+import { formatGameAccountId } from "@/lib/account-id";
 import type { LfgPostWithRelations, JoinRequestWithRequester } from "@/lib/supabase/types";
 
 type JoinStatus = "none" | "pending" | "accepted" | "declined" | "removed" | "left";
@@ -30,6 +31,7 @@ export function LfgPostCard({
 }) {
   const isOwner = viewerId === post.author_id;
   const isFull = partyMembers.length >= post.players_needed;
+  const accountId = formatGameAccountId(post.games?.slug, post.profiles);
 
   return (
     <Card className="relative min-w-0 transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
@@ -85,6 +87,12 @@ export function LfgPostCard({
               unknown
             </span>
           )}
+          {accountId ? (
+            <span className="flex items-center gap-1.5" title="In-game account ID">
+              <Hash className="size-3.5" />
+              {accountId}
+            </span>
+          ) : null}
           {post.region ? (
             <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5" />

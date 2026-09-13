@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getBuddyStatus } from "@/lib/queries";
 
 export interface MessageActionResult {
   error?: string;
@@ -21,6 +22,12 @@ export async function startConversation(otherProfileId: string) {
 
   if (!user) redirect("/login");
   if (user.id === otherProfileId) redirect("/messages");
+
+  // DMs are buddies-only (see conversations' insert policy in schema.sql)
+  // — checked here too so a non-buddy gets sent back to the profile
+  // instead of a silent failed insert redirecting them to an empty inbox.
+  const status = await getBuddyStatus(user.id, otherProfileId);
+  if (status !== "buddies") redirect("/messages");
 
   const [profileOneId, profileTwoId] =
     user.id < otherProfileId ? [user.id, otherProfileId] : [otherProfileId, user.id];

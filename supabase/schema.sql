@@ -1417,13 +1417,133 @@ create policy "Guild leader can delete achievements"
   using (auth.uid() = (select owner_id from public.guilds where id = guild_id));
 
 -- ---------------------------------------------------------------------------
--- conversations: one row per pair of players who've DMed each other, open
--- to any two signed-in players (no friend/follow gate, same "no
--- gatekeeping" bent as guild join or commending). profile_one_id is always
--- the smaller uuid of the pair — enforced by the check constraint below —
--- purely so a plain unique constraint can stop (a, b) and (b, a) from ever
--- both existing, regardless of who messaged first. That same strict "<"
--- also rules out a self-conversation for free, no separate check needed.
+-- buddy_requests: one row per pair of players who've sent a buddy request,
+-- directional while pending (requester_id/recipient_id matter for who can
+-- accept) but the pair itself can't be duplicated in either direction — a
+-- functional unique index on the unordered pair (least/greatest) handles
+-- that instead of conversations' "profile_one_id < profile_two_id" trick,
+-- since here the two columns aren't interchangeable. Declining or
+-- cancelling a request just deletes the row (no 'declined' status to carry
+-- around), which also lets the same two players re-request later.
+-- ---------------------------------------------------------------------------
+create table if not exists public.buddy_requests (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid not null references public.profiles (id) on delete cascade,
+  recipient_id uuid not null references public.profiles (id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'accepted')),
+  created_at timestamptz not null default now(),
+  constraint buddy_requests_not_self check (requester_id <> recipient_id)
+);
+
+create unique index if not exists buddy_requests_unique_pair
+  on public.buddy_requests (least(requester_id, recipient_id), greatest(requester_id, recipient_id));
+
+alter table public.buddy_requests enable row level security;
+
+drop policy if exists "Participants can read their buddy requests" on public.buddy_requests;
+create policy "Participants can read their buddy requests"
+  on public.buddy_requests for select
+  using (auth.uid() = requester_id or auth.uid() = recipient_id);
+
+drop policy if exists "Users can send a buddy request" on public.buddy_requests;
+create policy "Users can send a buddy request"
+  on public.buddy_requests for insert
+  with check (auth.uid() = requester_id and status = 'pending');
+
+drop policy if exists "Recipient can accept a buddy request" on public.buddy_requests;
+create policy "Recipient can accept a buddy request"
+  on public.buddy_requests for update
+  using (auth.uid() = recipient_id and status = 'pending')
+  with check (auth.uid() = recipient_id and status = 'accepted');
+
+drop policy if exists "Participants can delete a buddy request" on public.buddy_requests;
+create policy "Participants can delete a buddy request"
+  on public.buddy_requests for delete
+  using (auth.uid() = requester_id or auth.uid() = recipient_id);
+
+-- Used by conversations/direct_messages insert policies to gate DMs to
+-- buddies only — security definer so it can see both sides' buddy_requests
+-- row regardless of which one auth.uid() is, without needing extra RLS.
+create or replace function public.are_buddies(profile_a uuid, profile_b uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.buddy_requests
+    where status = 'accepted'
+      and least(requester_id, recipient_id) = least(profile_a, profile_b)
+      and greatest(requester_id, recipient_id) = greatest(profile_a, profile_b)
+  );
+$$;
+
+-- Notifies the recipient of a new buddy request.
+create or replace function public.notify_new_buddy_request()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  requester_name text;
+begin
+  select username into requester_name from public.profiles where id = new.requester_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    new.recipient_id,
+    'buddy_request_received',
+    'New buddy request',
+    coalesce('@' || requester_name, 'Someone') || ' wants to add you as a buddy',
+    '/messages'
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists buddy_requests_notify_new on public.buddy_requests;
+create trigger buddy_requests_notify_new
+  after insert on public.buddy_requests
+  for each row execute function public.notify_new_buddy_request();
+
+-- Notifies the original requester once their buddy request is accepted.
+create or replace function public.notify_buddy_request_accepted()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  recipient_name text;
+begin
+  if new.status = old.status or new.status <> 'accepted' then
+    return new;
+  end if;
+
+  select username into recipient_name from public.profiles where id = new.recipient_id;
+  insert into public.notifications (profile_id, type, title, body, link)
+  values (
+    new.requester_id,
+    'buddy_request_accepted',
+    'Buddy request accepted',
+    coalesce('@' || recipient_name, 'Someone') || ' accepted your buddy request',
+    '/messages'
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists buddy_requests_notify_accepted on public.buddy_requests;
+create trigger buddy_requests_notify_accepted
+  after update on public.buddy_requests
+  for each row execute function public.notify_buddy_request_accepted();
+
+-- ---------------------------------------------------------------------------
+-- conversations: one row per pair of players who've DMed each other.
+-- Restricted to buddies (see are_buddies() above) — profile_one_id is
+-- always the smaller uuid of the pair — enforced by the check constraint
+-- below — purely so a plain unique constraint can stop (a, b) and (b, a)
+-- from ever both existing, regardless of who messaged first. That same
+-- strict "<" also rules out a self-conversation for free, no separate
+-- check needed.
 -- ---------------------------------------------------------------------------
 create table if not exists public.conversations (
   id uuid primary key default gen_random_uuid(),
@@ -1443,9 +1563,13 @@ create policy "Participants can read their conversations"
   using (auth.uid() = profile_one_id or auth.uid() = profile_two_id);
 
 drop policy if exists "Users can start a conversation they're part of" on public.conversations;
-create policy "Users can start a conversation they're part of"
+drop policy if exists "Users can start a conversation with a buddy" on public.conversations;
+create policy "Users can start a conversation with a buddy"
   on public.conversations for insert
-  with check (auth.uid() = profile_one_id or auth.uid() = profile_two_id);
+  with check (
+    (auth.uid() = profile_one_id or auth.uid() = profile_two_id)
+    and public.are_buddies(profile_one_id, profile_two_id)
+  );
 
 -- ---------------------------------------------------------------------------
 -- direct_messages: messages within a conversation. read means the
@@ -1478,7 +1602,7 @@ create policy "Participants can read their messages"
   );
 
 drop policy if exists "Participants can send messages" on public.direct_messages;
-create policy "Participants can send messages"
+create policy "Buddies can send messages"
   on public.direct_messages for insert
   with check (
     sender_id = auth.uid()
@@ -1486,6 +1610,7 @@ create policy "Participants can send messages"
       select 1 from public.conversations
       where conversations.id = direct_messages.conversation_id
         and (conversations.profile_one_id = auth.uid() or conversations.profile_two_id = auth.uid())
+        and public.are_buddies(conversations.profile_one_id, conversations.profile_two_id)
     )
   );
 

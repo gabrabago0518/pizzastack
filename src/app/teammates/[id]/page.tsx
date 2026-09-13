@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, MapPin, UserPlus, Clock } from "lucide-react";
+import { ArrowLeft, Users, MapPin, UserPlus, Clock, Hash } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
   getMessagesForPost,
 } from "@/lib/queries";
 import { formatRelativeTime } from "@/lib/utils";
+import { formatGameAccountId } from "@/lib/account-id";
 
 interface ListingPageProps {
   params: Promise<{ id: string }>;
@@ -52,6 +53,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   } = await supabase.auth.getUser();
 
   const isOwner = viewer?.id === post.author_id;
+  const accountId = formatGameAccountId(post.games?.slug, post.profiles);
   const joinRequests = viewer ? await getJoinRequestsForPosts([post.id]) : [];
 
   const myRequest = joinRequests.find((request) => request.requester_id === viewer?.id);
@@ -124,6 +126,12 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   unknown
                 </span>
               )}
+              {accountId ? (
+                <span className="flex items-center gap-1.5" title="In-game account ID">
+                  <Hash className="size-3.5" />
+                  {accountId}
+                </span>
+              ) : null}
               {post.region ? (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="size-3.5" />

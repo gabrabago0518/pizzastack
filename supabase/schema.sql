@@ -100,6 +100,24 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists valorant_rank_synced_at timestamptz;
 
+-- Mobile Legends: Bang Bang rank — unlike Dota/CS2 (Steam OpenID) or
+-- Valorant (a real third-party API keyed off a self-entered Riot ID),
+-- there's no public API to fetch a live MLBB rank at all. So the trust
+-- model here is different again: mlbb_user_id/mlbb_server are self-entered
+-- (same level as riot_name/tag/region above), but mlbb_highest_star is
+-- never fetched automatically — it's only ever written by an admin after
+-- manually checking the player's in-game profile (see mlbb_verifications
+-- below), hence "Verified by admin" rather than "Verified via Steam"/"Via
+-- Riot ID" wherever it's displayed.
+alter table public.profiles
+  add column if not exists mlbb_user_id text;
+alter table public.profiles
+  add column if not exists mlbb_server text;
+alter table public.profiles
+  add column if not exists mlbb_highest_star integer;
+alter table public.profiles
+  add column if not exists mlbb_verified_at timestamptz;
+
 -- is_admin: grants access to /admin — service-role-only (see the grant
 -- below), so it can't be self-promoted by editing a profile like the
 -- self-reported fields can. Set directly via SQL, not through the app.
@@ -176,7 +194,7 @@ alter table public.profiles
 revoke update on public.profiles from authenticated;
 grant update (
   username, display_name, avatar_url, bio, region, onboarded,
-  riot_name, riot_tag, riot_region, last_seen_at,
+  riot_name, riot_tag, riot_region, mlbb_user_id, mlbb_server, last_seen_at,
   show_ranks, show_most_played, show_games, show_listings, show_coaching,
   profile_background
 ) on public.profiles to authenticated;
@@ -2085,3 +2103,54 @@ create policy "Admins can update feedback status"
   using (
     exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
+
+-- ---------------------------------------------------------------------------
+-- mlbb_verifications: manual rank-verification requests for Mobile Legends.
+-- There's no public API for a live MLBB rank (unlike Dota/CS2's Steam-based
+-- fetches or Valorant's HenrikDev lookup), so a player submits their
+-- mlbb_user_id/mlbb_server here and an admin checks it manually in-game,
+-- then fills in highest_star on approval — which also gets copied onto
+-- profiles.mlbb_highest_star (see reviewMlbbVerification in admin/actions.ts,
+-- mirroring reviewHighlight/reviewCoachApplication's service-role pattern).
+-- Same pending/approved/rejected moderation-queue shape as highlights.
+-- ---------------------------------------------------------------------------
+create table if not exists public.mlbb_verifications (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  mlbb_user_id text not null,
+  mlbb_server text not null,
+  highest_star integer,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  rejection_reason text,
+  reviewed_by uuid references public.profiles (id),
+  reviewed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists mlbb_verifications_profile_id_idx on public.mlbb_verifications (profile_id);
+create index if not exists mlbb_verifications_status_created_at_idx on public.mlbb_verifications (status, created_at asc);
+
+-- Only one outstanding request per player at a time — same "You already
+-- have an active X" shape as lfg_posts_one_open_per_author.
+create unique index if not exists mlbb_verifications_one_pending_per_profile
+  on public.mlbb_verifications (profile_id)
+  where status = 'pending';
+
+alter table public.mlbb_verifications enable row level security;
+
+drop policy if exists "Verification requests are visible to owner and admins" on public.mlbb_verifications;
+create policy "Verification requests are visible to owner and admins"
+  on public.mlbb_verifications for select
+  using (
+    auth.uid() = profile_id
+    or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Users can submit their own verification requests" on public.mlbb_verifications;
+create policy "Users can submit their own verification requests"
+  on public.mlbb_verifications for insert
+  with check (auth.uid() = profile_id);
+
+-- No update policy for authenticated: once submitted, a request can't be
+-- edited or self-approved — review only happens via the service-role
+-- client (see reviewMlbbVerification), same as highlights.status.

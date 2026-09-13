@@ -149,6 +149,7 @@ export default async function ProfilePage() {
         cs2CompetitiveRank={profile.cs2_competitive_rank}
         valorantTier={profile.valorant_tier}
         valorantTierIcon={profile.valorant_tier_icon}
+        mlbbHighestStar={profile.mlbb_highest_star}
       />
 
       <div className="mb-10 flex flex-col gap-4">

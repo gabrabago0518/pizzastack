@@ -32,6 +32,7 @@ export function RankBanner({
   cs2CompetitiveRank,
   valorantTier,
   valorantTierIcon,
+  mlbbHighestStar,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
@@ -41,10 +42,12 @@ export function RankBanner({
   cs2CompetitiveRank: number | null;
   valorantTier?: string | null;
   valorantTierIcon?: string | null;
+  mlbbHighestStar?: number | null;
 }) {
   const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
   const hasValorantRank = Boolean(valorantTier);
-  if (!dotaRankTier && !hasCs2Rank && !hasValorantRank) return null;
+  const hasMlbbRank = Boolean(mlbbHighestStar);
+  if (!dotaRankTier && !hasCs2Rank && !hasValorantRank && !hasMlbbRank) return null;
 
   return (
     <div className="mb-10 flex flex-col gap-3">
@@ -75,6 +78,13 @@ export function RankBanner({
             rankLabel={formatValorantRank(valorantTier ?? null)}
             sourceLabel="Via Riot ID"
             icon={<ValorantRankIcon iconUrl={valorantTierIcon ?? null} className="size-16 shrink-0 drop-shadow-md" />}
+          />
+        ) : null}
+        {hasMlbbRank ? (
+          <RankMedalCard
+            game="Mobile Legends: Bang Bang"
+            rankLabel={`${mlbbHighestStar} stars`}
+            sourceLabel="Verified by admin"
           />
         ) : null}
       </div>

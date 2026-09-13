@@ -28,6 +28,10 @@ export interface Database {
           valorant_rr: number | null;
           valorant_elo: number | null;
           valorant_rank_synced_at: string | null;
+          mlbb_user_id: string | null;
+          mlbb_server: string | null;
+          mlbb_highest_star: number | null;
+          mlbb_verified_at: string | null;
           is_admin: boolean;
           last_seen_at: string | null;
           show_ranks: boolean;
@@ -65,6 +69,10 @@ export interface Database {
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;
+          mlbb_user_id?: string | null;
+          mlbb_server?: string | null;
+          mlbb_highest_star?: number | null;
+          mlbb_verified_at?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -100,6 +108,10 @@ export interface Database {
           valorant_rr?: number | null;
           valorant_elo?: number | null;
           valorant_rank_synced_at?: string | null;
+          mlbb_user_id?: string | null;
+          mlbb_server?: string | null;
+          mlbb_highest_star?: number | null;
+          mlbb_verified_at?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -1158,6 +1170,42 @@ export interface Database {
           },
         ];
       };
+      mlbb_verifications: {
+        Row: {
+          id: string;
+          profile_id: string;
+          mlbb_user_id: string;
+          mlbb_server: string;
+          highest_star: number | null;
+          status: "pending" | "approved" | "rejected";
+          rejection_reason: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          mlbb_user_id: string;
+          mlbb_server: string;
+          status?: "pending" | "approved" | "rejected";
+        };
+        Update: {
+          status?: "pending" | "approved" | "rejected";
+          highest_star?: number | null;
+          rejection_reason?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mlbb_verifications_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       feedback: {
         Row: {
           id: string;
@@ -1292,5 +1340,11 @@ export type HighlightWithRelations = Highlight & {
 export type Feedback = Database["public"]["Tables"]["feedback"]["Row"];
 
 export type FeedbackWithProfile = Feedback & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type MlbbVerification = Database["public"]["Tables"]["mlbb_verifications"]["Row"];
+
+export type MlbbVerificationWithProfile = MlbbVerification & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

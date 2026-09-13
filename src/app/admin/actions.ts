@@ -116,6 +116,59 @@ export async function reviewHighlight(
   return {};
 }
 
+export async function reviewMlbbVerification(
+  verificationId: string,
+  decision: "approved" | "rejected",
+  highestStar?: number,
+  rejectionReason?: string,
+): Promise<AdminActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) {
+    return { error: "You need to be an admin to do that." };
+  }
+
+  if (decision === "approved" && (!highestStar || highestStar < 1)) {
+    return { error: "Enter the player's highest star to approve this." };
+  }
+
+  const serviceClient = createServiceClient();
+  const { data: verification, error: fetchError } = await serviceClient
+    .from("mlbb_verifications")
+    .select("profile_id")
+    .eq("id", verificationId)
+    .maybeSingle();
+
+  if (fetchError || !verification) {
+    return { error: "Verification request not found." };
+  }
+
+  const { error } = await serviceClient
+    .from("mlbb_verifications")
+    .update({
+      status: decision,
+      highest_star: decision === "approved" ? highestStar : null,
+      rejection_reason: decision === "rejected" ? rejectionReason || null : null,
+      reviewed_by: admin.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", verificationId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (decision === "approved") {
+    await serviceClient
+      .from("profiles")
+      .update({ mlbb_highest_star: highestStar, mlbb_verified_at: new Date().toISOString() })
+      .eq("id", verification.profile_id);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/profile");
+  return {};
+}
+
 // RLS restricts this update to admins (see player_reports' "Admins can
 // update report status" policy), so a non-admin calling it just silently
 // affects zero rows — the button is only ever rendered on /admin, which

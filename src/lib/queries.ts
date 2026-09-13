@@ -27,6 +27,8 @@ import type {
   ScrimmageWithRelations,
   HighlightWithRelations,
   FeedbackWithProfile,
+  MlbbVerification,
+  MlbbVerificationWithProfile,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -1198,5 +1200,34 @@ export async function getOpenFeedback() {
     .order("status", { ascending: true })
     .order("created_at", { ascending: false })
     .returns<FeedbackWithProfile[]>();
+  return data ?? [];
+}
+
+// The player's most recent MLBB verification request, whatever its status —
+// used on /profile/settings to show a pending banner or a rejection reason
+// alongside the form, not just once it's approved.
+export async function getMyMlbbVerification(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("mlbb_verifications")
+    .select("*")
+    .eq("profile_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    .returns<MlbbVerification>();
+  return data;
+}
+
+// Admin-only moderation queue, oldest first — mirrors getPendingHighlights
+// exactly.
+export async function getPendingMlbbVerifications() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("mlbb_verifications")
+    .select("*, profiles(username, avatar_url)")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .returns<MlbbVerificationWithProfile[]>();
   return data ?? [];
 }

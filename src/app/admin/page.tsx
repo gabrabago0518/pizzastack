@@ -11,6 +11,7 @@ import { CoachApplicationsList } from "@/components/site/coach-applications-list
 import { ApprovedCoachesList } from "@/components/site/approved-coaches-list";
 import { AccountsList } from "@/components/site/accounts-list";
 import { HighlightModerationList } from "@/components/site/highlight-moderation-list";
+import { MlbbVerificationsList } from "@/components/site/mlbb-verifications-list";
 import { FeedbackList } from "@/components/site/feedback-list";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -21,6 +22,7 @@ import {
   getApprovedCoaches,
   getAllAccounts,
   getPendingHighlights,
+  getPendingMlbbVerifications,
   getOpenFeedback,
 } from "@/lib/queries";
 
@@ -40,16 +42,25 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const [stats, reports, coachApplications, approvedCoaches, accounts, pendingHighlights, feedback] =
-    await Promise.all([
-      getAdminStats(),
-      getPlayerReports(),
-      getPendingCoachApplications(),
-      getApprovedCoaches(),
-      getAllAccounts(),
-      getPendingHighlights(),
-      getOpenFeedback(),
-    ]);
+  const [
+    stats,
+    reports,
+    coachApplications,
+    approvedCoaches,
+    accounts,
+    pendingHighlights,
+    pendingMlbbVerifications,
+    feedback,
+  ] = await Promise.all([
+    getAdminStats(),
+    getPlayerReports(),
+    getPendingCoachApplications(),
+    getApprovedCoaches(),
+    getAllAccounts(),
+    getPendingHighlights(),
+    getPendingMlbbVerifications(),
+    getOpenFeedback(),
+  ]);
 
   const tiles = [
     { label: "Total accounts", value: stats.totalAccounts, icon: Users },
@@ -125,6 +136,11 @@ export default async function AdminPage() {
       <div className="mt-10 flex flex-col gap-4">
         <h2 className="font-display text-xl">Highlights pending review</h2>
         <HighlightModerationList highlights={pendingHighlights} />
+      </div>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Mobile Legends verifications</h2>
+        <MlbbVerificationsList verifications={pendingMlbbVerifications} />
       </div>
 
       <div className="mt-10 flex flex-col gap-4">

@@ -8,10 +8,11 @@ import { AvatarUpload } from "@/components/site/avatar-upload";
 import { ProfileForm } from "@/components/site/profile-form";
 import { SteamConnect } from "@/components/site/steam-connect";
 import { RiotConnect } from "@/components/site/riot-connect";
+import { MlbbConnect } from "@/components/site/mlbb-connect";
 import { DeleteAccountButton } from "@/components/site/delete-account-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile, getGames, getGamesForProfile } from "@/lib/queries";
+import { getProfile, getGames, getGamesForProfile, getMyMlbbVerification } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Profile Settings",
@@ -36,10 +37,11 @@ export default async function ProfileSettingsPage({
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [allGames, myGames, { count: ownedGuildCount }] = await Promise.all([
+  const [allGames, myGames, { count: ownedGuildCount }, myMlbbVerification] = await Promise.all([
     getGames(),
     getGamesForProfile(user.id),
     supabase.from("guilds").select("*", { count: "exact", head: true }).eq("owner_id", user.id),
+    getMyMlbbVerification(user.id),
   ]);
 
   return (
@@ -97,6 +99,16 @@ export default async function ProfileSettingsPage({
             valorantTier={profile.valorant_tier}
             valorantTierIcon={profile.valorant_tier_icon}
             syncedAt={profile.valorant_rank_synced_at}
+          />
+        </div>
+
+        <div className="mt-6">
+          <MlbbConnect
+            mlbbUserId={profile.mlbb_user_id}
+            mlbbServer={profile.mlbb_server}
+            highestStar={profile.mlbb_highest_star}
+            verifiedAt={profile.mlbb_verified_at}
+            latestVerification={myMlbbVerification ?? null}
           />
         </div>
 

@@ -306,6 +306,67 @@ export async function connectRiotAccount(
   return { success: true };
 }
 
+export interface MlbbFormState {
+  error?: string;
+  success?: boolean;
+}
+
+// Mobile Legends has no public API for a live rank, so this doesn't sync
+// anything itself — it just saves the self-reported user ID/server (same
+// trust level as riot_name/tag/region) and files a pending row in
+// mlbb_verifications for an admin to check manually and fill in
+// highest_star (see reviewMlbbVerification in admin/actions.ts). Re-running
+// this after already being verified files a fresh request without
+// clearing the previously-verified profiles.mlbb_highest_star, so the old
+// verified value keeps showing until the new one is reviewed.
+export async function submitMlbbVerification(
+  _prevState: MlbbFormState,
+  formData: FormData,
+): Promise<MlbbFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in to submit a verification request." };
+  }
+
+  const mlbbUserId = String(formData.get("mlbbUserId") ?? "").trim();
+  const mlbbServer = String(formData.get("mlbbServer") ?? "").trim();
+
+  if (!mlbbUserId || !mlbbServer) {
+    return { error: "Enter your Mobile Legends user ID and server number." };
+  }
+
+  const { error: saveError } = await supabase
+    .from("profiles")
+    .update({ mlbb_user_id: mlbbUserId, mlbb_server: mlbbServer })
+    .eq("id", user.id);
+
+  if (saveError) {
+    return { error: saveError.message };
+  }
+
+  const { error } = await supabase.from("mlbb_verifications").insert({
+    profile_id: user.id,
+    mlbb_user_id: mlbbUserId,
+    mlbb_server: mlbbServer,
+  });
+
+  if (error) {
+    // 23505 = unique_violation on mlbb_verifications_one_pending_per_profile.
+    if (error.code === "23505") {
+      return { error: "You already have a verification request pending review." };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/profile");
+  revalidatePath("/profile/settings");
+  return { success: true };
+}
+
 export interface DeleteAccountResult {
   error?: string;
 }

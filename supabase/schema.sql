@@ -1624,6 +1624,7 @@ create policy "Participants can read their messages"
   );
 
 drop policy if exists "Participants can send messages" on public.direct_messages;
+drop policy if exists "Buddies can send messages" on public.direct_messages;
 create policy "Buddies can send messages"
   on public.direct_messages for insert
   with check (

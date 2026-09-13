@@ -23,7 +23,7 @@ export const MLBB_RANK_TIERS: { value: MlbbRankTier; label: string }[] = [
   { value: "mythic", label: "Mythic" },
 ];
 
-const TIER_LABELS: Record<MlbbRankTier, string> = {
+export const MLBB_TIER_LABELS: Record<MlbbRankTier, string> = {
   warrior: "Warrior",
   elite: "Elite",
   master: "Master",
@@ -47,6 +47,10 @@ export function formatMlbbMythicLabel(highestStar: number | null): string {
   return "Mythic";
 }
 
+// Plain-text version of the rank label — for contexts that can't render
+// JSX (alt text, page metadata). On-screen display uses MlbbRankLabel
+// instead, which renders the Mythic bracket's star count as an actual
+// star icon rather than spelling out the word "stars".
 export function formatMlbbRank(
   tier: MlbbRankTier | null,
   subRank: number | null,
@@ -62,7 +66,7 @@ export function formatMlbbRank(
   }
 
   const numeral = formatMlbbSubRank(subRank);
-  return numeral ? `${TIER_LABELS[tier]} ${numeral}` : TIER_LABELS[tier];
+  return numeral ? `${MLBB_TIER_LABELS[tier]} ${numeral}` : MLBB_TIER_LABELS[tier];
 }
 
 // Which badge asset to show. Non-mythic tiers map 1:1 to their own badge;

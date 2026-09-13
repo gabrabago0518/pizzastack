@@ -13,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RankMedalCard } from "@/components/site/rank-medal-card";
+import { MlbbRankLabel } from "@/components/site/mlbb-rank-label";
 import { submitMlbbVerification, type MlbbFormState } from "@/app/profile/actions";
 import { formatRelativeTime } from "@/lib/utils";
-import { formatMlbbRank, type MlbbRankTier } from "@/lib/mlbb-rank";
+import type { MlbbRankTier } from "@/lib/mlbb-rank";
 import type { MlbbVerification } from "@/lib/supabase/types";
 
 interface MlbbConnectProps {
@@ -117,7 +118,7 @@ export function MlbbConnect({
         <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
           <RankMedalCard
             game="Mobile Legends: Bang Bang"
-            rankLabel={formatMlbbRank(rankTier, subRank, highestStar)}
+            rankLabel={<MlbbRankLabel tier={rankTier} subRank={subRank} highestStar={highestStar} />}
             sourceLabel="Verified by admin"
           />
           <span className="text-sm text-muted-foreground">

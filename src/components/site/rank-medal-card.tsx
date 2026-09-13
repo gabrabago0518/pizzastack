@@ -18,7 +18,7 @@ export function RankMedalCard({
   leetifyAttribution = false,
 }: {
   game: string;
-  rankLabel: string;
+  rankLabel: ReactNode;
   sourceLabel: string;
   icon?: ReactNode;
   statLine?: string;

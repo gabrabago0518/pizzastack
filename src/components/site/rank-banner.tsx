@@ -1,10 +1,11 @@
 import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
+import { MlbbRankLabel } from "@/components/site/mlbb-rank-label";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
 import { formatValorantRank } from "@/lib/valorant-rank";
-import { formatMlbbRank, type MlbbRankTier } from "@/lib/mlbb-rank";
+import type { MlbbRankTier } from "@/lib/mlbb-rank";
 
 // A showcase strip of a player's ranks across games. Built as a list so
 // adding the next game's rank later is just another entry here, not a
@@ -88,7 +89,13 @@ export function RankBanner({
         {hasMlbbRank ? (
           <RankMedalCard
             game="Mobile Legends: Bang Bang"
-            rankLabel={formatMlbbRank(mlbbRankTier ?? null, mlbbSubRank ?? null, mlbbHighestStar ?? null)}
+            rankLabel={
+              <MlbbRankLabel
+                tier={mlbbRankTier ?? null}
+                subRank={mlbbSubRank ?? null}
+                highestStar={mlbbHighestStar ?? null}
+              />
+            }
             sourceLabel="Verified by admin"
           />
         ) : null}

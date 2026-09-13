@@ -118,7 +118,7 @@ export function MlbbVerificationsList({
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`tier-${verification.id}`} className="text-xs text-muted-foreground">
-                    Rank tier
+                    Rank
                   </label>
                   <SelectNative
                     id={`tier-${verification.id}`}
@@ -148,7 +148,7 @@ export function MlbbVerificationsList({
                       htmlFor={`subrank-${verification.id}`}
                       className="text-xs text-muted-foreground"
                     >
-                      Sub-rank
+                      Division
                     </label>
                     <SelectNative
                       id={`subrank-${verification.id}`}

@@ -25,12 +25,20 @@ export function MlbbRankLabel({
   if (tier === "mythic") {
     const label = formatMlbbMythicLabel(highestStar);
     if (!highestStar) return label;
+    // Plain inline flow (not a flex row) so "Mythical Immortal" can still
+    // wrap between its two words on a narrow screen — a flex row would
+    // instead center the icon+number across both wrapped lines, floating
+    // it oddly to the right. The icon+number stay glued together as their
+    // own unit via whitespace-nowrap, dropping to the next line as a pair
+    // if they don't fit rather than splitting the icon from its number.
     return (
-      <span className="inline-flex items-center gap-1">
-        {label}
-        <Star className="size-4 shrink-0 fill-current text-secondary" />
-        {highestStar}
-      </span>
+      <>
+        {label}{" "}
+        <span className="inline-flex items-center gap-1 whitespace-nowrap align-middle">
+          <Star className="size-4 shrink-0 fill-current text-secondary" />
+          {highestStar}
+        </span>
+      </>
     );
   }
 

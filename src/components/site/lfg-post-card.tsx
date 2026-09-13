@@ -27,8 +27,9 @@ export function LfgPostCard({
   partyMembers?: JoinRequestWithRequester[];
 }) {
   const isOwner = viewerId === post.author_id;
+  const isMember = isOwner || myRequestStatus === "accepted";
   const isFull = partyMembers.length >= post.players_needed;
-  const accountId = formatGameAccountId(post.games?.slug, post.profiles);
+  const accountId = isMember ? formatGameAccountId(post.games?.slug, post.profiles) : null;
 
   return (
     <Card className="relative min-w-0 transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">

@@ -52,7 +52,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
   } = await supabase.auth.getUser();
 
   const isOwner = viewer?.id === post.author_id;
-  const accountId = formatGameAccountId(post.games?.slug, post.profiles);
   const joinRequests = viewer ? await getJoinRequestsForPosts([post.id]) : [];
 
   const myRequest = joinRequests.find((request) => request.requester_id === viewer?.id);
@@ -60,6 +59,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
   const acceptedMembers = joinRequests.filter((request) => request.status === "accepted");
 
   const chatUnlocked = Boolean(viewer) && (isOwner || myRequestStatus === "accepted");
+  const accountId = chatUnlocked ? formatGameAccountId(post.games?.slug, post.profiles) : null;
   const messages = chatUnlocked ? await getMessagesForPost(post.id) : [];
 
   return (

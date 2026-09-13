@@ -106,6 +106,6 @@ export async function deleteHighlight(highlightId: string): Promise<DeleteHighli
 
   revalidatePath("/highlights");
   revalidatePath("/profile");
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {};
 }

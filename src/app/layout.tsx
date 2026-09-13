@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { ChatFab } from "@/components/site/chat-fab";
+import { SiteChrome } from "@/components/site/site-chrome";
 import { CookieConsent } from "@/components/site/cookie-consent";
 import { PresenceHeartbeat } from "@/components/site/presence-heartbeat";
 import { createClient } from "@/lib/supabase/server";
@@ -77,18 +78,22 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${spaceGrotesk.variable} ${inter.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
-        <Navbar />
+        <SiteChrome>
+          <Navbar />
+        </SiteChrome>
         <main className="flex-1">{children}</main>
-        <Footer />
-        <ChatFab
-          activeListingId={activeListingId}
-          pendingRequestCount={pendingRequestCount}
-          unreadDmCount={unreadDmCount}
-          guildId={myGuildMembership?.guilds?.id ?? null}
-          guildName={myGuildMembership?.guilds?.name ?? null}
-          guildTag={myGuildMembership?.guilds?.tag ?? null}
-          viewerId={user?.id ?? null}
-        />
+        <SiteChrome>
+          <Footer />
+          <ChatFab
+            activeListingId={activeListingId}
+            pendingRequestCount={pendingRequestCount}
+            unreadDmCount={unreadDmCount}
+            guildId={myGuildMembership?.guilds?.id ?? null}
+            guildName={myGuildMembership?.guilds?.name ?? null}
+            guildTag={myGuildMembership?.guilds?.tag ?? null}
+            viewerId={user?.id ?? null}
+          />
+        </SiteChrome>
         <CookieConsent />
         {user ? <PresenceHeartbeat /> : null}
       </body>

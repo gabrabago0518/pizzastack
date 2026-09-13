@@ -1344,3 +1344,47 @@ export async function getPendingMlbbVerifications() {
     .returns<MlbbVerificationWithProfile[]>();
   return data ?? [];
 }
+
+export interface AdminBadgeCounts {
+  feedback: number;
+  coachApplications: number;
+  highlights: number;
+  mlbbVerifications: number;
+  reports: number;
+}
+
+// Lightweight pending-item counts for the admin sidebar badges and the
+// overview page's "Needs attention" cards. Wrapped in cache() so both can
+// call this in the same request without doubling up on five count
+// queries — same dedup trick as getProfileByUsername.
+export const getAdminBadgeCounts = cache(async (): Promise<AdminBadgeCounts> => {
+  const supabase = await createClient();
+  const [feedback, coachApplications, highlights, mlbbVerifications, reports] =
+    await Promise.all([
+      supabase.from("feedback").select("*", { count: "exact", head: true }).eq("status", "open"),
+      supabase
+        .from("coach_profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("highlights")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("mlbb_verifications")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("player_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open"),
+    ]);
+
+  return {
+    feedback: feedback.count ?? 0,
+    coachApplications: coachApplications.count ?? 0,
+    highlights: highlights.count ?? 0,
+    mlbbVerifications: mlbbVerifications.count ?? 0,
+    reports: reports.count ?? 0,
+  };
+});

@@ -82,7 +82,7 @@ export async function reviewCoachApplication(
     }
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/coaches");
   return {};
 }
@@ -112,7 +112,7 @@ export async function reviewHighlight(
     return { error: error.message };
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/highlights");
   return {};
 }
@@ -195,7 +195,7 @@ export async function reviewMlbbVerification(
       .eq("id", verification.profile_id);
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/profile");
   return {};
 }
@@ -223,7 +223,7 @@ export async function markReportReviewed(reportId: string): Promise<AdminActionR
     return { error: error.message };
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {};
 }
 
@@ -249,6 +249,6 @@ export async function markFeedbackReviewed(feedbackId: string): Promise<AdminAct
     return { error: error.message };
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return {};
 }

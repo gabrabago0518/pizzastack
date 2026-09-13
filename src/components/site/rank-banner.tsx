@@ -28,29 +28,9 @@ function formatValorantStatLine(riotName: string | null, riotTag: string | null)
   return riotName && riotTag ? `${riotName}#${riotTag}` : undefined;
 }
 
-// Renders "PersonaName · 1,234 matches · 567 hrs played" — the Steam
-// persona name leads (same reason as Valorant/MLBB's username line: shows
-// exactly which account earned this), then whichever career-totals fields
-// have synced. Any piece alone (a partial sync, a very new account with
-// 0 hours rounding down, or no persona name yet) still reads fine, so
-// this degrades gracefully rather than requiring all three.
-function formatDotaStatLine(
-  personaName: string | null,
-  totalMatches: number | null,
-  hoursPlayed: number | null,
-): string | undefined {
-  const parts: string[] = [];
-  if (personaName) parts.push(personaName);
-  if (totalMatches !== null) parts.push(`${totalMatches.toLocaleString()} matches`);
-  if (hoursPlayed !== null) parts.push(`${hoursPlayed.toLocaleString()} hrs played`);
-  return parts.length > 0 ? parts.join(" · ") : undefined;
-}
-
 export function RankBanner({
   dotaRankTier,
   dotaLeaderboardRank,
-  dotaTotalMatches,
-  dotaHoursPlayed,
   cs2PremierRating,
   cs2CompetitiveRank,
   steamPersonaName,
@@ -65,8 +45,6 @@ export function RankBanner({
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
-  dotaTotalMatches?: number | null;
-  dotaHoursPlayed?: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
   steamPersonaName?: string | null;
@@ -95,11 +73,7 @@ export function RankBanner({
             game="Dota 2"
             rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
             sourceLabel="Verified via Steam"
-            statLine={formatDotaStatLine(
-              steamPersonaName ?? null,
-              dotaTotalMatches ?? null,
-              dotaHoursPlayed ?? null,
-            )}
+            statLine={steamPersonaName ?? undefined}
             icon={<DotaRankIcon rankTier={dotaRankTier} className="size-16 shrink-0 drop-shadow-md" />}
           />
         ) : null}

@@ -5,8 +5,9 @@
 // IV, Grandmaster/Epic/Legend the full V (see MAX_SUB_RANK_BY_TIER).
 // Mythic has no sub-rank numeral at all; it's a running star count from 1,
 // and the *display name* changes based on that count alone, not on
-// anything the admin picks separately: 1-49 stars "Mythic", 50-99
-// "Mythical Glory", 100+ "Mythical Immortal".
+// anything the admin picks separately: 1-49 stars "Mythic", 50-99 "Glory",
+// 100+ "Immortal" (MLBB's own names are "Mythical Glory"/"Mythical
+// Immortal" — shortened here for the card, same thresholds and badges).
 export type MlbbRankTier =
   | "warrior"
   | "elite"
@@ -65,9 +66,11 @@ export function mlbbSubRanksForTier(tier: MlbbRankTier | null): number[] {
 }
 
 // The Mythic-bracket display name, derived purely from star count.
+// Shortened from MLBB's own "Mythical Glory"/"Mythical Immortal" names —
+// still the same thresholds and badge art, just less to read on the card.
 export function formatMlbbMythicLabel(highestStar: number | null): string {
-  if (highestStar && highestStar >= 100) return "Mythical Immortal";
-  if (highestStar && highestStar >= 50) return "Mythical Glory";
+  if (highestStar && highestStar >= 100) return "Immortal";
+  if (highestStar && highestStar >= 50) return "Glory";
   return "Mythic";
 }
 

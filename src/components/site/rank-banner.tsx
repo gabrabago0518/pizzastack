@@ -2,6 +2,7 @@ import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
 import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
 import { MlbbRankLabel } from "@/components/site/mlbb-rank-label";
+import { MlbbRankIcon } from "@/components/site/mlbb-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
 import { formatValorantRank } from "@/lib/valorant-rank";
@@ -97,6 +98,13 @@ export function RankBanner({
               />
             }
             sourceLabel="Verified by admin"
+            icon={
+              <MlbbRankIcon
+                tier={mlbbRankTier ?? null}
+                highestStar={mlbbHighestStar ?? null}
+                className="size-16 shrink-0 drop-shadow-md"
+              />
+            }
           />
         ) : null}
       </div>

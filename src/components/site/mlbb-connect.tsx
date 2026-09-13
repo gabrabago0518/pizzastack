@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { MlbbRankLabel } from "@/components/site/mlbb-rank-label";
+import { MlbbRankIcon } from "@/components/site/mlbb-rank-icon";
 import { submitMlbbVerification, type MlbbFormState } from "@/app/profile/actions";
 import { formatRelativeTime } from "@/lib/utils";
 import type { MlbbRankTier } from "@/lib/mlbb-rank";
@@ -120,6 +121,7 @@ export function MlbbConnect({
             game="Mobile Legends: Bang Bang"
             rankLabel={<MlbbRankLabel tier={rankTier} subRank={subRank} highestStar={highestStar} />}
             sourceLabel="Verified by admin"
+            icon={<MlbbRankIcon tier={rankTier} highestStar={highestStar} className="size-10" />}
           />
           <span className="text-sm text-muted-foreground">
             {verifiedAt ? `Verified ${formatRelativeTime(verifiedAt)}` : null}

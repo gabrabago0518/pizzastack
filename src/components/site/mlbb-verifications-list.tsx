@@ -9,18 +9,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SelectNative } from "@/components/ui/select-native";
+import { MlbbRankIcon } from "@/components/site/mlbb-rank-icon";
 import { reviewMlbbVerification } from "@/app/admin/actions";
 import { formatRelativeTime } from "@/lib/utils";
-import { MLBB_RANK_TIERS, type MlbbRankTier } from "@/lib/mlbb-rank";
+import {
+  MLBB_RANK_TIERS,
+  formatMlbbSubRank,
+  mlbbSubRanksForTier,
+  type MlbbRankTier,
+} from "@/lib/mlbb-rank";
 import type { MlbbVerificationWithProfile } from "@/lib/supabase/types";
-
-const SUB_RANK_OPTIONS = [
-  { value: "1", label: "I (highest)" },
-  { value: "2", label: "II" },
-  { value: "3", label: "III" },
-  { value: "4", label: "IV" },
-  { value: "5", label: "V (lowest)" },
-];
 
 export function MlbbVerificationsList({
   verifications,
@@ -120,26 +118,36 @@ export function MlbbVerificationsList({
                   <label htmlFor={`tier-${verification.id}`} className="text-xs text-muted-foreground">
                     Rank
                   </label>
-                  <SelectNative
-                    id={`tier-${verification.id}`}
-                    value={tier}
-                    onChange={(event) =>
-                      setTiers((prev) => ({
-                        ...prev,
-                        [verification.id]: event.target.value as MlbbRankTier,
-                      }))
-                    }
-                    className="h-8 w-36 text-sm"
-                  >
-                    <option value="" disabled>
-                      Select
-                    </option>
-                    {MLBB_RANK_TIERS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
+                  <div className="flex items-center gap-2">
+                    <SelectNative
+                      id={`tier-${verification.id}`}
+                      value={tier}
+                      onChange={(event) => {
+                        const nextTier = event.target.value as MlbbRankTier;
+                        setTiers((prev) => ({ ...prev, [verification.id]: nextTier }));
+                        // A division valid for the previous tier might not be
+                        // valid for the new one (e.g. Grandmaster V -> Warrior).
+                        setSubRanks((prev) => ({ ...prev, [verification.id]: "" }));
+                      }}
+                      className="h-8 w-36 text-sm"
+                    >
+                      <option value="" disabled>
+                        Select
                       </option>
-                    ))}
-                  </SelectNative>
+                      {MLBB_RANK_TIERS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectNative>
+                    {tier ? (
+                      <MlbbRankIcon
+                        tier={tier}
+                        highestStar={isMythic ? Number(stars[verification.id]) || null : null}
+                        className="size-8"
+                      />
+                    ) : null}
+                  </div>
                 </div>
 
                 {tier && !isMythic ? (
@@ -161,9 +169,10 @@ export function MlbbVerificationsList({
                       <option value="" disabled>
                         Select
                       </option>
-                      {SUB_RANK_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
+                      {mlbbSubRanksForTier(tier).map((subRank, index, all) => (
+                        <option key={subRank} value={subRank}>
+                          {formatMlbbSubRank(subRank)}
+                          {index === 0 ? " (highest)" : index === all.length - 1 ? " (lowest)" : ""}
                         </option>
                       ))}
                     </SelectNative>

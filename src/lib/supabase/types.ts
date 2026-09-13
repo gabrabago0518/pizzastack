@@ -1376,7 +1376,16 @@ export type JoinRequestWithRequester = JoinRequest & {
 };
 
 export type LfgMessageWithSender = LfgMessage & {
-  profiles: Pick<Profile, "username" | "avatar_url"> | null;
+  profiles: Pick<
+    Profile,
+    | "username"
+    | "avatar_url"
+    | "steam_id"
+    | "riot_name"
+    | "riot_tag"
+    | "mlbb_user_id"
+    | "mlbb_server"
+  > | null;
 };
 
 export type CoachProfileWithRelations = CoachProfile & {

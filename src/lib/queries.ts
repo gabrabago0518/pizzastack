@@ -475,7 +475,9 @@ export async function getMessagesForPost(postId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("lfg_messages")
-    .select("*, profiles(username, avatar_url)")
+    .select(
+      "*, profiles(username, avatar_url, steam_id, riot_name, riot_tag, mlbb_user_id, mlbb_server)",
+    )
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
     .returns<LfgMessageWithSender[]>();

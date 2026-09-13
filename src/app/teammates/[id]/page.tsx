@@ -190,6 +190,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 postId={post.id}
                 viewerId={viewer.id}
                 initialMessages={messages}
+                gameSlug={post.games?.slug}
               />
             ) : myRequestStatus === "pending" ? (
               <p className="text-center text-sm text-muted-foreground">

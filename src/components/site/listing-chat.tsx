@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { formatGameAccountId } from "@/lib/account-id";
 import type { LfgMessageWithSender } from "@/lib/supabase/types";
 
 // Realtime (see the lfg_messages entry in the supabase_realtime
@@ -20,10 +21,12 @@ export function ListingChat({
   postId,
   viewerId,
   initialMessages,
+  gameSlug,
 }: {
   postId: string;
   viewerId: string;
   initialMessages: LfgMessageWithSender[];
+  gameSlug?: string | null;
 }) {
   const [messages, setMessages] = React.useState(initialMessages);
   const [input, setInput] = React.useState("");
@@ -113,6 +116,7 @@ export function ListingChat({
             const isMine = message.sender_id === viewerId;
             const hasProfile = Boolean(message.profiles?.username);
             const username = message.profiles?.username ?? "unknown";
+            const accountId = formatGameAccountId(gameSlug, message.profiles);
             return (
               <div
                 key={message.id}
@@ -147,7 +151,8 @@ export function ListingChat({
                       "You"
                     ) : (
                       `@${username}`
-                    )}{" "}
+                    )}
+                    {accountId ? ` · ${accountId}` : ""}{" "}
                     &middot; {formatRelativeTime(message.created_at)}
                   </span>
                   <p

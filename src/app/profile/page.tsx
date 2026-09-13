@@ -12,13 +12,12 @@ import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
 import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
 import { getProfileBackgroundGradient } from "@/lib/profile-backgrounds";
-import { LfgPostsList, CoachProfilesList, HighlightsList } from "@/components/site/activity-lists";
+import { CoachProfilesList, HighlightsList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfile,
-  getLfgPostsByAuthor,
   getCoachProfilesByAuthor,
   getGamesForProfile,
   getCommendCount,
@@ -42,8 +41,7 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [posts, coachProfiles, games, commendCount, topHeroes, highlights] = await Promise.all([
-    getLfgPostsByAuthor(user.id),
+  const [coachProfiles, games, commendCount, topHeroes, highlights] = await Promise.all([
     getCoachProfilesByAuthor(user.id),
     getGamesForProfile(user.id),
     getCommendCount(user.id),
@@ -161,26 +159,18 @@ export default async function ProfilePage() {
         />
       </div>
 
-      {/* Coaches and Highlights aren't promoted on the profile page right
-          now (see lib/nav-links.ts) — these two sections only show up for
+      {/* Teammate listings are managed from /dashboard now, not duplicated
+          here. Coaches and Highlights aren't promoted on the profile page
+          either (see lib/nav-links.ts) — these sections only show up for
           someone who already has existing content there, so past coach
           listings/highlights stay visible and manageable without a "create
           new" upsell pushing everyone else toward a deprioritized feature. */}
-      <div className={coachProfiles.length > 0 ? "grid gap-8 lg:grid-cols-2" : undefined}>
-        <div className="flex flex-col gap-4">
-          <h2 className="font-display text-xl">Your listings</h2>
-          <LfgPostsList
-            posts={posts}
-            emptyText="You haven't posted a listing yet."
-          />
+      {coachProfiles.length > 0 ? (
+        <div className="mb-10 flex flex-col gap-4">
+          <h2 className="font-display text-xl">Your coach listings</h2>
+          <CoachProfilesList coachProfiles={coachProfiles} emptyText="" />
         </div>
-        {coachProfiles.length > 0 ? (
-          <div className="mt-8 flex flex-col gap-4 lg:mt-0">
-            <h2 className="font-display text-xl">Your coach listings</h2>
-            <CoachProfilesList coachProfiles={coachProfiles} emptyText="" />
-          </div>
-        ) : null}
-      </div>
+      ) : null}
 
       {highlights.length > 0 ? (
         <div className="mt-8 flex flex-col gap-4">

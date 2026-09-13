@@ -106,6 +106,7 @@ export default async function ProfileSettingsPage({
           <MlbbConnect
             mlbbUserId={profile.mlbb_user_id}
             mlbbServer={profile.mlbb_server}
+            mlbbIgn={profile.mlbb_ign}
             highestStar={profile.mlbb_highest_star}
             verifiedAt={profile.mlbb_verified_at}
             latestVerification={myMlbbVerification ?? null}

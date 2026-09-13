@@ -32,6 +32,7 @@ export interface Database {
           mlbb_server: string | null;
           mlbb_highest_star: number | null;
           mlbb_verified_at: string | null;
+          mlbb_ign: string | null;
           is_admin: boolean;
           last_seen_at: string | null;
           show_ranks: boolean;
@@ -73,6 +74,7 @@ export interface Database {
           mlbb_server?: string | null;
           mlbb_highest_star?: number | null;
           mlbb_verified_at?: string | null;
+          mlbb_ign?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -112,6 +114,7 @@ export interface Database {
           mlbb_server?: string | null;
           mlbb_highest_star?: number | null;
           mlbb_verified_at?: string | null;
+          mlbb_ign?: string | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -1177,6 +1180,7 @@ export interface Database {
           mlbb_user_id: string;
           mlbb_server: string;
           highest_star: number | null;
+          ign: string | null;
           status: "pending" | "approved" | "rejected";
           rejection_reason: string | null;
           reviewed_by: string | null;
@@ -1192,6 +1196,7 @@ export interface Database {
         Update: {
           status?: "pending" | "approved" | "rejected";
           highest_star?: number | null;
+          ign?: string | null;
           rejection_reason?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;

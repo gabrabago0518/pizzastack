@@ -117,6 +117,12 @@ alter table public.profiles
   add column if not exists mlbb_highest_star integer;
 alter table public.profiles
   add column if not exists mlbb_verified_at timestamptz;
+-- mlbb_ign: the player's exact in-game name. Unlike mlbb_user_id/server,
+-- this isn't self-entered at all — a free-text name field would otherwise
+-- be trivially fakeable, so it's only ever set by the reviewing admin
+-- (see reviewMlbbVerification), locked/read-only on MlbbConnect.
+alter table public.profiles
+  add column if not exists mlbb_ign text;
 
 -- is_admin: grants access to /admin — service-role-only (see the grant
 -- below), so it can't be self-promoted by editing a profile like the
@@ -2109,10 +2115,11 @@ create policy "Admins can update feedback status"
 -- There's no public API for a live MLBB rank (unlike Dota/CS2's Steam-based
 -- fetches or Valorant's HenrikDev lookup), so a player submits their
 -- mlbb_user_id/mlbb_server here and an admin checks it manually in-game,
--- then fills in highest_star on approval — which also gets copied onto
--- profiles.mlbb_highest_star (see reviewMlbbVerification in admin/actions.ts,
--- mirroring reviewHighlight/reviewCoachApplication's service-role pattern).
--- Same pending/approved/rejected moderation-queue shape as highlights.
+-- then fills in highest_star and ign on approval — both also get copied
+-- onto profiles.mlbb_highest_star/mlbb_ign (see reviewMlbbVerification in
+-- admin/actions.ts, mirroring reviewHighlight/reviewCoachApplication's
+-- service-role pattern). Same pending/approved/rejected moderation-queue
+-- shape as highlights.
 -- ---------------------------------------------------------------------------
 create table if not exists public.mlbb_verifications (
   id uuid primary key default gen_random_uuid(),
@@ -2126,6 +2133,12 @@ create table if not exists public.mlbb_verifications (
   reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+-- ign: added after the table's initial rollout, hence a separate alter
+-- rather than a column in the create table above (which is a no-op once
+-- the table already exists) — same admin-only trust level as highest_star.
+alter table public.mlbb_verifications
+  add column if not exists ign text;
 
 create index if not exists mlbb_verifications_profile_id_idx on public.mlbb_verifications (profile_id);
 create index if not exists mlbb_verifications_status_created_at_idx on public.mlbb_verifications (status, created_at asc);

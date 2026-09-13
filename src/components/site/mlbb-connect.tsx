@@ -7,7 +7,7 @@
 // submitMlbbVerification/reviewMlbbVerification.
 import * as React from "react";
 import { useActionState } from "react";
-import { Loader2, RefreshCw, Clock } from "lucide-react";
+import { Loader2, RefreshCw, Clock, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import type { MlbbVerification } from "@/lib/supabase/types";
 interface MlbbConnectProps {
   mlbbUserId: string | null;
   mlbbServer: string | null;
+  mlbbIgn: string | null;
   highestStar: number | null;
   verifiedAt: string | null;
   latestVerification: MlbbVerification | null;
@@ -28,6 +29,7 @@ interface MlbbConnectProps {
 export function MlbbConnect({
   mlbbUserId,
   mlbbServer,
+  mlbbIgn,
   highestStar,
   verifiedAt,
   latestVerification,
@@ -51,6 +53,19 @@ export function MlbbConnect({
           ID and server and an admin will check your highest star manually
           and verify it.
         </p>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="mlbbIgn" className="flex items-center gap-1.5">
+          <Lock className="size-3" /> IGN
+        </Label>
+        <Input
+          id="mlbbIgn"
+          value={mlbbIgn ?? ""}
+          placeholder="Set by admin once verified"
+          disabled
+          className="w-48"
+        />
       </div>
 
       <form action={formAction} className="flex flex-wrap items-end gap-2">

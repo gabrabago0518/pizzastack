@@ -120,6 +120,7 @@ export async function reviewMlbbVerification(
   verificationId: string,
   decision: "approved" | "rejected",
   highestStar?: number,
+  ign?: string,
   rejectionReason?: string,
 ): Promise<AdminActionResult> {
   const admin = await requireAdmin();
@@ -127,8 +128,12 @@ export async function reviewMlbbVerification(
     return { error: "You need to be an admin to do that." };
   }
 
+  const trimmedIgn = ign?.trim();
   if (decision === "approved" && (!highestStar || highestStar < 1)) {
     return { error: "Enter the player's highest star to approve this." };
+  }
+  if (decision === "approved" && !trimmedIgn) {
+    return { error: "Enter the player's IGN to approve this." };
   }
 
   const serviceClient = createServiceClient();
@@ -147,6 +152,7 @@ export async function reviewMlbbVerification(
     .update({
       status: decision,
       highest_star: decision === "approved" ? highestStar : null,
+      ign: decision === "approved" ? trimmedIgn : null,
       rejection_reason: decision === "rejected" ? rejectionReason || null : null,
       reviewed_by: admin.id,
       reviewed_at: new Date().toISOString(),
@@ -160,7 +166,11 @@ export async function reviewMlbbVerification(
   if (decision === "approved") {
     await serviceClient
       .from("profiles")
-      .update({ mlbb_highest_star: highestStar, mlbb_verified_at: new Date().toISOString() })
+      .update({
+        mlbb_highest_star: highestStar,
+        mlbb_ign: trimmedIgn,
+        mlbb_verified_at: new Date().toISOString(),
+      })
       .eq("id", verification.profile_id);
   }
 

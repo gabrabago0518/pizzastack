@@ -84,7 +84,7 @@ export function RiotConnect({
 
       <form action={formAction} className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="riotName">Name</Label>
+          <Label htmlFor="riotName">Username</Label>
           <Input
             id="riotName"
             name="riotName"

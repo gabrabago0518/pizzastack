@@ -22,6 +22,7 @@ export function MlbbVerificationsList({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [reasons, setReasons] = React.useState<Record<string, string>>({});
   const [stars, setStars] = React.useState<Record<string, string>>({});
+  const [igns, setIgns] = React.useState<Record<string, string>>({});
 
   function handleReview(id: string, decision: "approved" | "rejected") {
     setPendingId(id);
@@ -31,6 +32,7 @@ export function MlbbVerificationsList({
       id,
       decision,
       decision === "approved" ? highestStar : undefined,
+      decision === "approved" ? igns[id] : undefined,
       reasons[id],
     ).then((result) => {
       setPendingId(null);
@@ -82,6 +84,20 @@ export function MlbbVerificationsList({
               </p>
 
               <div className="flex flex-wrap items-end gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor={`ign-${verification.id}`} className="text-xs text-muted-foreground">
+                    IGN
+                  </label>
+                  <Input
+                    id={`ign-${verification.id}`}
+                    placeholder="e.g. ShadowStrike"
+                    value={igns[verification.id] ?? ""}
+                    onChange={(event) =>
+                      setIgns((prev) => ({ ...prev, [verification.id]: event.target.value }))
+                    }
+                    className="h-8 w-40 text-sm"
+                  />
+                </div>
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor={`star-${verification.id}`} className="text-xs text-muted-foreground">
                     Highest star

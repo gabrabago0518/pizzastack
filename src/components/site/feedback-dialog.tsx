@@ -83,7 +83,7 @@ export function FeedbackDialog({
               Thanks — we&apos;ve got it.
             </p>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 px-6">
                 <textarea
                   value={message}

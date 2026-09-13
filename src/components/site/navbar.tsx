@@ -55,7 +55,7 @@ export async function Navbar() {
           <input
             type="search"
             name="q"
-            placeholder="Search players, coaches, squads..."
+            placeholder="Search Players"
             className="h-9 w-full rounded-full border border-input bg-muted/40 pr-3 pl-9 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
           />
         </form>

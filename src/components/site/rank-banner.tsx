@@ -1,12 +1,17 @@
 import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { DotaRankIcon } from "@/components/site/dota-rank-icon";
+import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
+import { formatValorantRank } from "@/lib/valorant-rank";
 
-// A showcase strip of a player's verified ranks across games. Built as a
-// list so adding the next game's rank later is just another entry here,
-// not a redesign. Valorant isn't included here — see verified-ranks.ts
-// for why.
+// A showcase strip of a player's ranks across games. Built as a list so
+// adding the next game's rank later is just another entry here, not a
+// redesign. Valorant is included but each card states its own trust level
+// via sourceLabel rather than the section claiming every entry is
+// "verified" — Dota/CS2 are proven via Steam OpenID, Valorant's rank value
+// is real (from HenrikDev) but its identity is a self-entered Riot ID, per
+// verified-ranks.ts.
 // Renders "1,234 matches · 567 hrs played" once both career-totals fields
 // have synced. Either alone (a partial sync, or a very new account with
 // 0 hours rounding down) still reads fine, so this degrades gracefully
@@ -25,6 +30,8 @@ export function RankBanner({
   dotaHoursPlayed,
   cs2PremierRating,
   cs2CompetitiveRank,
+  valorantTier,
+  valorantTierIcon,
 }: {
   dotaRankTier: number | null;
   dotaLeaderboardRank: number | null;
@@ -32,14 +39,17 @@ export function RankBanner({
   dotaHoursPlayed?: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
+  valorantTier?: string | null;
+  valorantTierIcon?: string | null;
 }) {
   const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
-  if (!dotaRankTier && !hasCs2Rank) return null;
+  const hasValorantRank = Boolean(valorantTier);
+  if (!dotaRankTier && !hasCs2Rank && !hasValorantRank) return null;
 
   return (
     <div className="mb-10 flex flex-col gap-3">
       <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Verified ranks
+        Ranks
       </h2>
       <div className="flex flex-wrap gap-3">
         {dotaRankTier ? (
@@ -57,6 +67,14 @@ export function RankBanner({
             rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
             sourceLabel="Verified via Steam"
             leetifyAttribution
+          />
+        ) : null}
+        {hasValorantRank ? (
+          <RankMedalCard
+            game="Valorant"
+            rankLabel={formatValorantRank(valorantTier ?? null)}
+            sourceLabel="Via Riot ID"
+            icon={<ValorantRankIcon iconUrl={valorantTierIcon ?? null} className="size-16 shrink-0 drop-shadow-md" />}
           />
         ) : null}
       </div>

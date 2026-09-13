@@ -114,8 +114,6 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists mlbb_server text;
 alter table public.profiles
-  add column if not exists mlbb_highest_star integer;
-alter table public.profiles
   add column if not exists mlbb_verified_at timestamptz;
 -- mlbb_ign: the player's exact in-game name. Unlike mlbb_user_id/server,
 -- this isn't self-entered at all — a free-text name field would otherwise
@@ -123,6 +121,33 @@ alter table public.profiles
 -- (see reviewMlbbVerification), locked/read-only on MlbbConnect.
 alter table public.profiles
   add column if not exists mlbb_ign text;
+
+-- MLBB's rank mechanics are two different shapes glued together:
+-- Warrior through Legend each have 5 sub-ranks numbered V (lowest) down to
+-- I (highest) — mlbb_sub_rank stores that as 5..1, only meaningful when
+-- mlbb_rank_tier is one of those six. Mythic has no sub-rank numeral at
+-- all; instead it's a running star count from 1, and the *display* name
+-- changes based on that count alone (1-49 "Mythic", 50-99 "Mythical
+-- Glory", 100+ "Mythical Immortal") without the admin ever picking those
+-- as a separate tier — see formatMlbbRank in src/lib/mlbb-rank.ts, which
+-- is the single source of truth for that threshold logic.
+alter table public.profiles
+  add column if not exists mlbb_rank_tier text;
+alter table public.profiles
+  drop constraint if exists profiles_mlbb_rank_tier_check;
+alter table public.profiles
+  add constraint profiles_mlbb_rank_tier_check
+  check (mlbb_rank_tier is null or mlbb_rank_tier in
+    ('warrior', 'elite', 'master', 'grandmaster', 'epic', 'legend', 'mythic'));
+alter table public.profiles
+  add column if not exists mlbb_sub_rank smallint;
+alter table public.profiles
+  drop constraint if exists profiles_mlbb_sub_rank_check;
+alter table public.profiles
+  add constraint profiles_mlbb_sub_rank_check
+  check (mlbb_sub_rank is null or mlbb_sub_rank between 1 and 5);
+alter table public.profiles
+  add column if not exists mlbb_highest_star integer;
 
 -- is_admin: grants access to /admin — service-role-only (see the grant
 -- below), so it can't be self-promoted by editing a profile like the
@@ -2139,6 +2164,24 @@ create table if not exists public.mlbb_verifications (
 -- the table already exists) — same admin-only trust level as highest_star.
 alter table public.mlbb_verifications
   add column if not exists ign text;
+
+-- rank_tier/sub_rank: same shape and same reasoning as profiles.mlbb_rank_tier/
+-- mlbb_sub_rank above — added after rollout, hence separate alters.
+alter table public.mlbb_verifications
+  add column if not exists rank_tier text;
+alter table public.mlbb_verifications
+  drop constraint if exists mlbb_verifications_rank_tier_check;
+alter table public.mlbb_verifications
+  add constraint mlbb_verifications_rank_tier_check
+  check (rank_tier is null or rank_tier in
+    ('warrior', 'elite', 'master', 'grandmaster', 'epic', 'legend', 'mythic'));
+alter table public.mlbb_verifications
+  add column if not exists sub_rank smallint;
+alter table public.mlbb_verifications
+  drop constraint if exists mlbb_verifications_sub_rank_check;
+alter table public.mlbb_verifications
+  add constraint mlbb_verifications_sub_rank_check
+  check (sub_rank is null or sub_rank between 1 and 5);
 
 create index if not exists mlbb_verifications_profile_id_idx on public.mlbb_verifications (profile_id);
 create index if not exists mlbb_verifications_status_created_at_idx on public.mlbb_verifications (status, created_at asc);

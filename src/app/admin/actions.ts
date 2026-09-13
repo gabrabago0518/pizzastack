@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import type { MlbbRankTier } from "@/lib/mlbb-rank";
 
 export interface AdminActionResult {
   error?: string;
@@ -119,6 +120,8 @@ export async function reviewHighlight(
 export async function reviewMlbbVerification(
   verificationId: string,
   decision: "approved" | "rejected",
+  rankTier?: MlbbRankTier,
+  subRank?: number,
   highestStar?: number,
   ign?: string,
   rejectionReason?: string,
@@ -129,11 +132,21 @@ export async function reviewMlbbVerification(
   }
 
   const trimmedIgn = ign?.trim();
-  if (decision === "approved" && (!highestStar || highestStar < 1)) {
-    return { error: "Enter the player's highest star to approve this." };
-  }
-  if (decision === "approved" && !trimmedIgn) {
-    return { error: "Enter the player's IGN to approve this." };
+  const isMythic = rankTier === "mythic";
+
+  if (decision === "approved") {
+    if (!rankTier) {
+      return { error: "Pick the player's rank tier to approve this." };
+    }
+    if (!trimmedIgn) {
+      return { error: "Enter the player's IGN to approve this." };
+    }
+    if (isMythic && (!highestStar || highestStar < 1)) {
+      return { error: "Enter the player's highest star to approve this." };
+    }
+    if (!isMythic && (!subRank || subRank < 1 || subRank > 5)) {
+      return { error: "Pick the player's sub-rank to approve this." };
+    }
   }
 
   const serviceClient = createServiceClient();
@@ -147,11 +160,17 @@ export async function reviewMlbbVerification(
     return { error: "Verification request not found." };
   }
 
+  const approvedRankTier = decision === "approved" ? rankTier : null;
+  const approvedSubRank = decision === "approved" && !isMythic ? subRank : null;
+  const approvedHighestStar = decision === "approved" && isMythic ? highestStar : null;
+
   const { error } = await serviceClient
     .from("mlbb_verifications")
     .update({
       status: decision,
-      highest_star: decision === "approved" ? highestStar : null,
+      rank_tier: approvedRankTier,
+      sub_rank: approvedSubRank,
+      highest_star: approvedHighestStar,
       ign: decision === "approved" ? trimmedIgn : null,
       rejection_reason: decision === "rejected" ? rejectionReason || null : null,
       reviewed_by: admin.id,
@@ -167,7 +186,9 @@ export async function reviewMlbbVerification(
     await serviceClient
       .from("profiles")
       .update({
-        mlbb_highest_star: highestStar,
+        mlbb_rank_tier: approvedRankTier,
+        mlbb_sub_rank: approvedSubRank,
+        mlbb_highest_star: approvedHighestStar,
         mlbb_ign: trimmedIgn,
         mlbb_verified_at: new Date().toISOString(),
       })

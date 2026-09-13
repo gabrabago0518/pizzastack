@@ -30,9 +30,19 @@ export interface Database {
           valorant_rank_synced_at: string | null;
           mlbb_user_id: string | null;
           mlbb_server: string | null;
-          mlbb_highest_star: number | null;
           mlbb_verified_at: string | null;
           mlbb_ign: string | null;
+          mlbb_rank_tier:
+            | "warrior"
+            | "elite"
+            | "master"
+            | "grandmaster"
+            | "epic"
+            | "legend"
+            | "mythic"
+            | null;
+          mlbb_sub_rank: number | null;
+          mlbb_highest_star: number | null;
           is_admin: boolean;
           last_seen_at: string | null;
           show_ranks: boolean;
@@ -72,9 +82,19 @@ export interface Database {
           valorant_rank_synced_at?: string | null;
           mlbb_user_id?: string | null;
           mlbb_server?: string | null;
-          mlbb_highest_star?: number | null;
           mlbb_verified_at?: string | null;
           mlbb_ign?: string | null;
+          mlbb_rank_tier?:
+            | "warrior"
+            | "elite"
+            | "master"
+            | "grandmaster"
+            | "epic"
+            | "legend"
+            | "mythic"
+            | null;
+          mlbb_sub_rank?: number | null;
+          mlbb_highest_star?: number | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -112,9 +132,19 @@ export interface Database {
           valorant_rank_synced_at?: string | null;
           mlbb_user_id?: string | null;
           mlbb_server?: string | null;
-          mlbb_highest_star?: number | null;
           mlbb_verified_at?: string | null;
           mlbb_ign?: string | null;
+          mlbb_rank_tier?:
+            | "warrior"
+            | "elite"
+            | "master"
+            | "grandmaster"
+            | "epic"
+            | "legend"
+            | "mythic"
+            | null;
+          mlbb_sub_rank?: number | null;
+          mlbb_highest_star?: number | null;
           is_admin?: boolean;
           last_seen_at?: string | null;
           show_ranks?: boolean;
@@ -1181,6 +1211,16 @@ export interface Database {
           mlbb_server: string;
           highest_star: number | null;
           ign: string | null;
+          rank_tier:
+            | "warrior"
+            | "elite"
+            | "master"
+            | "grandmaster"
+            | "epic"
+            | "legend"
+            | "mythic"
+            | null;
+          sub_rank: number | null;
           status: "pending" | "approved" | "rejected";
           rejection_reason: string | null;
           reviewed_by: string | null;
@@ -1197,6 +1237,16 @@ export interface Database {
           status?: "pending" | "approved" | "rejected";
           highest_star?: number | null;
           ign?: string | null;
+          rank_tier?:
+            | "warrior"
+            | "elite"
+            | "master"
+            | "grandmaster"
+            | "epic"
+            | "legend"
+            | "mythic"
+            | null;
+          sub_rank?: number | null;
           rejection_reason?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;

@@ -15,12 +15,15 @@ import { Label } from "@/components/ui/label";
 import { RankMedalCard } from "@/components/site/rank-medal-card";
 import { submitMlbbVerification, type MlbbFormState } from "@/app/profile/actions";
 import { formatRelativeTime } from "@/lib/utils";
+import { formatMlbbRank, type MlbbRankTier } from "@/lib/mlbb-rank";
 import type { MlbbVerification } from "@/lib/supabase/types";
 
 interface MlbbConnectProps {
   mlbbUserId: string | null;
   mlbbServer: string | null;
   mlbbIgn: string | null;
+  rankTier: MlbbRankTier | null;
+  subRank: number | null;
   highestStar: number | null;
   verifiedAt: string | null;
   latestVerification: MlbbVerification | null;
@@ -30,6 +33,8 @@ export function MlbbConnect({
   mlbbUserId,
   mlbbServer,
   mlbbIgn,
+  rankTier,
+  subRank,
   highestStar,
   verifiedAt,
   latestVerification,
@@ -42,7 +47,7 @@ export function MlbbConnect({
   const isPendingReview = latestVerification?.status === "pending";
   const rejectionReason =
     latestVerification?.status === "rejected" ? latestVerification.rejection_reason : null;
-  const isVerified = Boolean(highestStar);
+  const isVerified = Boolean(rankTier);
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4">
@@ -112,7 +117,7 @@ export function MlbbConnect({
         <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
           <RankMedalCard
             game="Mobile Legends: Bang Bang"
-            rankLabel={`${highestStar} stars`}
+            rankLabel={formatMlbbRank(rankTier, subRank, highestStar)}
             sourceLabel="Verified by admin"
           />
           <span className="text-sm text-muted-foreground">

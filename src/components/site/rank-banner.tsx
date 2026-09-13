@@ -4,6 +4,7 @@ import { ValorantRankIcon } from "@/components/site/valorant-rank-icon";
 import { formatDotaRank } from "@/lib/dota-rank";
 import { formatCs2Rank } from "@/lib/cs2-rank";
 import { formatValorantRank } from "@/lib/valorant-rank";
+import { formatMlbbRank, type MlbbRankTier } from "@/lib/mlbb-rank";
 
 // A showcase strip of a player's ranks across games. Built as a list so
 // adding the next game's rank later is just another entry here, not a
@@ -32,6 +33,8 @@ export function RankBanner({
   cs2CompetitiveRank,
   valorantTier,
   valorantTierIcon,
+  mlbbRankTier,
+  mlbbSubRank,
   mlbbHighestStar,
 }: {
   dotaRankTier: number | null;
@@ -42,11 +45,13 @@ export function RankBanner({
   cs2CompetitiveRank: number | null;
   valorantTier?: string | null;
   valorantTierIcon?: string | null;
+  mlbbRankTier?: MlbbRankTier | null;
+  mlbbSubRank?: number | null;
   mlbbHighestStar?: number | null;
 }) {
   const hasCs2Rank = Boolean(cs2PremierRating || cs2CompetitiveRank);
   const hasValorantRank = Boolean(valorantTier);
-  const hasMlbbRank = Boolean(mlbbHighestStar);
+  const hasMlbbRank = Boolean(mlbbRankTier);
   if (!dotaRankTier && !hasCs2Rank && !hasValorantRank && !hasMlbbRank) return null;
 
   return (
@@ -83,7 +88,7 @@ export function RankBanner({
         {hasMlbbRank ? (
           <RankMedalCard
             game="Mobile Legends: Bang Bang"
-            rankLabel={`${mlbbHighestStar} stars`}
+            rankLabel={formatMlbbRank(mlbbRankTier ?? null, mlbbSubRank ?? null, mlbbHighestStar ?? null)}
             sourceLabel="Verified by admin"
           />
         ) : null}

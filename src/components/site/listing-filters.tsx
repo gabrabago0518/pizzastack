@@ -55,7 +55,7 @@ export function ListingFilters({
         className="w-auto min-w-36"
       >
         <option value="newest">Newest</option>
-        <option value="requested">Most requested</option>
+        <option value="requested">Most joined</option>
       </SelectNative>
 
       {isSpecificGame ? (

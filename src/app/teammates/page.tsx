@@ -58,15 +58,10 @@ export default async function TeammatesPage({
     : [];
 
   const myRequestByPost = new Map<string, JoinRequestWithRequester>();
-  const pendingByPost = new Map<string, JoinRequestWithRequester[]>();
   const partyMembersByPost = new Map<string, JoinRequestWithRequester[]>();
   for (const request of joinRequests) {
     if (request.requester_id === viewer?.id) {
       myRequestByPost.set(request.post_id, request);
-    } else if (request.status === "pending") {
-      const list = pendingByPost.get(request.post_id) ?? [];
-      list.push(request);
-      pendingByPost.set(request.post_id, list);
     } else if (request.status === "accepted") {
       const list = partyMembersByPost.get(request.post_id) ?? [];
       list.push(request);
@@ -132,7 +127,6 @@ export default async function TeammatesPage({
                     viewerId={viewer?.id}
                     myRequestId={myRequestByPost.get(post.id)?.id}
                     myRequestStatus={myRequestByPost.get(post.id)?.status ?? "none"}
-                    pendingRequests={pendingByPost.get(post.id) ?? []}
                     partyMembers={partyMembersByPost.get(post.id) ?? []}
                   />
                 ))}

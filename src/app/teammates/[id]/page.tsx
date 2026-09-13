@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
-import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { CloseListingButton } from "@/components/site/close-listing-button";
 import { ListingChat } from "@/components/site/listing-chat";
@@ -58,7 +57,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
   const myRequest = joinRequests.find((request) => request.requester_id === viewer?.id);
   const myRequestStatus = myRequest?.status ?? "none";
-  const pendingRequests = joinRequests.filter((request) => request.status === "pending");
   const acceptedMembers = joinRequests.filter((request) => request.status === "accepted");
 
   const chatUnlocked = Boolean(viewer) && (isOwner || myRequestStatus === "accepted");
@@ -152,11 +150,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
 
             {isOwner ? (
               <>
-                <JoinRequestsManager
-                  requests={pendingRequests}
-                  acceptedCount={acceptedMembers.length}
-                  playersNeeded={post.players_needed}
-                />
                 <PartyMembersManager
                   members={acceptedMembers}
                   playersNeeded={post.players_needed}
@@ -178,7 +171,7 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 ) : (
                   <Button asChild size="sm" variant="outline">
                     <Link href="/login">
-                      <UserPlus /> Request to join
+                      <UserPlus /> Join
                     </Link>
                   </Button>
                 )}
@@ -192,10 +185,6 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 initialMessages={messages}
                 gameSlug={post.games?.slug}
               />
-            ) : myRequestStatus === "pending" ? (
-              <p className="text-center text-sm text-muted-foreground">
-                Chat unlocks once the owner accepts your request.
-              </p>
             ) : null}
           </CardContent>
         </Card>

@@ -184,9 +184,9 @@ export async function getLfgPosts(gameSlug?: string, filters: LfgPostFilters = {
     )
     .eq("status", "open");
 
-  // request_count is a trigger-maintained total of every join request the
-  // listing has ever received (see schema.sql) — a simple proxy for "how
-  // much interest has this gotten" to power a "Most requested" sort.
+  // request_count is a trigger-maintained total of every join the listing
+  // has ever received (see schema.sql) — a simple proxy for "how much
+  // interest has this gotten" to power a "Most joined" sort.
   builder =
     filters.sort === "requested"
       ? builder.order("request_count", { ascending: false }).order("created_at", { ascending: false })

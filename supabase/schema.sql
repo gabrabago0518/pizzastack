@@ -443,17 +443,22 @@ create policy "Users can delete their own notifications"
   using (auth.uid() = profile_id);
 
 -- ---------------------------------------------------------------------------
--- lfg_join_requests: a player requesting to join someone else's listing.
--- The post's author decides to accept or decline.
+-- lfg_join_requests: a player who has joined someone else's listing. Joining
+-- is immediate — no owner approval — so every new row lands straight at
+-- 'accepted'; 'pending'/'declined' are only kept in the status check below
+-- for any rows written before this table stopped needing them. A player can
+-- leave anytime ('left') and the owner can remove one ('removed').
 -- ---------------------------------------------------------------------------
 create table if not exists public.lfg_join_requests (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.lfg_posts (id) on delete cascade,
   requester_id uuid not null references public.profiles (id) on delete cascade,
-  status text not null default 'pending' check (status in ('pending', 'accepted', 'declined')),
+  status text not null default 'accepted' check (status in ('pending', 'accepted', 'declined')),
   created_at timestamptz not null default now(),
   unique (post_id, requester_id)
 );
+
+alter table public.lfg_join_requests alter column status set default 'accepted';
 
 -- 'removed' (owner kicked an accepted player) and 'left' (player left on
 -- their own) added after the initial three statuses.
@@ -473,10 +478,12 @@ create policy "Requesters and post owners can view join requests"
   );
 
 drop policy if exists "Users can request to join a listing" on public.lfg_join_requests;
-create policy "Users can request to join a listing"
+drop policy if exists "Users can join a listing" on public.lfg_join_requests;
+create policy "Users can join a listing"
   on public.lfg_join_requests for insert
   with check (
     auth.uid() = requester_id
+    and status = 'accepted'
     and auth.uid() <> (select author_id from public.lfg_posts where id = post_id)
   );
 
@@ -494,13 +501,17 @@ create policy "Requesters can cancel their own pending request"
   on public.lfg_join_requests for delete
   using (auth.uid() = requester_id);
 
--- Caps accepted party members at the listing's players_needed — e.g. a
--- listing that needs 1 more player can only ever have 1 accepted request,
--- so it can't be over-filled by racing accepts or a stale UI. Locks the
--- post row first (select ... for update) so two concurrent accepts on the
--- same listing serialize instead of both reading the same pre-accept
--- count and both succeeding.
-create or replace function public.enforce_lfg_party_capacity()
+-- Runs on both a fresh join (insert) and a rejoin after leaving (update
+-- from 'left' back to 'accepted' — the join route upserts on the
+-- post_id/requester_id unique constraint). Blocks a kicked player from
+-- self-reinstating (only the owner clearing it another way could undo a
+-- 'removed' row — there's currently no route for that, by design), and
+-- caps accepted members at the listing's players_needed so a listing that
+-- needs 1 more player can never end up with 2 (racing joins or a stale
+-- UI). Locks the post row first (select ... for update) so two concurrent
+-- joins on the same listing serialize instead of both reading the same
+-- pre-join count and both succeeding.
+create or replace function public.enforce_lfg_join_rules()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -509,7 +520,11 @@ declare
   needed integer;
   accepted_count integer;
 begin
-  if new.status = 'accepted' and old.status is distinct from 'accepted' then
+  if new.status = 'accepted' and (tg_op = 'INSERT' or old.status is distinct from 'accepted') then
+    if tg_op = 'UPDATE' and old.status = 'removed' then
+      raise exception 'You were removed from this listing by the owner.';
+    end if;
+
     select players_needed into needed
       from public.lfg_posts where id = new.post_id for update;
 
@@ -526,11 +541,12 @@ end;
 $$;
 
 drop trigger if exists lfg_join_requests_capacity on public.lfg_join_requests;
-create trigger lfg_join_requests_capacity
-  before update on public.lfg_join_requests
-  for each row execute function public.enforce_lfg_party_capacity();
+drop trigger if exists lfg_join_requests_join_rules on public.lfg_join_requests;
+create trigger lfg_join_requests_join_rules
+  before insert or update on public.lfg_join_requests
+  for each row execute function public.enforce_lfg_join_rules();
 
--- Notifies a listing's owner when someone requests to join it.
+-- Notifies a listing's owner when someone joins it.
 create or replace function public.notify_new_join_request()
 returns trigger
 language plpgsql
@@ -541,6 +557,10 @@ declare
   post_author uuid;
   requester_name text;
 begin
+  if new.status <> 'accepted' then
+    return new;
+  end if;
+
   select title, author_id into post_title, post_author
     from public.lfg_posts where id = new.post_id;
   if post_author is null or post_author = new.requester_id then
@@ -551,9 +571,9 @@ begin
   insert into public.notifications (profile_id, type, title, body, link)
   values (
     post_author,
-    'join_request_received',
-    'New join request',
-    coalesce('@' || requester_name, 'Someone') || ' wants to join "' || post_title || '"',
+    'party_member_joined',
+    'New party member',
+    coalesce('@' || requester_name, 'Someone') || ' joined "' || post_title || '"',
     '/teammates/' || new.post_id
   );
   return new;
@@ -565,7 +585,9 @@ create trigger lfg_join_requests_notify_new
   after insert on public.lfg_join_requests
   for each row execute function public.notify_new_join_request();
 
--- Notifies the requester once their request is accepted or declined.
+-- Notifies a member if the owner removes them — the only status change
+-- left worth flagging now that joining no longer goes through a pending
+-- review (see enforce_lfg_join_rules above).
 create or replace function public.notify_join_request_status_change()
 returns trigger
 language plpgsql
@@ -574,7 +596,7 @@ as $$
 declare
   post_title text;
 begin
-  if new.status = old.status or new.status not in ('accepted', 'declined') then
+  if new.status = old.status or new.status <> 'removed' then
     return new;
   end if;
 
@@ -582,9 +604,9 @@ begin
   insert into public.notifications (profile_id, type, title, body, link)
   values (
     new.requester_id,
-    'join_request_' || new.status,
-    case when new.status = 'accepted' then 'Request accepted' else 'Request declined' end,
-    'Your request to join "' || post_title || '" was ' || new.status,
+    'removed_from_listing',
+    'Removed from listing',
+    'You were removed from "' || post_title || '"',
     '/teammates/' || new.post_id
   );
   return new;

@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
-import { JoinRequestsManager } from "@/components/site/join-requests-manager";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
 import { formatRelativeTime } from "@/lib/utils";
@@ -19,14 +18,12 @@ export function LfgPostCard({
   viewerId,
   myRequestId,
   myRequestStatus = "none",
-  pendingRequests = [],
   partyMembers = [],
 }: {
   post: LfgPostWithRelations;
   viewerId?: string;
   myRequestId?: string;
   myRequestStatus?: JoinStatus;
-  pendingRequests?: JoinRequestWithRequester[];
   partyMembers?: JoinRequestWithRequester[];
 }) {
   const isOwner = viewerId === post.author_id;
@@ -102,7 +99,7 @@ export function LfgPostCard({
           {post.request_count > 0 ? (
             <span className="flex items-center gap-1.5">
               <Flame className="size-3.5" />
-              {post.request_count} {post.request_count === 1 ? "request" : "requests"}
+              {post.request_count} {post.request_count === 1 ? "join" : "joins"}
             </span>
           ) : null}
           <span
@@ -115,11 +112,6 @@ export function LfgPostCard({
 
         {isOwner ? (
           <div className="relative flex flex-col gap-3">
-            <JoinRequestsManager
-              requests={pendingRequests}
-              acceptedCount={partyMembers.length}
-              playersNeeded={post.players_needed}
-            />
             <PartyMembersManager members={partyMembers} playersNeeded={post.players_needed} />
           </div>
         ) : (
@@ -133,7 +125,7 @@ export function LfgPostCard({
             ) : (
               <Button asChild size="sm" variant="outline">
                 <Link href="/login">
-                  <UserPlus /> Request to join
+                  <UserPlus /> Join
                 </Link>
               </Button>
             )}

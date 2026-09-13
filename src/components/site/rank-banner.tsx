@@ -89,7 +89,7 @@ export function RankBanner({
         ) : null}
         {hasMlbbRank ? (
           <RankMedalCard
-            game="Mobile Legends: Bang Bang"
+            game="Mobile Legends"
             rankLabel={
               <MlbbRankLabel
                 tier={mlbbRankTier ?? null}

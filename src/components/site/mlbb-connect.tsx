@@ -54,7 +54,7 @@ export function MlbbConnect({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4">
       <div>
-        <p className="text-sm font-medium">Mobile Legends: Bang Bang</p>
+        <p className="text-sm font-medium">Mobile Legends</p>
         <p className="text-sm text-muted-foreground">
           There&apos;s no public API for a live MLBB rank, so enter your user
           ID and server and an admin will check your highest star manually
@@ -118,7 +118,7 @@ export function MlbbConnect({
       {isVerified ? (
         <div className="flex flex-col gap-3 border-t border-border/60 pt-3">
           <RankMedalCard
-            game="Mobile Legends: Bang Bang"
+            game="Mobile Legends"
             rankLabel={<MlbbRankLabel tier={rankTier} subRank={subRank} highestStar={highestStar} />}
             sourceLabel="Verified by admin"
             icon={<MlbbRankIcon tier={rankTier} highestStar={highestStar} className="size-10" />}

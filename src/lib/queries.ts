@@ -30,6 +30,8 @@ import type {
   FeedbackWithProfile,
   MlbbVerification,
   MlbbVerificationWithProfile,
+  FeedPostWithAuthor,
+  FeedCommentWithAuthor,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -451,6 +453,48 @@ export async function hasCommended(profileId: string, commenderId: string) {
     .eq("commender_id", commenderId)
     .maybeSingle();
   return data !== null;
+}
+
+// The site's small public feed — newest first, capped like getAllAccounts
+// rather than real pagination, fine at the site's current scale.
+const FEED_POSTS_LIMIT = 100;
+
+export async function getFeedPosts(): Promise<FeedPostWithAuthor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("feed_posts")
+    .select("*, profiles(username, avatar_url, account_tier)")
+    .order("created_at", { ascending: false })
+    .limit(FEED_POSTS_LIMIT)
+    .returns<FeedPostWithAuthor[]>();
+  return data ?? [];
+}
+
+export async function getFeedCommentsForPost(postId: string): Promise<FeedCommentWithAuthor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("feed_comments")
+    .select("*, profiles(username, avatar_url)")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true })
+    .returns<FeedCommentWithAuthor[]>();
+  return data ?? [];
+}
+
+// Which of these posts the viewer has already reacted to, for showing
+// each FeedPostCard's initial "liked" state without one query per post.
+export async function getMyFeedReactions(
+  postIds: string[],
+  viewerId: string,
+): Promise<Set<string>> {
+  if (postIds.length === 0) return new Set();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("feed_reactions")
+    .select("post_id")
+    .eq("profile_id", viewerId)
+    .in("post_id", postIds);
+  return new Set((data ?? []).map((row) => row.post_id));
 }
 
 // RLS scopes this to rows the viewer is allowed to see: their own join

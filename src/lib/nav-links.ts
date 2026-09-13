@@ -1,4 +1,4 @@
-import { Users, Swords, type LucideIcon } from "lucide-react";
+import { Users, Swords, Rss, type LucideIcon } from "lucide-react";
 
 export interface NavLink {
   href: string;
@@ -14,6 +14,7 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { href: "/teammates", label: "Teammates", icon: Users },
   { href: "/scrims", label: "Scrimmages", icon: Swords },
+  { href: "/feed", label: "Feed", icon: Rss },
 ];
 
 // Not rendered anywhere — kept only as a record of what's hidden and why,

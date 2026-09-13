@@ -485,6 +485,89 @@ export interface Database {
           },
         ];
       };
+      feed_posts: {
+        Row: {
+          id: string;
+          author_id: string;
+          body: string;
+          comment_count: number;
+          reaction_count: number;
+          created_at: string;
+        };
+        Insert: {
+          author_id: string;
+          body: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "feed_posts_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      feed_comments: {
+        Row: {
+          id: string;
+          post_id: string;
+          author_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          author_id: string;
+          body: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "feed_comments_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "feed_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feed_comments_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      feed_reactions: {
+        Row: {
+          post_id: string;
+          profile_id: string;
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          profile_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "feed_reactions_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "feed_posts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "feed_reactions_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       match_history: {
         Row: {
           id: string;
@@ -1355,6 +1438,9 @@ export type TournamentTeamMember = Database["public"]["Tables"]["tournament_team
 export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
 export type Scrimmage = Database["public"]["Tables"]["scrimmages"]["Row"];
 export type Highlight = Database["public"]["Tables"]["highlights"]["Row"];
+export type FeedPost = Database["public"]["Tables"]["feed_posts"]["Row"];
+export type FeedComment = Database["public"]["Tables"]["feed_comments"]["Row"];
+export type FeedReaction = Database["public"]["Tables"]["feed_reactions"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<
@@ -1420,6 +1506,14 @@ export type DirectMessageWithSender = DirectMessage & {
 export type BuddyRequestWithProfiles = BuddyRequest & {
   requester: Pick<Profile, "username" | "avatar_url"> | null;
   recipient: Pick<Profile, "username" | "avatar_url"> | null;
+};
+
+export type FeedPostWithAuthor = FeedPost & {
+  profiles: Pick<Profile, "username" | "avatar_url" | "account_tier"> | null;
+};
+
+export type FeedCommentWithAuthor = FeedComment & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 
 export type CoachingRequestWithRelations = CoachingRequest & {

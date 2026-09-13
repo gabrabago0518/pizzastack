@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-muted/20">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-[1fr_auto]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-3">
         <div className="flex flex-col gap-3">
           <Logo id="footer" className="h-8 w-auto" />
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -14,7 +14,7 @@ export function Footer() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 text-sm">
+        <div className="flex flex-col gap-3 text-sm sm:items-center sm:text-center">
           <h4 className="font-display text-base">Explore</h4>
           <Link href="/teammates" className="text-muted-foreground transition-colors hover:text-foreground">
             Teammates

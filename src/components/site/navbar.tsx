@@ -6,6 +6,8 @@ import { Logo, LogoMark } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { FeedbackDialog } from "@/components/site/feedback-dialog";
+import { MobileNavMenu } from "@/components/site/mobile-nav-menu";
+import { SheetClose } from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
 import { NAV_LINKS } from "@/lib/nav-links";
@@ -18,6 +20,9 @@ import {
 
 const iconLinkClassName =
   "flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
+const mobileMenuItemClassName =
+  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-muted";
 
 export async function Navbar() {
   const supabase = await createClient();
@@ -61,27 +66,45 @@ export async function Navbar() {
         </form>
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
-          {NAV_LINKS.map((link) => (
-            <Button key={link.href} asChild variant="ghost" size="sm" className="px-2.5 sm:px-4">
-              <Link href={link.href}>
-                <link.icon className="size-4 sm:hidden" />
-                <span className="hidden sm:inline">{link.label}</span>
-              </Link>
-            </Button>
-          ))}
-          <FeedbackDialog
-            viewerId={user?.id ?? null}
-            trigger={
-              <button
-                type="button"
-                aria-label="Send feedback"
-                title="Send feedback"
-                className={iconLinkClassName}
-              >
-                <MessageSquarePlus className="size-[18px]" />
-              </button>
-            }
-          />
+          <MobileNavMenu>
+            {NAV_LINKS.map((link) => (
+              <SheetClose asChild key={link.href}>
+                <Link href={link.href} className={mobileMenuItemClassName}>
+                  <link.icon className="size-4" />
+                  {link.label}
+                </Link>
+              </SheetClose>
+            ))}
+            <FeedbackDialog
+              viewerId={user?.id ?? null}
+              trigger={
+                <button type="button" className={mobileMenuItemClassName}>
+                  <MessageSquarePlus className="size-4" />
+                  Send feedback
+                </button>
+              }
+            />
+          </MobileNavMenu>
+          <div className="hidden items-center gap-1 sm:flex sm:gap-3">
+            {NAV_LINKS.map((link) => (
+              <Button key={link.href} asChild variant="ghost" size="sm" className="px-4">
+                <Link href={link.href}>{link.label}</Link>
+              </Button>
+            ))}
+            <FeedbackDialog
+              viewerId={user?.id ?? null}
+              trigger={
+                <button
+                  type="button"
+                  aria-label="Send feedback"
+                  title="Send feedback"
+                  className={iconLinkClassName}
+                >
+                  <MessageSquarePlus className="size-[18px]" />
+                </button>
+              }
+            />
+          </div>
           <Link
             href="/search"
             aria-label="Search"

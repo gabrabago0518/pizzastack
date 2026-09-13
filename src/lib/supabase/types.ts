@@ -485,7 +485,7 @@ export interface Database {
           },
         ];
       };
-      feed_posts: {
+      lobby_posts: {
         Row: {
           id: string;
           author_id: string;
@@ -501,7 +501,7 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [
           {
-            foreignKeyName: "feed_posts_author_id_fkey";
+            foreignKeyName: "lobby_posts_author_id_fkey";
             columns: ["author_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -509,7 +509,7 @@ export interface Database {
           },
         ];
       };
-      feed_comments: {
+      lobby_comments: {
         Row: {
           id: string;
           post_id: string;
@@ -525,14 +525,14 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [
           {
-            foreignKeyName: "feed_comments_post_id_fkey";
+            foreignKeyName: "lobby_comments_post_id_fkey";
             columns: ["post_id"];
             isOneToOne: false;
-            referencedRelation: "feed_posts";
+            referencedRelation: "lobby_posts";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "feed_comments_author_id_fkey";
+            foreignKeyName: "lobby_comments_author_id_fkey";
             columns: ["author_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -540,7 +540,7 @@ export interface Database {
           },
         ];
       };
-      feed_reactions: {
+      lobby_reactions: {
         Row: {
           post_id: string;
           profile_id: string;
@@ -553,14 +553,14 @@ export interface Database {
         Update: Record<string, never>;
         Relationships: [
           {
-            foreignKeyName: "feed_reactions_post_id_fkey";
+            foreignKeyName: "lobby_reactions_post_id_fkey";
             columns: ["post_id"];
             isOneToOne: false;
-            referencedRelation: "feed_posts";
+            referencedRelation: "lobby_posts";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "feed_reactions_profile_id_fkey";
+            foreignKeyName: "lobby_reactions_profile_id_fkey";
             columns: ["profile_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -1438,9 +1438,9 @@ export type TournamentTeamMember = Database["public"]["Tables"]["tournament_team
 export type TournamentMatch = Database["public"]["Tables"]["tournament_matches"]["Row"];
 export type Scrimmage = Database["public"]["Tables"]["scrimmages"]["Row"];
 export type Highlight = Database["public"]["Tables"]["highlights"]["Row"];
-export type FeedPost = Database["public"]["Tables"]["feed_posts"]["Row"];
-export type FeedComment = Database["public"]["Tables"]["feed_comments"]["Row"];
-export type FeedReaction = Database["public"]["Tables"]["feed_reactions"]["Row"];
+export type LobbyPost = Database["public"]["Tables"]["lobby_posts"]["Row"];
+export type LobbyComment = Database["public"]["Tables"]["lobby_comments"]["Row"];
+export type LobbyReaction = Database["public"]["Tables"]["lobby_reactions"]["Row"];
 
 export type LfgPostWithRelations = LfgPost & {
   profiles: Pick<
@@ -1508,11 +1508,11 @@ export type BuddyRequestWithProfiles = BuddyRequest & {
   recipient: Pick<Profile, "username" | "avatar_url"> | null;
 };
 
-export type FeedPostWithAuthor = FeedPost & {
+export type LobbyPostWithAuthor = LobbyPost & {
   profiles: Pick<Profile, "username" | "avatar_url" | "account_tier"> | null;
 };
 
-export type FeedCommentWithAuthor = FeedComment & {
+export type LobbyCommentWithAuthor = LobbyComment & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };
 

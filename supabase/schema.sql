@@ -1062,15 +1062,22 @@ create trigger commendations_notify
   for each row execute function public.notify_commend_received();
 
 -- ---------------------------------------------------------------------------
--- feed_posts / feed_comments / feed_reactions: a lightweight public feed —
--- any signed-in player can post a short statement, and any other player can
--- comment on it or react (a single toggleable "like", not a multi-emoji
--- picker — same one-reaction-per-viewer shape as commendations above).
--- Fully public reads, same "no gatekeeping" posture as the rest of the
--- site's social features; an admin can remove any post or comment as a
--- baseline moderation safety net, on top of the author's own delete.
+-- lobby_posts / lobby_comments / lobby_reactions: a lightweight public
+-- feed — any signed-in player can post a short statement, and any other
+-- player can comment on it or react (a single toggleable "like", not a
+-- multi-emoji picker — same one-reaction-per-viewer shape as
+-- commendations above). Fully public reads, same "no gatekeeping" posture
+-- as the rest of the site's social features; an admin can remove any post
+-- or comment as a baseline moderation safety net, on top of the author's
+-- own delete. Named "Feed" when first shipped — these renames turn any
+-- already-deployed feed_* tables into lobby_* ones the first time this
+-- runs, and no-op (table already renamed) on every run after.
 -- ---------------------------------------------------------------------------
-create table if not exists public.feed_posts (
+alter table if exists public.feed_posts rename to lobby_posts;
+alter table if exists public.feed_comments rename to lobby_comments;
+alter table if exists public.feed_reactions rename to lobby_reactions;
+
+create table if not exists public.lobby_posts (
   id uuid primary key default gen_random_uuid(),
   author_id uuid not null references public.profiles (id) on delete cascade,
   body text not null check (char_length(body) between 1 and 1000),
@@ -1079,86 +1086,95 @@ create table if not exists public.feed_posts (
   created_at timestamptz not null default now()
 );
 
-create index if not exists feed_posts_created_at_idx on public.feed_posts (created_at desc);
+create index if not exists lobby_posts_created_at_idx on public.lobby_posts (created_at desc);
 
-alter table public.feed_posts enable row level security;
+alter table public.lobby_posts enable row level security;
 
-drop policy if exists "Feed posts are publicly readable" on public.feed_posts;
-create policy "Feed posts are publicly readable"
-  on public.feed_posts for select
+drop policy if exists "Feed posts are publicly readable" on public.lobby_posts;
+drop policy if exists "Lobby posts are publicly readable" on public.lobby_posts;
+create policy "Lobby posts are publicly readable"
+  on public.lobby_posts for select
   using (true);
 
-drop policy if exists "Users can post to the feed" on public.feed_posts;
-create policy "Users can post to the feed"
-  on public.feed_posts for insert
+drop policy if exists "Users can post to the feed" on public.lobby_posts;
+drop policy if exists "Users can post to the lobby" on public.lobby_posts;
+create policy "Users can post to the lobby"
+  on public.lobby_posts for insert
   with check (auth.uid() = author_id);
 
-drop policy if exists "Authors and admins can delete a feed post" on public.feed_posts;
-create policy "Authors and admins can delete a feed post"
-  on public.feed_posts for delete
+drop policy if exists "Authors and admins can delete a feed post" on public.lobby_posts;
+drop policy if exists "Authors and admins can delete a lobby post" on public.lobby_posts;
+create policy "Authors and admins can delete a lobby post"
+  on public.lobby_posts for delete
   using (
     auth.uid() = author_id
     or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
 
-create table if not exists public.feed_comments (
+create table if not exists public.lobby_comments (
   id uuid primary key default gen_random_uuid(),
-  post_id uuid not null references public.feed_posts (id) on delete cascade,
+  post_id uuid not null references public.lobby_posts (id) on delete cascade,
   author_id uuid not null references public.profiles (id) on delete cascade,
   body text not null check (char_length(body) between 1 and 500),
   created_at timestamptz not null default now()
 );
 
-create index if not exists feed_comments_post_id_created_at_idx
-  on public.feed_comments (post_id, created_at);
+create index if not exists lobby_comments_post_id_created_at_idx
+  on public.lobby_comments (post_id, created_at);
 
-alter table public.feed_comments enable row level security;
+alter table public.lobby_comments enable row level security;
 
-drop policy if exists "Feed comments are publicly readable" on public.feed_comments;
-create policy "Feed comments are publicly readable"
-  on public.feed_comments for select
+drop policy if exists "Feed comments are publicly readable" on public.lobby_comments;
+drop policy if exists "Lobby comments are publicly readable" on public.lobby_comments;
+create policy "Lobby comments are publicly readable"
+  on public.lobby_comments for select
   using (true);
 
-drop policy if exists "Users can comment on a feed post" on public.feed_comments;
-create policy "Users can comment on a feed post"
-  on public.feed_comments for insert
+drop policy if exists "Users can comment on a feed post" on public.lobby_comments;
+drop policy if exists "Users can comment on a lobby post" on public.lobby_comments;
+create policy "Users can comment on a lobby post"
+  on public.lobby_comments for insert
   with check (auth.uid() = author_id);
 
-drop policy if exists "Authors and admins can delete a feed comment" on public.feed_comments;
-create policy "Authors and admins can delete a feed comment"
-  on public.feed_comments for delete
+drop policy if exists "Authors and admins can delete a feed comment" on public.lobby_comments;
+drop policy if exists "Authors and admins can delete a lobby comment" on public.lobby_comments;
+create policy "Authors and admins can delete a lobby comment"
+  on public.lobby_comments for delete
   using (
     auth.uid() = author_id
     or exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
   );
 
-create table if not exists public.feed_reactions (
-  post_id uuid not null references public.feed_posts (id) on delete cascade,
+create table if not exists public.lobby_reactions (
+  post_id uuid not null references public.lobby_posts (id) on delete cascade,
   profile_id uuid not null references public.profiles (id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (post_id, profile_id)
 );
 
-alter table public.feed_reactions enable row level security;
+alter table public.lobby_reactions enable row level security;
 
-drop policy if exists "Feed reactions are publicly readable" on public.feed_reactions;
-create policy "Feed reactions are publicly readable"
-  on public.feed_reactions for select
+drop policy if exists "Feed reactions are publicly readable" on public.lobby_reactions;
+drop policy if exists "Lobby reactions are publicly readable" on public.lobby_reactions;
+create policy "Lobby reactions are publicly readable"
+  on public.lobby_reactions for select
   using (true);
 
-drop policy if exists "Users can react to a feed post" on public.feed_reactions;
-create policy "Users can react to a feed post"
-  on public.feed_reactions for insert
+drop policy if exists "Users can react to a feed post" on public.lobby_reactions;
+drop policy if exists "Users can react to a lobby post" on public.lobby_reactions;
+create policy "Users can react to a lobby post"
+  on public.lobby_reactions for insert
   with check (auth.uid() = profile_id);
 
-drop policy if exists "Users can remove their own feed reaction" on public.feed_reactions;
-create policy "Users can remove their own feed reaction"
-  on public.feed_reactions for delete
+drop policy if exists "Users can remove their own feed reaction" on public.lobby_reactions;
+drop policy if exists "Users can remove their own lobby reaction" on public.lobby_reactions;
+create policy "Users can remove their own lobby reaction"
+  on public.lobby_reactions for delete
   using (auth.uid() = profile_id);
 
--- Keeps feed_posts.comment_count current, same denormalized-count pattern
--- as lfg_posts.request_count.
-create or replace function public.recalculate_feed_comment_count()
+-- Keeps lobby_posts.comment_count current, same denormalized-count
+-- pattern as lfg_posts.request_count.
+create or replace function public.recalculate_lobby_comment_count()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -1166,21 +1182,22 @@ as $$
 declare
   target_post_id uuid := coalesce(new.post_id, old.post_id);
 begin
-  update public.feed_posts
+  update public.lobby_posts
   set comment_count = (
-    select count(*) from public.feed_comments where post_id = target_post_id
+    select count(*) from public.lobby_comments where post_id = target_post_id
   )
   where id = target_post_id;
   return null;
 end;
 $$;
 
-drop trigger if exists feed_comments_recalculate_count on public.feed_comments;
-create trigger feed_comments_recalculate_count
-  after insert or delete on public.feed_comments
-  for each row execute function public.recalculate_feed_comment_count();
+drop trigger if exists feed_comments_recalculate_count on public.lobby_comments;
+drop trigger if exists lobby_comments_recalculate_count on public.lobby_comments;
+create trigger lobby_comments_recalculate_count
+  after insert or delete on public.lobby_comments
+  for each row execute function public.recalculate_lobby_comment_count();
 
-create or replace function public.recalculate_feed_reaction_count()
+create or replace function public.recalculate_lobby_reaction_count()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -1188,22 +1205,23 @@ as $$
 declare
   target_post_id uuid := coalesce(new.post_id, old.post_id);
 begin
-  update public.feed_posts
+  update public.lobby_posts
   set reaction_count = (
-    select count(*) from public.feed_reactions where post_id = target_post_id
+    select count(*) from public.lobby_reactions where post_id = target_post_id
   )
   where id = target_post_id;
   return null;
 end;
 $$;
 
-drop trigger if exists feed_reactions_recalculate_count on public.feed_reactions;
-create trigger feed_reactions_recalculate_count
-  after insert or delete on public.feed_reactions
-  for each row execute function public.recalculate_feed_reaction_count();
+drop trigger if exists feed_reactions_recalculate_count on public.lobby_reactions;
+drop trigger if exists lobby_reactions_recalculate_count on public.lobby_reactions;
+create trigger lobby_reactions_recalculate_count
+  after insert or delete on public.lobby_reactions
+  for each row execute function public.recalculate_lobby_reaction_count();
 
 -- Notifies a post's author when someone else comments on it.
-create or replace function public.notify_new_feed_comment()
+create or replace function public.notify_new_lobby_comment()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -1212,7 +1230,7 @@ declare
   post_author uuid;
   commenter_name text;
 begin
-  select author_id into post_author from public.feed_posts where id = new.post_id;
+  select author_id into post_author from public.lobby_posts where id = new.post_id;
   if post_author is null or post_author = new.author_id then
     return new;
   end if;
@@ -1221,22 +1239,23 @@ begin
   insert into public.notifications (profile_id, type, title, body, link)
   values (
     post_author,
-    'feed_comment_received',
+    'lobby_comment_received',
     'New comment',
     coalesce('@' || commenter_name, 'Someone') || ' commented on your post',
-    '/feed'
+    '/lobby'
   );
   return new;
 end;
 $$;
 
-drop trigger if exists feed_comments_notify_new on public.feed_comments;
-create trigger feed_comments_notify_new
-  after insert on public.feed_comments
-  for each row execute function public.notify_new_feed_comment();
+drop trigger if exists feed_comments_notify_new on public.lobby_comments;
+drop trigger if exists lobby_comments_notify_new on public.lobby_comments;
+create trigger lobby_comments_notify_new
+  after insert on public.lobby_comments
+  for each row execute function public.notify_new_lobby_comment();
 
 -- Notifies a post's author when someone else reacts to it.
-create or replace function public.notify_new_feed_reaction()
+create or replace function public.notify_new_lobby_reaction()
 returns trigger
 language plpgsql
 security definer set search_path = public
@@ -1245,7 +1264,7 @@ declare
   post_author uuid;
   reactor_name text;
 begin
-  select author_id into post_author from public.feed_posts where id = new.post_id;
+  select author_id into post_author from public.lobby_posts where id = new.post_id;
   if post_author is null or post_author = new.profile_id then
     return new;
   end if;
@@ -1254,19 +1273,20 @@ begin
   insert into public.notifications (profile_id, type, title, body, link)
   values (
     post_author,
-    'feed_reaction_received',
+    'lobby_reaction_received',
     'New reaction',
     coalesce('@' || reactor_name, 'Someone') || ' reacted to your post',
-    '/feed'
+    '/lobby'
   );
   return new;
 end;
 $$;
 
-drop trigger if exists feed_reactions_notify_new on public.feed_reactions;
-create trigger feed_reactions_notify_new
-  after insert on public.feed_reactions
-  for each row execute function public.notify_new_feed_reaction();
+drop trigger if exists feed_reactions_notify_new on public.lobby_reactions;
+drop trigger if exists lobby_reactions_notify_new on public.lobby_reactions;
+create trigger lobby_reactions_notify_new
+  after insert on public.lobby_reactions
+  for each row execute function public.notify_new_lobby_reaction();
 
 -- ---------------------------------------------------------------------------
 -- match_history: recent verified matches (Dota 2 via OpenDota, Valorant via

@@ -30,8 +30,8 @@ import type {
   FeedbackWithProfile,
   MlbbVerification,
   MlbbVerificationWithProfile,
-  FeedPostWithAuthor,
-  FeedCommentWithAuthor,
+  LobbyPostWithAuthor,
+  LobbyCommentWithAuthor,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -455,42 +455,43 @@ export async function hasCommended(profileId: string, commenderId: string) {
   return data !== null;
 }
 
-// The site's small public feed — newest first, capped like getAllAccounts
-// rather than real pagination, fine at the site's current scale.
-const FEED_POSTS_LIMIT = 100;
+// The site's small public lobby feed — newest first, capped like
+// getAllAccounts rather than real pagination, fine at the site's current
+// scale.
+const LOBBY_POSTS_LIMIT = 100;
 
-export async function getFeedPosts(): Promise<FeedPostWithAuthor[]> {
+export async function getLobbyPosts(): Promise<LobbyPostWithAuthor[]> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("feed_posts")
+    .from("lobby_posts")
     .select("*, profiles(username, avatar_url, account_tier)")
     .order("created_at", { ascending: false })
-    .limit(FEED_POSTS_LIMIT)
-    .returns<FeedPostWithAuthor[]>();
+    .limit(LOBBY_POSTS_LIMIT)
+    .returns<LobbyPostWithAuthor[]>();
   return data ?? [];
 }
 
-export async function getFeedCommentsForPost(postId: string): Promise<FeedCommentWithAuthor[]> {
+export async function getLobbyCommentsForPost(postId: string): Promise<LobbyCommentWithAuthor[]> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("feed_comments")
+    .from("lobby_comments")
     .select("*, profiles(username, avatar_url)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
-    .returns<FeedCommentWithAuthor[]>();
+    .returns<LobbyCommentWithAuthor[]>();
   return data ?? [];
 }
 
 // Which of these posts the viewer has already reacted to, for showing
-// each FeedPostCard's initial "liked" state without one query per post.
-export async function getMyFeedReactions(
+// each LobbyPostCard's initial "liked" state without one query per post.
+export async function getMyLobbyReactions(
   postIds: string[],
   viewerId: string,
 ): Promise<Set<string>> {
   if (postIds.length === 0) return new Set();
   const supabase = await createClient();
   const { data } = await supabase
-    .from("feed_reactions")
+    .from("lobby_reactions")
     .select("post_id")
     .eq("profile_id", viewerId)
     .in("post_id", postIds);

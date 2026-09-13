@@ -4,9 +4,9 @@ import * as React from "react";
 import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { createFeedPost } from "@/app/feed/actions";
+import { createLobbyPost } from "@/app/lobby/actions";
 
-export function FeedComposer() {
+export function LobbyComposer() {
   const [body, setBody] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [isPending, startTransition] = React.useTransition();
@@ -17,7 +17,7 @@ export function FeedComposer() {
 
     setError(null);
     startTransition(async () => {
-      const result = await createFeedPost(body);
+      const result = await createLobbyPost(body);
       if (result.error) {
         setError(result.error);
         return;

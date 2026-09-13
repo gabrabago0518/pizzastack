@@ -9,18 +9,18 @@ import { AvatarDisplay } from "@/components/site/avatar-display";
 import { PrimeBadge } from "@/components/site/prime-badge";
 import { formatRelativeTime, cn } from "@/lib/utils";
 import {
-  toggleFeedReaction,
-  deleteFeedPost,
-  deleteFeedComment,
-} from "@/app/feed/actions";
-import type { FeedPostWithAuthor, FeedCommentWithAuthor } from "@/lib/supabase/types";
+  toggleLobbyReaction,
+  deleteLobbyPost,
+  deleteLobbyComment,
+} from "@/app/lobby/actions";
+import type { LobbyPostWithAuthor, LobbyCommentWithAuthor } from "@/lib/supabase/types";
 
-export function FeedPostCard({
+export function LobbyPostCard({
   post,
   viewerId,
   initialReacted,
 }: {
-  post: FeedPostWithAuthor;
+  post: LobbyPostWithAuthor;
   viewerId?: string;
   initialReacted: boolean;
 }) {
@@ -28,7 +28,7 @@ export function FeedPostCard({
   const [reactionCount, setReactionCount] = React.useState(post.reaction_count);
   const [commentCount, setCommentCount] = React.useState(post.comment_count);
   const [commentsOpen, setCommentsOpen] = React.useState(false);
-  const [comments, setComments] = React.useState<FeedCommentWithAuthor[] | null>(null);
+  const [comments, setComments] = React.useState<LobbyCommentWithAuthor[] | null>(null);
   const [commentInput, setCommentInput] = React.useState("");
   const [deleted, setDeleted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -44,7 +44,7 @@ export function FeedPostCard({
     setReactionCount((count) => count + (next ? 1 : -1));
 
     startTransition(async () => {
-      const result = await toggleFeedReaction(post.id, next);
+      const result = await toggleLobbyReaction(post.id, next);
       if (result.error) {
         setReacted(!next);
         setReactionCount((count) => count + (next ? -1 : 1));
@@ -53,8 +53,8 @@ export function FeedPostCard({
   }
 
   async function loadComments() {
-    const response = await fetch(`/api/feed/${post.id}/comments`);
-    const data = (await response.json()) as { comments: FeedCommentWithAuthor[] };
+    const response = await fetch(`/api/lobby/${post.id}/comments`);
+    const data = (await response.json()) as { comments: LobbyCommentWithAuthor[] };
     setComments(data.comments);
   }
 
@@ -73,7 +73,7 @@ export function FeedPostCard({
 
     setError(null);
     startTransition(async () => {
-      const response = await fetch(`/api/feed/${post.id}/comments`, {
+      const response = await fetch(`/api/lobby/${post.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: text }),
@@ -93,14 +93,14 @@ export function FeedPostCard({
     setComments((current) => current?.filter((c) => c.id !== commentId) ?? null);
     setCommentCount((count) => Math.max(0, count - 1));
     startTransition(async () => {
-      await deleteFeedComment(commentId);
+      await deleteLobbyComment(commentId);
     });
   }
 
   function handleDeletePost() {
     setDeleted(true);
     startTransition(async () => {
-      const result = await deleteFeedPost(post.id);
+      const result = await deleteLobbyPost(post.id);
       if (result.error) {
         setDeleted(false);
         setError(result.error);

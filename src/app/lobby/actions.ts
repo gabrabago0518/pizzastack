@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export interface FeedActionResult {
+export interface LobbyActionResult {
   error?: string;
 }
 
-export async function createFeedPost(body: string): Promise<FeedActionResult> {
+export async function createLobbyPost(body: string): Promise<LobbyActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,7 +25,7 @@ export async function createFeedPost(body: string): Promise<FeedActionResult> {
     return { error: "That's too long (max 1000 characters)." };
   }
 
-  const { error } = await supabase.from("feed_posts").insert({
+  const { error } = await supabase.from("lobby_posts").insert({
     author_id: user.id,
     body: trimmed,
   });
@@ -34,13 +34,13 @@ export async function createFeedPost(body: string): Promise<FeedActionResult> {
     return { error: error.message };
   }
 
-  revalidatePath("/feed");
+  revalidatePath("/lobby");
   return {};
 }
 
-// RLS backs this up independently (authors and admins can delete a feed
+// RLS backs this up independently (authors and admins can delete a lobby
 // post) — a caller who isn't either just deletes zero rows.
-export async function deleteFeedPost(postId: string): Promise<FeedActionResult> {
+export async function deleteLobbyPost(postId: string): Promise<LobbyActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,16 +50,16 @@ export async function deleteFeedPost(postId: string): Promise<FeedActionResult> 
     return { error: "You need to be logged in." };
   }
 
-  const { error } = await supabase.from("feed_posts").delete().eq("id", postId);
+  const { error } = await supabase.from("lobby_posts").delete().eq("id", postId);
   if (error) {
     return { error: error.message };
   }
 
-  revalidatePath("/feed");
+  revalidatePath("/lobby");
   return {};
 }
 
-export async function deleteFeedComment(commentId: string): Promise<FeedActionResult> {
+export async function deleteLobbyComment(commentId: string): Promise<LobbyActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -69,21 +69,21 @@ export async function deleteFeedComment(commentId: string): Promise<FeedActionRe
     return { error: "You need to be logged in." };
   }
 
-  const { error } = await supabase.from("feed_comments").delete().eq("id", commentId);
+  const { error } = await supabase.from("lobby_comments").delete().eq("id", commentId);
   if (error) {
     return { error: error.message };
   }
 
-  revalidatePath("/feed");
+  revalidatePath("/lobby");
   return {};
 }
 
 // Toggles the viewer's own "like" on a post — one row per (post, viewer),
 // same shape as toggleCommend.
-export async function toggleFeedReaction(
+export async function toggleLobbyReaction(
   postId: string,
   react: boolean,
-): Promise<FeedActionResult> {
+): Promise<LobbyActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -95,7 +95,7 @@ export async function toggleFeedReaction(
 
   if (react) {
     const { error } = await supabase
-      .from("feed_reactions")
+      .from("lobby_reactions")
       .insert({ post_id: postId, profile_id: user.id });
     // 23505 = unique_violation (already reacted) — treat as a no-op success.
     if (error && error.code !== "23505") {
@@ -103,7 +103,7 @@ export async function toggleFeedReaction(
     }
   } else {
     const { error } = await supabase
-      .from("feed_reactions")
+      .from("lobby_reactions")
       .delete()
       .eq("post_id", postId)
       .eq("profile_id", user.id);
@@ -112,6 +112,6 @@ export async function toggleFeedReaction(
     }
   }
 
-  revalidatePath("/feed");
+  revalidatePath("/lobby");
   return {};
 }

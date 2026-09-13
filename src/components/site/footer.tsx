@@ -5,8 +5,8 @@ import { Separator } from "@/components/ui/separator";
 export function Footer() {
   return (
     <footer className="border-t border-border/60 bg-muted/20">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col gap-3 lg:col-span-2">
+      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-[1fr_auto]">
+        <div className="flex flex-col gap-3">
           <Logo id="footer" className="h-8 w-auto" />
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
             The hub for squading up. Post what you&apos;re looking for, find
@@ -21,16 +21,6 @@ export function Footer() {
           </Link>
           <Link href="/scrims" className="text-muted-foreground transition-colors hover:text-foreground">
             Scrimmages
-          </Link>
-        </div>
-
-        <div className="flex flex-col gap-3 text-sm">
-          <h4 className="font-display text-base">Account</h4>
-          <Link href="/signup" className="text-muted-foreground transition-colors hover:text-foreground">
-            Create an account
-          </Link>
-          <Link href="/login" className="text-muted-foreground transition-colors hover:text-foreground">
-            Log in
           </Link>
         </div>
       </div>

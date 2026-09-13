@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, ArrowRight, Swords, MessageSquarePlus } from "lucide-react";
+import { Users, ArrowRight, Swords, MessageSquarePlus, Construction } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ const features = [
   },
   {
     icon: Swords,
-    title: "Schedule a scrim",
+    title: "Look for a scrim",
     description:
       "Post your game, region, and when you're free to play — or browse open slots and reach out directly.",
     href: "/scrims",
@@ -139,24 +139,43 @@ export default async function Home() {
         </div>
       </Section>
 
-      <Section className="bg-muted/20">
-        <Reveal className="flex flex-col items-center gap-5 text-center">
-          <h2 className="text-balance font-display text-3xl sm:text-4xl">
-            Website is under development
-          </h2>
-          <p className="max-w-md text-balance text-muted-foreground">
-            Feedback and suggestions are much appreciated as we keep building.
-          </p>
-          <FeedbackDialog
-            viewerId={user?.id ?? null}
-            trigger={
-              <Button size="lg">
-                Give feedback <MessageSquarePlus />
-              </Button>
-            }
-          />
-        </Reveal>
-      </Section>
+      <section className="relative overflow-hidden border-y border-border/60 bg-black">
+        <div
+          className="h-3 w-full sm:h-4"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #facc15 0px, #facc15 20px, #0a0a0a 20px, #0a0a0a 40px)",
+          }}
+        />
+        <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
+          <Reveal className="flex flex-col items-center gap-5 text-center">
+            <Badge variant="outline" className="border-yellow-400/40 bg-yellow-400/10 text-yellow-400">
+              <Construction className="size-3.5" /> Under construction
+            </Badge>
+            <h2 className="text-balance font-display text-3xl text-white sm:text-4xl">
+              Website is under development
+            </h2>
+            <p className="max-w-md text-balance text-neutral-300">
+              Feedback and suggestions are much appreciated as we keep building.
+            </p>
+            <FeedbackDialog
+              viewerId={user?.id ?? null}
+              trigger={
+                <Button size="lg" className="bg-yellow-400 text-black hover:bg-yellow-300">
+                  Give feedback <MessageSquarePlus />
+                </Button>
+              }
+            />
+          </Reveal>
+        </div>
+        <div
+          className="h-3 w-full sm:h-4"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(45deg, #facc15 0px, #facc15 20px, #0a0a0a 20px, #0a0a0a 40px)",
+          }}
+        />
+      </section>
     </>
   );
 }

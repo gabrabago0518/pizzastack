@@ -51,6 +51,26 @@ export async function Navbar() {
           <Logo id="nav" className="hidden h-9 w-auto sm:block" />
         </Link>
 
+        <MobileNavMenu>
+          {NAV_LINKS.map((link) => (
+            <SheetClose asChild key={link.href}>
+              <Link href={link.href} className={mobileMenuItemClassName}>
+                <link.icon className="size-4" />
+                {link.label}
+              </Link>
+            </SheetClose>
+          ))}
+          <FeedbackDialog
+            viewerId={user?.id ?? null}
+            trigger={
+              <button type="button" className={mobileMenuItemClassName}>
+                <MessageSquarePlus className="size-4" />
+                Send feedback
+              </button>
+            }
+          />
+        </MobileNavMenu>
+
         <form
           action="/search"
           method="GET"
@@ -66,25 +86,6 @@ export async function Navbar() {
         </form>
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
-          <MobileNavMenu>
-            {NAV_LINKS.map((link) => (
-              <SheetClose asChild key={link.href}>
-                <Link href={link.href} className={mobileMenuItemClassName}>
-                  <link.icon className="size-4" />
-                  {link.label}
-                </Link>
-              </SheetClose>
-            ))}
-            <FeedbackDialog
-              viewerId={user?.id ?? null}
-              trigger={
-                <button type="button" className={mobileMenuItemClassName}>
-                  <MessageSquarePlus className="size-4" />
-                  Send feedback
-                </button>
-              }
-            />
-          </MobileNavMenu>
           <div className="hidden items-center gap-1 sm:flex sm:gap-3">
             {NAV_LINKS.map((link) => (
               <Button key={link.href} asChild variant="ghost" size="sm" className="px-4">

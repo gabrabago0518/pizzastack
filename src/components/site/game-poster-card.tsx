@@ -8,6 +8,21 @@ interface PosterGame {
   cover_url: string | null;
 }
 
+// Neither Valorant nor Mobile Legends has a Steam listing, so there's no
+// equivalent official box-art URL for them the way there is for the
+// Steam-hosted games in schema.sql (cover_url pulls those straight from
+// Valve's CDN by app id) — hotlinking a scraped copy of someone else's
+// key art instead would be an unlicensed image on a site with no rights
+// to it. This gives those two (and anything else without a cover_url) a
+// brand-toned gradient instead of the site's default pink/purple one, so
+// the tile still reads as "this game" at a glance until real licensed
+// art is available to drop in as a cover_url.
+const BRAND_GRADIENTS: Record<string, string> = {
+  valorant: "from-[#ff4655]/50 via-card to-black/60",
+  "mobile-legends": "from-[#1560bd]/45 via-card to-[#f0a020]/35",
+};
+const DEFAULT_GRADIENT = "from-primary/25 via-card to-secondary/25";
+
 // A game tile styled like a library box-art card (portrait poster, name
 // overlaid at the bottom) rather than the plain text pill used elsewhere
 // (see GameFilter, still used on /coaches). The gradient-and-name layer
@@ -33,7 +48,12 @@ export function GamePosterCard({
         compact && "max-w-[160px]",
       )}
     >
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/25 via-card to-secondary/25 p-4 text-center transition-transform duration-300 group-hover:scale-105">
+      <div
+        className={cn(
+          "absolute inset-0 flex items-center justify-center bg-gradient-to-br p-4 text-center transition-transform duration-300 group-hover:scale-105",
+          BRAND_GRADIENTS[game.slug] ?? DEFAULT_GRADIENT,
+        )}
+      >
         <span className="font-display text-lg leading-tight text-foreground/85">
           {game.name}
         </span>

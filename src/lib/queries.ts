@@ -1131,13 +1131,20 @@ export async function getMostRequestedLfgPosts(): Promise<TopLfgPostRow[]> {
 // Newest-approved first, only ever showing rows the RLS policy already
 // scopes to "status = 'approved'" for an anonymous/non-owner viewer — same
 // shape as getCoachProfiles. gameSlug filters to one game's clips.
+//
+// The embed is pinned to profiles!highlights_profile_id_fkey because
+// highlights has two FKs to profiles (profile_id and reviewed_by) — a bare
+// "profiles(...)" is ambiguous to PostgREST and errors, which silently
+// became an empty result here since only `data` was destructured. Same
+// underlying issue getPlayerReports/getConversations already work around,
+// just via a two-query merge instead of a pinned embed.
 export async function getApprovedHighlights(gameSlug?: string) {
   const supabase = await createClient();
   const gameId = await resolveGameId(gameSlug);
 
   let builder = supabase
     .from("highlights")
-    .select("*, profiles(username, avatar_url), games(name, slug)")
+    .select("*, profiles!highlights_profile_id_fkey(username, avatar_url), games(name, slug)")
     .eq("status", "approved")
     .order("created_at", { ascending: false });
 
@@ -1157,7 +1164,7 @@ export const getHighlightById = cache(async (id: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("highlights")
-    .select("*, profiles(username, avatar_url), games(name, slug)")
+    .select("*, profiles!highlights_profile_id_fkey(username, avatar_url), games(name, slug)")
     .eq("id", id)
     .maybeSingle()
     .returns<HighlightWithRelations>();
@@ -1176,12 +1183,14 @@ export async function getMyHighlights(userId: string) {
 }
 
 // Admin-only moderation queue, oldest first (first uploaded, first
-// reviewed) — mirrors getPendingCoachApplications exactly.
+// reviewed) — mirrors getPendingCoachApplications, except the profiles
+// embed must be pinned (see getApprovedHighlights) since highlights has
+// two FKs to profiles.
 export async function getPendingHighlights() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("highlights")
-    .select("*, profiles(username, region), games(name, slug)")
+    .select("*, profiles!highlights_profile_id_fkey(username, region), games(name, slug)")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .returns<HighlightWithRelations[]>();
@@ -1219,13 +1228,16 @@ export async function getMyMlbbVerification(userId: string) {
   return data;
 }
 
-// Admin-only moderation queue, oldest first — mirrors getPendingHighlights
-// exactly.
+// Admin-only moderation queue, oldest first — mirrors getPendingHighlights,
+// including pinning the profiles embed: mlbb_verifications also has two
+// FKs to profiles (profile_id and reviewed_by), so a bare "profiles(...)"
+// is ambiguous to PostgREST and errors, which silently became an empty
+// result here since only `data` was destructured.
 export async function getPendingMlbbVerifications() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("mlbb_verifications")
-    .select("*, profiles(username, avatar_url)")
+    .select("*, profiles!mlbb_verifications_profile_id_fkey(username, avatar_url)")
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .returns<MlbbVerificationWithProfile[]>();

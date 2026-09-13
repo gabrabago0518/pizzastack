@@ -74,46 +74,49 @@ export default async function ProfileSettingsPage({
           </CardContent>
         </Card>
 
-        <div className="mt-6">
-          <SteamConnect
-            connected={Boolean(profile.steam_id)}
-            dotaRankTier={profile.dota_rank_tier}
-            dotaLeaderboardRank={profile.dota_leaderboard_rank}
-            cs2PremierRating={profile.cs2_premier_rating}
-            cs2CompetitiveRank={profile.cs2_competitive_rank}
-            steamPersonaName={profile.steam_persona_name}
-            syncedAt={
-              [profile.dota_rank_synced_at, profile.cs2_rank_synced_at]
-                .filter((date): date is string => Boolean(date))
-                .sort()
-                .at(-1) ?? null
-            }
-            statusParam={steam}
-          />
-        </div>
+        <div className="mt-8">
+          <h2 className="mb-1 font-display text-lg">Linked Accounts</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Connect your in-game accounts to show verified ranks and let
+            other players find you.
+          </p>
+          <div className="flex flex-col gap-4">
+            <SteamConnect
+              connected={Boolean(profile.steam_id)}
+              dotaRankTier={profile.dota_rank_tier}
+              dotaLeaderboardRank={profile.dota_leaderboard_rank}
+              cs2PremierRating={profile.cs2_premier_rating}
+              cs2CompetitiveRank={profile.cs2_competitive_rank}
+              steamPersonaName={profile.steam_persona_name}
+              syncedAt={
+                [profile.dota_rank_synced_at, profile.cs2_rank_synced_at]
+                  .filter((date): date is string => Boolean(date))
+                  .sort()
+                  .at(-1) ?? null
+              }
+              statusParam={steam}
+            />
 
-        <div className="mt-6">
-          <RiotConnect
-            riotName={profile.riot_name}
-            riotTag={profile.riot_tag}
-            riotRegion={profile.riot_region}
-            valorantTier={profile.valorant_tier}
-            valorantTierIcon={profile.valorant_tier_icon}
-            syncedAt={profile.valorant_rank_synced_at}
-          />
-        </div>
+            <RiotConnect
+              riotName={profile.riot_name}
+              riotTag={profile.riot_tag}
+              riotRegion={profile.riot_region}
+              valorantTier={profile.valorant_tier}
+              valorantTierIcon={profile.valorant_tier_icon}
+              syncedAt={profile.valorant_rank_synced_at}
+            />
 
-        <div className="mt-6">
-          <MlbbConnect
-            mlbbUserId={profile.mlbb_user_id}
-            mlbbServer={profile.mlbb_server}
-            mlbbIgn={profile.mlbb_ign}
-            rankTier={profile.mlbb_rank_tier}
-            subRank={profile.mlbb_sub_rank}
-            highestStar={profile.mlbb_highest_star}
-            verifiedAt={profile.mlbb_verified_at}
-            latestVerification={myMlbbVerification ?? null}
-          />
+            <MlbbConnect
+              mlbbUserId={profile.mlbb_user_id}
+              mlbbServer={profile.mlbb_server}
+              mlbbIgn={profile.mlbb_ign}
+              rankTier={profile.mlbb_rank_tier}
+              subRank={profile.mlbb_sub_rank}
+              highestStar={profile.mlbb_highest_star}
+              verifiedAt={profile.mlbb_verified_at}
+              latestVerification={myMlbbVerification ?? null}
+            />
+          </div>
         </div>
 
         <div className="mt-10 flex flex-col gap-3 rounded-xl border border-destructive/30 p-5">

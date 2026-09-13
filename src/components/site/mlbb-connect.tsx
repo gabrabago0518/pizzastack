@@ -54,7 +54,7 @@ export function MlbbConnect({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4">
       <div>
-        <p className="text-sm font-medium">Mobile Legends</p>
+        <p className="text-sm font-medium">Moonton account (Mobile Legends: Bang Bang)</p>
         <p className="text-sm text-muted-foreground">
           There&apos;s no public API for a live MLBB rank, so enter your user
           ID and server and an admin will check your highest star manually
@@ -77,7 +77,7 @@ export function MlbbConnect({
 
       <form action={formAction} className="flex flex-wrap items-end gap-2">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="mlbbUserId">User ID</Label>
+          <Label htmlFor="mlbbUserId">Account ID</Label>
           <Input
             id="mlbbUserId"
             name="mlbbUserId"
@@ -88,7 +88,7 @@ export function MlbbConnect({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="mlbbServer">Server</Label>
+          <Label htmlFor="mlbbServer">Server ID</Label>
           <Input
             id="mlbbServer"
             name="mlbbServer"

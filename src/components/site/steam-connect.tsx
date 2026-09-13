@@ -83,7 +83,7 @@ export function SteamConnect({
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">Steam account</p>
+          <p className="text-sm font-medium">Steam</p>
           <p className="text-sm text-muted-foreground">
             Connect Steam to verify your Dota 2 and CS2 ranks — used on your
             listings and to qualify as a coach.
@@ -95,7 +95,7 @@ export function SteamConnect({
           </div>
         ) : (
           <Button asChild size="sm">
-            <a href="/api/auth/steam/login">Connect Steam</a>
+            <a href="/api/auth/steam/login">Link Steam</a>
           </Button>
         )}
       </div>

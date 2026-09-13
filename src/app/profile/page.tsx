@@ -12,13 +12,12 @@ import { PrimeBadge } from "@/components/site/prime-badge";
 import { CoachBadge } from "@/components/site/coach-badge";
 import { PrimeAvatarFrame } from "@/components/site/prime-avatar-frame";
 import { getProfileBackgroundGradient } from "@/lib/profile-backgrounds";
-import { CoachProfilesList, HighlightsList } from "@/components/site/activity-lists";
+import { HighlightsList } from "@/components/site/activity-lists";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfile,
-  getCoachProfilesByAuthor,
   getGamesForProfile,
   getCommendCount,
   getTopHeroesForProfile,
@@ -41,8 +40,7 @@ export default async function ProfilePage() {
   const profile = await getProfile(user.id);
   if (!profile) redirect("/dashboard");
 
-  const [coachProfiles, games, commendCount, topHeroes, highlights] = await Promise.all([
-    getCoachProfilesByAuthor(user.id),
+  const [games, commendCount, topHeroes, highlights] = await Promise.all([
     getGamesForProfile(user.id),
     getCommendCount(user.id),
     getTopHeroesForProfile(user.id),
@@ -159,19 +157,12 @@ export default async function ProfilePage() {
         />
       </div>
 
-      {/* Teammate listings are managed from /dashboard now, not duplicated
-          here. Coaches and Highlights aren't promoted on the profile page
-          either (see lib/nav-links.ts) — these sections only show up for
-          someone who already has existing content there, so past coach
-          listings/highlights stay visible and manageable without a "create
-          new" upsell pushing everyone else toward a deprioritized feature. */}
-      {coachProfiles.length > 0 ? (
-        <div className="mb-10 flex flex-col gap-4">
-          <h2 className="font-display text-xl">Your coach listings</h2>
-          <CoachProfilesList coachProfiles={coachProfiles} emptyText="" />
-        </div>
-      ) : null}
-
+      {/* Teammate listings and coach listings are managed from /dashboard
+          now, not duplicated here. Highlights aren't promoted on the
+          profile page either (see lib/nav-links.ts) — this section only
+          shows up for someone who already has existing highlights, so past
+          uploads stay visible and manageable without a "create new" upsell
+          pushing everyone else toward a deprioritized feature. */}
       {highlights.length > 0 ? (
         <div className="mt-8 flex flex-col gap-4">
           <h2 className="font-display text-xl">Your highlights</h2>

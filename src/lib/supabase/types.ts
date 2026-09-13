@@ -1158,6 +1158,32 @@ export interface Database {
           },
         ];
       };
+      feedback: {
+        Row: {
+          id: string;
+          profile_id: string;
+          message: string;
+          status: "open" | "reviewed";
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          message: string;
+          status?: "open" | "reviewed";
+        };
+        Update: {
+          status?: "open" | "reviewed";
+        };
+        Relationships: [
+          {
+            foreignKeyName: "feedback_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -1261,4 +1287,10 @@ export type ScrimmageWithRelations = Scrimmage & {
 export type HighlightWithRelations = Highlight & {
   profiles: Pick<Profile, "username" | "avatar_url"> | null;
   games: Pick<Game, "name" | "slug"> | null;
+};
+
+export type Feedback = Database["public"]["Tables"]["feedback"]["Row"];
+
+export type FeedbackWithProfile = Feedback & {
+  profiles: Pick<Profile, "username" | "avatar_url"> | null;
 };

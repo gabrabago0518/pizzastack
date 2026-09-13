@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Search, MessageCircle } from "lucide-react";
+import { Search, MessageCircle, MessageSquarePlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Logo, LogoMark } from "@/components/site/logo";
 import { AvatarDisplay } from "@/components/site/avatar-display";
 import { NotificationBell } from "@/components/site/notification-bell";
+import { FeedbackDialog } from "@/components/site/feedback-dialog";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/supabase/actions";
 import { NAV_LINKS } from "@/lib/nav-links";
@@ -68,6 +69,19 @@ export async function Navbar() {
               </Link>
             </Button>
           ))}
+          <FeedbackDialog
+            viewerId={user?.id ?? null}
+            trigger={
+              <button
+                type="button"
+                aria-label="Send feedback"
+                title="Send feedback"
+                className={iconLinkClassName}
+              >
+                <MessageSquarePlus className="size-[18px]" />
+              </button>
+            }
+          />
           <Link
             href="/search"
             aria-label="Search"

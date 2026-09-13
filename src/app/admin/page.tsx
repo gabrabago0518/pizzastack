@@ -11,6 +11,7 @@ import { CoachApplicationsList } from "@/components/site/coach-applications-list
 import { ApprovedCoachesList } from "@/components/site/approved-coaches-list";
 import { AccountsList } from "@/components/site/accounts-list";
 import { HighlightModerationList } from "@/components/site/highlight-moderation-list";
+import { FeedbackList } from "@/components/site/feedback-list";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfile,
@@ -20,6 +21,7 @@ import {
   getApprovedCoaches,
   getAllAccounts,
   getPendingHighlights,
+  getOpenFeedback,
 } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -38,7 +40,7 @@ export default async function AdminPage() {
   const profile = await getProfile(user.id);
   if (!profile?.is_admin) redirect("/dashboard");
 
-  const [stats, reports, coachApplications, approvedCoaches, accounts, pendingHighlights] =
+  const [stats, reports, coachApplications, approvedCoaches, accounts, pendingHighlights, feedback] =
     await Promise.all([
       getAdminStats(),
       getPlayerReports(),
@@ -46,6 +48,7 @@ export default async function AdminPage() {
       getApprovedCoaches(),
       getAllAccounts(),
       getPendingHighlights(),
+      getOpenFeedback(),
     ]);
 
   const tiles = [
@@ -102,6 +105,11 @@ export default async function AdminPage() {
           ) : null}
         </div>
         <AccountsList accounts={accounts} />
+      </div>
+
+      <div className="mt-10 flex flex-col gap-4">
+        <h2 className="font-display text-xl">Feedback</h2>
+        <FeedbackList feedback={feedback} />
       </div>
 
       <div className="mt-10 flex flex-col gap-4">

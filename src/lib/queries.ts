@@ -26,6 +26,7 @@ import type {
   TournamentTeamMemberWithProfile,
   ScrimmageWithRelations,
   HighlightWithRelations,
+  FeedbackWithProfile,
 } from "@/lib/supabase/types";
 
 export interface TopHero {
@@ -1182,5 +1183,20 @@ export async function getPendingHighlights() {
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .returns<HighlightWithRelations[]>();
+  return data ?? [];
+}
+
+// Admin-only "inbox" of open feedback — RLS on feedback independently
+// enforces this (only admins can select), same belt-and-suspenders gating
+// as every other admin list. Open first, then newest, so nothing sits
+// unread behind a wall of already-reviewed submissions.
+export async function getOpenFeedback() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("feedback")
+    .select("*, profiles(username, avatar_url)")
+    .order("status", { ascending: true })
+    .order("created_at", { ascending: false })
+    .returns<FeedbackWithProfile[]>();
   return data ?? [];
 }

@@ -2051,3 +2051,37 @@ create policy "Users can delete their own highlight videos"
     bucket_id = 'highlights'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------------
+-- feedback: general site feedback/suggestions from signed-in players, sent
+-- straight to admins — same "goes to the team, not published" model as
+-- player_reports, just without a target player.
+-- ---------------------------------------------------------------------------
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  message text not null check (char_length(message) between 1 and 2000),
+  status text not null default 'open' check (status in ('open', 'reviewed')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.feedback enable row level security;
+
+drop policy if exists "Admins can read feedback" on public.feedback;
+create policy "Admins can read feedback"
+  on public.feedback for select
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );
+
+drop policy if exists "Users can submit feedback" on public.feedback;
+create policy "Users can submit feedback"
+  on public.feedback for insert
+  with check (auth.uid() = profile_id);
+
+drop policy if exists "Admins can update feedback status" on public.feedback;
+create policy "Admins can update feedback status"
+  on public.feedback for update
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and is_admin = true)
+  );

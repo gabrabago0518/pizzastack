@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Users, ArrowRight, Swords } from "lucide-react";
+import { Users, ArrowRight, Swords, MessageSquarePlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Section, SectionHeading } from "@/components/site/section";
 import { Reveal } from "@/components/site/reveal";
+import { FeedbackDialog } from "@/components/site/feedback-dialog";
 import { createClient } from "@/lib/supabase/server";
 import { SUPPORTED_GAME_SLUGS } from "@/lib/queries";
 
@@ -32,6 +33,9 @@ const features = [
 
 export default async function Home() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const [{ count: gameCount }, { count: postCount }, { count: scrimCount }] =
     await Promise.all([
       supabase
@@ -138,17 +142,19 @@ export default async function Home() {
       <Section className="bg-muted/20">
         <Reveal className="flex flex-col items-center gap-5 text-center">
           <h2 className="text-balance font-display text-3xl sm:text-4xl">
-            Ready to find your squad?
+            Website is under development
           </h2>
           <p className="max-w-md text-balance text-muted-foreground">
-            It takes less than a minute to create a profile and post your
-            first listing.
+            Feedback and suggestions are much appreciated as we keep building.
           </p>
-          <Button asChild size="lg">
-            <Link href="/signup">
-              Get started <ArrowRight />
-            </Link>
-          </Button>
+          <FeedbackDialog
+            viewerId={user?.id ?? null}
+            trigger={
+              <Button size="lg">
+                Give feedback <MessageSquarePlus />
+              </Button>
+            }
+          />
         </Reveal>
       </Section>
     </>

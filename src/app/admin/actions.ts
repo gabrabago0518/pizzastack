@@ -142,3 +142,29 @@ export async function markReportReviewed(reportId: string): Promise<AdminActionR
   revalidatePath("/admin");
   return {};
 }
+
+// Same RLS-does-the-real-gating shape as markReportReviewed above (see
+// "Admins can update feedback status" policy) — a non-admin call just
+// affects zero rows.
+export async function markFeedbackReviewed(feedbackId: string): Promise<AdminActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "You need to be logged in." };
+  }
+
+  const { error } = await supabase
+    .from("feedback")
+    .update({ status: "reviewed" })
+    .eq("id", feedbackId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return {};
+}

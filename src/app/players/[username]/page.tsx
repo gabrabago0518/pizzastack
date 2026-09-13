@@ -153,6 +153,7 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
           dotaHoursPlayed={profile.dota_hours_played}
           cs2PremierRating={profile.cs2_premier_rating}
           cs2CompetitiveRank={profile.cs2_competitive_rank}
+          steamPersonaName={profile.steam_persona_name}
           valorantTier={profile.valorant_tier}
           valorantTierIcon={profile.valorant_tier_icon}
           riotName={profile.riot_name}

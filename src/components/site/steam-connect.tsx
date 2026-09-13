@@ -23,6 +23,7 @@ interface SteamConnectProps {
   dotaLeaderboardRank: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
+  steamPersonaName: string | null;
   syncedAt: string | null;
   statusParam?: string;
 }
@@ -33,6 +34,7 @@ export function SteamConnect({
   dotaLeaderboardRank: initialDotaLeaderboardRank,
   cs2PremierRating: initialCs2PremierRating,
   cs2CompetitiveRank: initialCs2CompetitiveRank,
+  steamPersonaName: initialSteamPersonaName,
   syncedAt: initialSyncedAt,
   statusParam,
 }: SteamConnectProps) {
@@ -44,6 +46,7 @@ export function SteamConnect({
   const [cs2CompetitiveRank, setCs2CompetitiveRank] = React.useState(
     initialCs2CompetitiveRank,
   );
+  const [steamPersonaName, setSteamPersonaName] = React.useState(initialSteamPersonaName);
   const [syncedAt, setSyncedAt] = React.useState(initialSyncedAt);
   const [error, setError] = React.useState<string | null>(null);
   const [isPending, startTransition] = React.useTransition();
@@ -60,6 +63,7 @@ export function SteamConnect({
         dotaLeaderboardRank?: number | null;
         cs2PremierRating?: number | null;
         cs2CompetitiveRank?: number | null;
+        steamPersonaName?: string | null;
         syncedAt?: string;
       };
       if (result.error) {
@@ -70,6 +74,7 @@ export function SteamConnect({
       setDotaLeaderboardRank(result.dotaLeaderboardRank ?? null);
       setCs2PremierRating(result.cs2PremierRating ?? null);
       setCs2CompetitiveRank(result.cs2CompetitiveRank ?? null);
+      setSteamPersonaName(result.steamPersonaName ?? null);
       setSyncedAt(result.syncedAt ?? null);
     });
   }
@@ -102,12 +107,14 @@ export function SteamConnect({
               game="Dota 2"
               rankLabel={formatDotaRank(dotaRankTier, dotaLeaderboardRank)}
               sourceLabel="Verified via Steam"
+              statLine={steamPersonaName ?? undefined}
               icon={<DotaRankIcon rankTier={dotaRankTier} className="size-10" />}
             />
             <RankMedalCard
               game="Counter-Strike 2"
               rankLabel={formatCs2Rank(cs2PremierRating, cs2CompetitiveRank)}
               sourceLabel="Verified via Steam"
+              statLine={steamPersonaName ?? undefined}
               leetifyAttribution
             />
           </div>

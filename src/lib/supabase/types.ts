@@ -12,6 +12,7 @@ export interface Database {
           is_coach: boolean;
           onboarded: boolean;
           steam_id: string | null;
+          steam_persona_name: string | null;
           dota_rank_tier: number | null;
           dota_leaderboard_rank: number | null;
           dota_rank_synced_at: string | null;
@@ -64,6 +65,7 @@ export interface Database {
           is_coach?: boolean;
           onboarded?: boolean;
           steam_id?: string | null;
+          steam_persona_name?: string | null;
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;
@@ -114,6 +116,7 @@ export interface Database {
           is_coach?: boolean;
           onboarded?: boolean;
           steam_id?: string | null;
+          steam_persona_name?: string | null;
           dota_rank_tier?: number | null;
           dota_leaderboard_rank?: number | null;
           dota_rank_synced_at?: string | null;

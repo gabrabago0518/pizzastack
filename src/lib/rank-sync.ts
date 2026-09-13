@@ -43,6 +43,7 @@ export interface SyncedRanks {
   dotaHoursPlayed: number | null;
   cs2PremierRating: number | null;
   cs2CompetitiveRank: number | null;
+  steamPersonaName: string | null;
 }
 
 // Fetches every verified-game rank (Dota 2 via OpenDota, CS2 via Leetify)
@@ -59,16 +60,19 @@ export async function syncRanksForSteamId(
 
   let dotaRankTier: number | null = null;
   let dotaLeaderboardRank: number | null = null;
+  let steamPersonaName: string | null = null;
   try {
     const dota = await fetchDotaRankFromOpenDota(steamId64);
     dotaRankTier = dota.rankTier;
     dotaLeaderboardRank = dota.leaderboardRank;
+    steamPersonaName = dota.personaName;
     await service
       .from("profiles")
       .update({
         dota_rank_tier: dota.rankTier,
         dota_leaderboard_rank: dota.leaderboardRank,
         dota_rank_synced_at: syncedAt,
+        steam_persona_name: dota.personaName,
       })
       .eq("id", userId);
   } catch (err) {
@@ -149,6 +153,7 @@ export async function syncRanksForSteamId(
     dotaHoursPlayed,
     cs2PremierRating,
     cs2CompetitiveRank,
+    steamPersonaName,
   };
 }
 

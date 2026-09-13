@@ -81,6 +81,7 @@ export default async function ProfileSettingsPage({
             dotaLeaderboardRank={profile.dota_leaderboard_rank}
             cs2PremierRating={profile.cs2_premier_rating}
             cs2CompetitiveRank={profile.cs2_competitive_rank}
+            steamPersonaName={profile.steam_persona_name}
             syncedAt={
               [profile.dota_rank_synced_at, profile.cs2_rank_synced_at]
                 .filter((date): date is string => Boolean(date))

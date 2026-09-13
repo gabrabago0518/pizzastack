@@ -49,11 +49,17 @@ export async function verifySteamOpenIdCallback(
 export interface DotaRankResult {
   rankTier: number | null;
   leaderboardRank: number | null;
+  personaName: string | null;
 }
 
 // OpenDota derives rank_tier/leaderboard_rank from Dota 2's Game Coordinator
 // via their own bot accounts — free, no API key, but only populated if the
-// player has "Expose Public Match Data" on in the Dota 2 client.
+// player has "Expose Public Match Data" on in the Dota 2 client. The same
+// response also echoes the Steam account's public persona name (OpenDota's
+// own proxy to the keyed Steam Web API) — a plain identity attribute of
+// the Steam account itself, not a Dota-specific stat, so it's read here
+// and reused as the persona name shown next to the CS2 rank too, rather
+// than making a second, CS2-specific request for the same Steam account.
 export async function fetchDotaRankFromOpenDota(steamId64: string): Promise<DotaRankResult> {
   const accountId = steamId64ToDotaAccountId(steamId64);
   const response = await fetch(`https://api.opendota.com/api/players/${accountId}`, {
@@ -66,11 +72,13 @@ export async function fetchDotaRankFromOpenDota(steamId64: string): Promise<Dota
   const data = (await response.json()) as {
     rank_tier?: number | null;
     leaderboard_rank?: number | null;
+    profile?: { personaname?: string | null } | null;
   };
 
   return {
     rankTier: data.rank_tier ?? null,
     leaderboardRank: data.leaderboard_rank ?? null,
+    personaName: data.profile?.personaname ?? null,
   };
 }
 

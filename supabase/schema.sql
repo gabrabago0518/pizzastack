@@ -49,6 +49,14 @@ create policy "Users can update their own profile"
 -- can write steam_id or any rank column.
 alter table public.profiles
   add column if not exists steam_id text unique;
+-- steam_persona_name: the Steam account's public display name, echoed
+-- back by OpenDota's player lookup (see fetchDotaRankFromOpenDota) —
+-- a plain attribute of the Steam account itself, not a Dota stat, shown
+-- next to both the Dota and CS2 rank cards so a viewer can see exactly
+-- which Steam account earned the rank, not just that "some" Steam
+-- account did.
+alter table public.profiles
+  add column if not exists steam_persona_name text;
 alter table public.profiles
   add column if not exists dota_rank_tier smallint;
 alter table public.profiles

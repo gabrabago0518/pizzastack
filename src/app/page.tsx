@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Users, ArrowRight, Swords, MessageSquarePlus, Construction } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Section, SectionHeading } from "@/components/site/section";
 import { Reveal } from "@/components/site/reveal";
 import { FeedbackDialog } from "@/components/site/feedback-dialog";
 import { createClient } from "@/lib/supabase/server";
-import { SUPPORTED_GAME_SLUGS } from "@/lib/queries";
+import { SUPPORTED_GAME_SLUGS, getProfile, getGamesForProfile } from "@/lib/queries";
 
 // Coaches/Guilds/Tournaments/Leaderboard/Highlights feature cards are
 // deliberately left out here while the homepage focuses on the core
@@ -36,6 +37,21 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (user) {
+    const profile = await getProfile(user.id);
+    if (profile && !profile.onboarded) {
+      // Accounts that already picked games (e.g. via the old signup-time
+      // picker) shouldn't be asked again — heal the flag and let them through.
+      const existingGames = await getGamesForProfile(user.id);
+      if (existingGames.length > 0) {
+        await supabase.from("profiles").update({ onboarded: true }).eq("id", user.id);
+      } else {
+        redirect("/onboarding/games");
+      }
+    }
+  }
+
   const [{ count: gameCount }, { count: postCount }, { count: scrimCount }] =
     await Promise.all([
       supabase

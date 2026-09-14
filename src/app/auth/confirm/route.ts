@@ -5,11 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 // A same-origin, relative "next" path only — starts with exactly one slash
 // (never "//..." or "/\...", both of which some browsers treat as
 // protocol-relative and will happily follow off-site). Anything else falls
-// back to /dashboard rather than trusting an attacker-supplied email link
-// to send a just-verified session somewhere else.
+// back to / rather than trusting an attacker-supplied email link to send a
+// just-verified session somewhere else.
 function safeNextPath(raw: string | null): string {
   if (raw && /^\/(?!\/|\\)/.test(raw)) return raw;
-  return "/dashboard";
+  return "/";
 }
 
 // Handles every Supabase auth email link (signup confirmation, password

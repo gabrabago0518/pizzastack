@@ -79,7 +79,6 @@ export async function uploadAvatar(
   }
 
   revalidatePath("/profile");
-  revalidatePath("/dashboard");
   return { avatarUrl: bustedUrl };
 }
 
@@ -115,7 +114,6 @@ export async function updateProfile(
 
   revalidatePath("/profile");
   revalidatePath("/profile/settings");
-  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -174,7 +172,7 @@ export interface VisibilityResult {
 // Toggles what shows on the player's PUBLIC profile (/players/[username]) —
 // self-editable like bio/display_name, since it only ever hides a section
 // from other viewers rather than touching any verified data. The owner's
-// own /profile dashboard ignores these and always shows everything.
+// own /profile page ignores these and always shows everything.
 export async function setProfileVisibility(
   field: ProfileVisibilityField,
   value: boolean,

@@ -19,7 +19,7 @@ export default async function OnboardingGamesPage() {
   if (!user) redirect("/login");
 
   const profile = await getProfile(user.id);
-  if (profile?.onboarded) redirect("/dashboard");
+  if (profile?.onboarded) redirect("/");
 
   const games = await getGames();
 

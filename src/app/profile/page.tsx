@@ -38,7 +38,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const profile = await getProfile(user.id);
-  if (!profile) redirect("/dashboard");
+  if (!profile) redirect("/");
 
   const [games, commendCount, topHeroes, highlights] = await Promise.all([
     getGamesForProfile(user.id),
@@ -164,9 +164,8 @@ export default async function ProfilePage() {
         />
       </div>
 
-      {/* Teammate listings and coach listings are managed from /dashboard
-          now, not duplicated here. Highlights aren't promoted on the
-          profile page either (see lib/nav-links.ts) — this section only
+      {/* Highlights aren't promoted on the
+          profile page (see lib/nav-links.ts) — this section only
           shows up for someone who already has existing highlights, so past
           uploads stay visible and manageable without a "create new" upsell
           pushing everyone else toward a deprioritized feature. */}

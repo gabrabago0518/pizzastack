@@ -71,7 +71,6 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/signup");
   const protectedPrefixes = [
     "/profile",
-    "/dashboard",
     "/teammates/new",
     "/coaches/new",
     "/highlights/new",
@@ -94,7 +93,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     url.search = "";
     const redirect = NextResponse.redirect(url);
     redirect.headers.set("Content-Security-Policy", csp);

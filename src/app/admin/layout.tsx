@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   if (!user) redirect("/login");
 
   const profile = await getProfile(user.id);
-  if (!profile?.is_admin) redirect("/dashboard");
+  if (!profile?.is_admin) redirect("/");
 
   const counts = await getAdminBadgeCounts();
 

@@ -45,5 +45,5 @@ export async function completeOnboarding(
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect("/");
 }

@@ -35,7 +35,7 @@ export default async function ProfileSettingsPage({
   if (!user) redirect("/login");
 
   const profile = await getProfile(user.id);
-  if (!profile) redirect("/dashboard");
+  if (!profile) redirect("/");
 
   const [allGames, myGames, { count: ownedGuildCount }, myMlbbVerification] = await Promise.all([
     getGames(),

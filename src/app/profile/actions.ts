@@ -158,12 +158,7 @@ export async function toggleProfileGame(
   return {};
 }
 
-export type ProfileVisibilityField =
-  | "show_ranks"
-  | "show_most_played"
-  | "show_games"
-  | "show_listings"
-  | "show_coaching";
+export type ProfileVisibilityField = "show_ranks" | "show_most_played" | "show_games";
 
 export interface VisibilityResult {
   error?: string;

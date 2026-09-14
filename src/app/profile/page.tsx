@@ -125,8 +125,6 @@ export default async function ProfilePage() {
                 show_ranks: profile.show_ranks,
                 show_most_played: profile.show_most_played,
                 show_games: profile.show_games,
-                show_listings: profile.show_listings,
-                show_coaching: profile.show_coaching,
               }}
               initialBackground={profile.profile_background}
             />

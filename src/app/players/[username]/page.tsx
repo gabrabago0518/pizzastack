@@ -9,7 +9,6 @@ import {
   CommendCount,
   CommendToggleButton,
 } from "@/components/site/commend-button";
-import { LfgPostsList, CoachProfilesList } from "@/components/site/activity-lists";
 import { MostPlayedList } from "@/components/site/most-played-list";
 import { ReportPlayerDialog } from "@/components/site/report-player-dialog";
 import { BuddyButton } from "@/components/site/buddy-button";
@@ -21,8 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
   getProfileByUsername,
-  getLfgPostsByAuthor,
-  getCoachProfilesByAuthor,
   getGamesForProfile,
   getCommendCount,
   hasCommended,
@@ -66,16 +63,13 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
 
   const isOwnProfile = viewer?.id === profile.id;
 
-  const [posts, coachProfiles, games, commendCount, viewerHasCommended, topHeroes, buddyStatus] =
-    await Promise.all([
-      getLfgPostsByAuthor(profile.id),
-      getCoachProfilesByAuthor(profile.id),
-      getGamesForProfile(profile.id),
-      getCommendCount(profile.id),
-      viewer && !isOwnProfile ? hasCommended(profile.id, viewer.id) : false,
-      getTopHeroesForProfile(profile.id),
-      viewer && !isOwnProfile ? getBuddyStatus(viewer.id, profile.id) : Promise.resolve("none" as const),
-    ]);
+  const [games, commendCount, viewerHasCommended, topHeroes, buddyStatus] = await Promise.all([
+    getGamesForProfile(profile.id),
+    getCommendCount(profile.id),
+    viewer && !isOwnProfile ? hasCommended(profile.id, viewer.id) : false,
+    getTopHeroesForProfile(profile.id),
+    viewer && !isOwnProfile ? getBuddyStatus(viewer.id, profile.id) : Promise.resolve("none" as const),
+  ]);
 
   const label = profile.display_name || profile.username;
   const backgroundGradient = getProfileBackgroundGradient(profile.profile_background);
@@ -172,29 +166,6 @@ export default async function PlayerProfilePage({ params }: PlayerPageProps) {
             topHeroes={topHeroes}
             emptyText={`@${profile.username} has no synced matches yet.`}
           />
-        </div>
-      ) : null}
-
-      {profile.show_listings || profile.show_coaching ? (
-        <div className="grid gap-8 lg:grid-cols-2">
-          {profile.show_listings ? (
-            <div className="flex flex-col gap-4">
-              <h2 className="font-display text-xl">Listings</h2>
-              <LfgPostsList
-                posts={posts}
-                emptyText={`@${profile.username} hasn't posted any listings.`}
-              />
-            </div>
-          ) : null}
-          {profile.show_coaching ? (
-            <div className="flex flex-col gap-4">
-              <h2 className="font-display text-xl">Coaching</h2>
-              <CoachProfilesList
-                coachProfiles={coachProfiles}
-                emptyText={`@${profile.username} isn't listed as a coach.`}
-              />
-            </div>
-          ) : null}
         </div>
       ) : null}
     </Section>

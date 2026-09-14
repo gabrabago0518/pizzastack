@@ -41,16 +41,6 @@ const OPTIONS: VisibilityOption[] = [
     label: "Games played",
     description: "The game badges next to your name.",
   },
-  {
-    field: "show_listings",
-    label: "Listings",
-    description: "Your open teammate listings.",
-  },
-  {
-    field: "show_coaching",
-    label: "Coaching",
-    description: "Your coach directory listing.",
-  },
 ];
 
 export function EditProfileDialog({

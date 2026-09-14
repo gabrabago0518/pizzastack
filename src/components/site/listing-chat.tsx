@@ -6,6 +6,7 @@ import { Loader2, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AvatarDisplay } from "@/components/site/avatar-display";
+import { PlayerMiniProfile } from "@/components/site/player-mini-profile";
 import { createClient } from "@/lib/supabase/client";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { formatGameAccountId } from "@/lib/account-id";
@@ -143,10 +144,12 @@ export function ListingChat({
                   className={cn("flex flex-col", isMine ? "items-end" : "items-start")}
                 >
                   <span className="text-xs text-muted-foreground">
-                    {hasProfile ? (
-                      <Link href={`/players/${username}`} className="hover:text-foreground">
-                        {isMine ? "You" : `@${username}`}
-                      </Link>
+                    {hasProfile && message.profiles ? (
+                      <PlayerMiniProfile profile={message.profiles}>
+                        <Link href={`/players/${username}`} className="hover:text-foreground">
+                          {isMine ? "You" : `@${username}`}
+                        </Link>
+                      </PlayerMiniProfile>
                     ) : isMine ? (
                       "You"
                     ) : (

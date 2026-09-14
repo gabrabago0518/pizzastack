@@ -521,7 +521,7 @@ export async function getMessagesForPost(postId: string) {
   const { data } = await supabase
     .from("lfg_messages")
     .select(
-      "*, profiles(username, avatar_url, steam_id, riot_name, riot_tag, mlbb_user_id, mlbb_server)",
+      "*, profiles(username, display_name, avatar_url, steam_id, riot_name, riot_tag, mlbb_user_id, mlbb_server, dota_rank_tier, dota_leaderboard_rank, cs2_premier_rating, cs2_competitive_rank, valorant_tier, valorant_tier_icon, mlbb_rank_tier, mlbb_sub_rank, mlbb_highest_star)",
     )
     .eq("post_id", postId)
     .order("created_at", { ascending: true })

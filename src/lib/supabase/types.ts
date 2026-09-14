@@ -1465,12 +1465,22 @@ export type LfgMessageWithSender = LfgMessage & {
   profiles: Pick<
     Profile,
     | "username"
+    | "display_name"
     | "avatar_url"
     | "steam_id"
     | "riot_name"
     | "riot_tag"
     | "mlbb_user_id"
     | "mlbb_server"
+    | "dota_rank_tier"
+    | "dota_leaderboard_rank"
+    | "cs2_premier_rating"
+    | "cs2_competitive_rank"
+    | "valorant_tier"
+    | "valorant_tier_icon"
+    | "mlbb_rank_tier"
+    | "mlbb_sub_rank"
+    | "mlbb_highest_star"
   > | null;
 };
 

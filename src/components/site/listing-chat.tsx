@@ -145,7 +145,7 @@ export function ListingChat({
                 >
                   <span className="text-xs text-muted-foreground">
                     {hasProfile && message.profiles ? (
-                      <PlayerMiniProfile profile={message.profiles}>
+                      <PlayerMiniProfile profile={message.profiles} gameSlug={gameSlug}>
                         <Link href={`/players/${username}`} className="hover:text-foreground">
                           {isMine ? "You" : `@${username}`}
                         </Link>

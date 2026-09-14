@@ -242,6 +242,12 @@ grant update (
 -- Safe to re-run; no-ops if the username doesn't exist (yet).
 update public.profiles set is_admin = true where username = 'kydothecreator_6a67';
 
+-- Keeps the grant above exclusive — revokes is_admin from every other
+-- account on every deploy, so kydothecreator_6a67 stays the only admin
+-- unless this statement is changed. Safe to re-run. Update this (and the
+-- grant above) if a second admin is ever added.
+update public.profiles set is_admin = false where is_admin = true and username <> 'kydothecreator_6a67';
+
 -- Comps the site owner a Prime account so they can test/demo profile
 -- customization before Stripe billing is wired up. Safe to re-run.
 update public.profiles set is_premium = true where username = 'kydothecreator_6a67';

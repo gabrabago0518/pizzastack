@@ -9,10 +9,8 @@ export const metadata: Metadata = {
     "The rules for using Pizzastack.gg — your account, what you post (including highlight clips), copyright complaints, and our moderation rights.",
 };
 
-// TODO(owner): support@pizzastack.gg is a placeholder — point this at a real
-// inbox you actually monitor once the site is close to launch (this address
-// is also where copyright/IP complaints in section 6 get sent).
-const CONTACT_EMAIL = "support@pizzastack.gg";
+// Also where copyright/IP complaints in section 6 get sent.
+const CONTACT_EMAIL = "pizzastack@gmail.com";
 const GOVERNING_LAW = "the Republic of the Philippines";
 
 export default function TermsPage() {

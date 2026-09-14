@@ -9,10 +9,8 @@ export const metadata: Metadata = {
     "What Pizzastack.gg stores about you, which cookies we use, the third-party sites we pull verified rank data from, and your data rights.",
 };
 
-// TODO(owner): support@pizzastack.gg is a placeholder — point this at a real
-// inbox you actually monitor once the site is close to launch. It's also
-// the address data-subject and NPC-related requests below get sent to.
-const CONTACT_EMAIL = "support@pizzastack.gg";
+// Also the address data-subject and NPC-related requests below get sent to.
+const CONTACT_EMAIL = "pizzastack@gmail.com";
 
 export default function PrivacyPage() {
   return (

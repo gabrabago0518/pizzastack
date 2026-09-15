@@ -9,7 +9,7 @@ import type { AdminBadgeCounts } from "@/lib/queries";
 
 // The sidebar (admin/layout.tsx) is desktop-only (hidden below lg) — this
 // is its mobile stand-in, same Sheet primitive as the site's own
-// MobileNavMenu, so the admin section still has a way to switch pages on
+// NavMenu, so the admin section still has a way to switch pages on
 // a phone.
 export function AdminMobileNav({ counts }: { counts: AdminBadgeCounts }) {
   const [open, setOpen] = React.useState(false);

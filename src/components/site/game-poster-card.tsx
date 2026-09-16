@@ -8,18 +8,23 @@ interface PosterGame {
   cover_url: string | null;
 }
 
-// Neither Valorant nor Mobile Legends has a Steam listing, so there's no
-// equivalent official box-art URL for them the way there is for the
-// Steam-hosted games in schema.sql (cover_url pulls those straight from
-// Valve's CDN by app id) — hotlinking a scraped copy of someone else's
-// key art instead would be an unlicensed image on a site with no rights
-// to it. This gives those two (and anything else without a cover_url) a
-// brand-toned gradient instead of the site's default pink/purple one, so
-// the tile still reads as "this game" at a glance until real licensed
-// art is available to drop in as a cover_url.
+// None of Valorant, Mobile Legends, or Car Parking Multiplayer 1/2 has a
+// Steam listing, so there's no equivalent official box-art URL for them
+// the way there is for the Steam-hosted games in schema.sql (cover_url
+// pulls those straight from Valve's CDN by app id). Car Parking
+// Multiplayer's developer (Olzhass) has no public press kit either — the
+// only art that exists is Google Play/App Store listing images, which
+// aren't licensed for reuse on another site. Hotlinking a scraped copy of
+// any of this key art instead would be an unlicensed image on a site
+// with no rights to it. This gives those games (and anything else
+// without a cover_url) a brand-toned gradient instead of the site's
+// default pink/purple one, so the tile still reads as "this game" at a
+// glance until real licensed art is available to drop in as a cover_url.
 const BRAND_GRADIENTS: Record<string, string> = {
   valorant: "from-[#ff4655]/50 via-card to-black/60",
   "mobile-legends": "from-[#1560bd]/45 via-card to-[#f0a020]/35",
+  "car-parking-multiplayer": "from-[#ff8a00]/50 via-card to-black/60",
+  "car-parking-multiplayer-2": "from-[#ff8a00]/40 via-card to-[#1560bd]/30",
 };
 const DEFAULT_GRADIENT = "from-primary/25 via-card to-secondary/25";
 

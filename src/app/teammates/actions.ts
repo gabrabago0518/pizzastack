@@ -41,12 +41,27 @@ export async function createLfgPost(
 
   // Meetup games (Car Parking Multiplayer 1/2 — see meetup-games.ts) have
   // no rank/role/mode/capacity concept at all: just a title, a server ID
-  // so other players can find the room, and an optional description.
-  // Short-circuits before any of the normal fields are even read.
+  // so other players can find the room, an optional meetup time, and an
+  // optional description. Short-circuits before any of the normal fields
+  // are even read.
   if (game && (MEETUP_GAME_SLUGS as readonly string[]).includes(game.slug)) {
     const serverId = String(formData.get("serverId") ?? "").trim();
     if (!serverId) {
       return { error: "Enter the server ID so other players can find the room." };
+    }
+
+    // <input type="datetime-local"> has no timezone of its own — new Date()
+    // reads it in the server's local time, same as the browser did when
+    // showing it back, so it round-trips as the wall-clock time the poster
+    // actually picked.
+    const scheduledAtRaw = String(formData.get("scheduledAt") ?? "").trim();
+    let scheduledAt: string | null = null;
+    if (scheduledAtRaw) {
+      const parsed = new Date(scheduledAtRaw);
+      if (Number.isNaN(parsed.getTime())) {
+        return { error: "That date/time doesn't look right." };
+      }
+      scheduledAt = parsed.toISOString();
     }
 
     const { error } = await supabase.from("lfg_posts").insert({
@@ -55,6 +70,7 @@ export async function createLfgPost(
       title,
       description: description || null,
       server_id: serverId,
+      scheduled_at: scheduledAt,
       mode: null,
       rank: null,
       region: null,

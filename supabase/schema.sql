@@ -373,6 +373,13 @@ alter table public.lfg_posts
 alter table public.lfg_posts
   add column if not exists server_id text;
 
+-- scheduled_at: an optional "meet at this time" for a listing — currently
+-- only offered on the meetup-game form (see lfg-form.tsx), but stored as
+-- a plain nullable timestamp rather than folded into the meetup-only
+-- fields above, so nothing stops it being offered more broadly later.
+alter table public.lfg_posts
+  add column if not exists scheduled_at timestamptz;
+
 -- request_count: total join requests ever received (any status), kept in
 -- sync by the trigger below — a simple "how much interest has this
 -- listing gotten" signal for sorting by "Most requested" on /teammates,

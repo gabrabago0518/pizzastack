@@ -214,15 +214,22 @@ export function LfgForm({
       </div>
 
       {isMeetup ? (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="serverId">Server ID</Label>
-          <Input
-            id="serverId"
-            name="serverId"
-            required
-            placeholder="The room/server code other players join"
-          />
-        </div>
+        <>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="serverId">Server ID</Label>
+            <Input
+              id="serverId"
+              name="serverId"
+              required
+              placeholder="The room/server code other players join"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="scheduledAt">Date &amp; time (optional)</Label>
+            <Input id="scheduledAt" name="scheduledAt" type="datetime-local" />
+          </div>
+        </>
       ) : null}
 
       <div className="flex flex-col gap-1.5">

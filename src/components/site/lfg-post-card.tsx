@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MapPin, UserPlus, Flame, Hash, Server } from "lucide-react";
+import { Users, MapPin, UserPlus, Flame, Hash, Server, CalendarClock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { JoinRequestButton } from "@/components/site/join-request-button";
 import { PartyMembersManager } from "@/components/site/party-members-manager";
 import { ListingLoadingOverlay } from "@/components/site/listing-loading-overlay";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, formatScheduledTime } from "@/lib/utils";
 import { formatGameAccountId } from "@/lib/account-id";
 import type { LfgPostWithRelations, JoinRequestWithRequester } from "@/lib/supabase/types";
 
@@ -95,6 +95,12 @@ export function LfgPostCard({
             <span className="flex items-center gap-1.5" title="Server ID">
               <Server className="size-3.5" />
               {post.server_id}
+            </span>
+          ) : null}
+          {post.scheduled_at ? (
+            <span className="flex items-center gap-1.5">
+              <CalendarClock className="size-3.5" />
+              {formatScheduledTime(post.scheduled_at)}
             </span>
           ) : null}
           {post.region ? (

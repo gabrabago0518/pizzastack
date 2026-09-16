@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, MapPin, UserPlus, Clock, Hash, Server } from "lucide-react";
+import { ArrowLeft, Users, MapPin, UserPlus, Clock, Hash, Server, CalendarClock } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import {
   getJoinRequestsForPosts,
   getMessagesForPost,
 } from "@/lib/queries";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, formatScheduledTime } from "@/lib/utils";
 import { formatGameAccountId } from "@/lib/account-id";
 
 interface ListingPageProps {
@@ -136,6 +136,12 @@ export default async function ListingPage({ params }: ListingPageProps) {
                 <span className="flex items-center gap-1.5" title="Server ID">
                   <Server className="size-3.5" />
                   {post.server_id}
+                </span>
+              ) : null}
+              {post.scheduled_at ? (
+                <span className="flex items-center gap-1.5">
+                  <CalendarClock className="size-3.5" />
+                  {formatScheduledTime(post.scheduled_at)}
                 </span>
               ) : null}
               {post.region ? (

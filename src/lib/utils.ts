@@ -25,3 +25,18 @@ export function formatRelativeTime(isoDate: string) {
   }
   return "just now";
 }
+
+const scheduledTimeFormatter = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+// An absolute local date/time (e.g. "Sep 20, 3:00 PM") for a listing's
+// optional meetup time — formatRelativeTime reads wrong here since a
+// scheduled time is about the future, not "how long ago", and it may not
+// even be today.
+export function formatScheduledTime(isoDate: string) {
+  return scheduledTimeFormatter.format(new Date(isoDate));
+}

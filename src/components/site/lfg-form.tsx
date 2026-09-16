@@ -15,6 +15,7 @@ import { REGIONS } from "@/lib/regions";
 import { RANKS_BY_GAME, FALLBACK_RANKS, PLAYERS_NEEDED_OPTIONS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
 import { MODES_BY_GAME, FALLBACK_MODES, RANK_NOT_NEEDED_MODES } from "@/lib/modes";
+import { MEETUP_GAME_SLUGS } from "@/lib/meetup-games";
 import { getFormVerifiedRank } from "@/lib/verified-ranks";
 import { cn } from "@/lib/utils";
 import type { Game } from "@/lib/supabase/types";
@@ -80,6 +81,7 @@ export function LfgForm({
   const [selectedMode, setSelectedMode] = React.useState("");
 
   const selectedGame = games.find((game) => game.id === selectedGameId);
+  const isMeetup = Boolean(selectedGame && MEETUP_GAME_SLUGS.includes(selectedGame.slug));
   const rankNotNeeded = RANK_NOT_NEEDED_MODES.includes(selectedMode);
   const verifiedRank = getFormVerifiedRank(selectedGame?.slug, {
     dotaRankTier,
@@ -101,7 +103,7 @@ export function LfgForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className={cn("grid gap-4", !isMeetup && "sm:grid-cols-3")}>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="gameId">Game</Label>
           <SelectNative
@@ -124,68 +126,72 @@ export function LfgForm({
             ))}
           </SelectNative>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="mode">Mode</Label>
-          <SelectNative
-            id="mode"
-            name="mode"
-            required
-            disabled={!selectedGame}
-            value={selectedMode}
-            onChange={(event) => setSelectedMode(event.target.value)}
-          >
-            <option value="" disabled>
-              {selectedGame ? "Select a mode" : "Select a game first"}
-            </option>
-            {modeOptions.map((mode) => (
-              <option key={mode} value={mode}>
-                {mode}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rank">Rank</Label>
-          {rankNotNeeded ? (
-            <div className="flex h-9 items-center rounded-lg border border-input bg-muted/40 px-3.5 text-sm text-muted-foreground">
-              Not needed for {selectedMode}
+        {isMeetup ? null : (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="mode">Mode</Label>
+              <SelectNative
+                id="mode"
+                name="mode"
+                required
+                disabled={!selectedGame}
+                value={selectedMode}
+                onChange={(event) => setSelectedMode(event.target.value)}
+              >
+                <option value="" disabled>
+                  {selectedGame ? "Select a mode" : "Select a game first"}
+                </option>
+                {modeOptions.map((mode) => (
+                  <option key={mode} value={mode}>
+                    {mode}
+                  </option>
+                ))}
+              </SelectNative>
             </div>
-          ) : verifiedRank ? (
-            <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
-              {verifiedRank.available ? (
-                <>
-                  {selectedGame?.slug === "dota-2" ? (
-                    <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
-                  ) : null}
-                  {verifiedRank.label}
-                </>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="rank">Rank</Label>
+              {rankNotNeeded ? (
+                <div className="flex h-9 items-center rounded-lg border border-input bg-muted/40 px-3.5 text-sm text-muted-foreground">
+                  Not needed for {selectedMode}
+                </div>
+              ) : verifiedRank ? (
+                <div className="flex h-9 items-center gap-1.5 rounded-lg border border-input bg-muted/40 px-3.5 text-sm">
+                  {verifiedRank.available ? (
+                    <>
+                      {selectedGame?.slug === "dota-2" ? (
+                        <DotaRankIcon rankTier={dotaRankTier} className="size-5" />
+                      ) : null}
+                      {verifiedRank.label}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">Not verified</span>
+                  )}
+                </div>
               ) : (
-                <span className="text-muted-foreground">Not verified</span>
+                <SelectNative
+                  key={selectedGameId}
+                  id="rank"
+                  name="rank"
+                  required
+                  disabled={!selectedGame}
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    {selectedGame ? "Select a rank" : "Select a game first"}
+                  </option>
+                  {rankOptions.map((rank) => (
+                    <option key={rank} value={rank}>
+                      {rank}
+                    </option>
+                  ))}
+                </SelectNative>
               )}
             </div>
-          ) : (
-            <SelectNative
-              key={selectedGameId}
-              id="rank"
-              name="rank"
-              required
-              disabled={!selectedGame}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                {selectedGame ? "Select a rank" : "Select a game first"}
-              </option>
-              {rankOptions.map((rank) => (
-                <option key={rank} value={rank}>
-                  {rank}
-                </option>
-              ))}
-            </SelectNative>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
-      {blockedByUnverifiedRank ? (
+      {!isMeetup && blockedByUnverifiedRank ? (
         <p className="rounded-lg bg-muted/40 px-3.5 py-2.5 text-sm text-muted-foreground">
           {selectedGame?.name} rank is pulled from your connected Steam account.{" "}
           <Link href="/profile/settings" className="font-medium text-primary hover:underline">
@@ -201,9 +207,23 @@ export function LfgForm({
           id="title"
           name="title"
           required
-          placeholder="Need a 5th for ranked grind tonight"
+          placeholder={
+            isMeetup ? "Cruising the map, come say hi" : "Need a 5th for ranked grind tonight"
+          }
         />
       </div>
+
+      {isMeetup ? (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="serverId">Server ID</Label>
+          <Input
+            id="serverId"
+            name="serverId"
+            required
+            placeholder="The room/server code other players join"
+          />
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="description">Description (optional)</Label>
@@ -211,44 +231,52 @@ export function LfgForm({
           id="description"
           name="description"
           rows={4}
-          placeholder="What are you looking for? Playstyle, availability, voice chat, etc."
+          placeholder={
+            isMeetup
+              ? "Anything else players should know before joining."
+              : "What are you looking for? Playstyle, availability, voice chat, etc."
+          }
           className="flex w-full rounded-lg border border-input bg-transparent px-3.5 py-2.5 text-sm shadow-sm outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/40"
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label>Roles needed (optional)</Label>
-        <RolesPicker key={selectedGameId} options={roleOptions} disabled={!selectedGame} />
-      </div>
+      {isMeetup ? null : (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <Label>Roles needed (optional)</Label>
+            <RolesPicker key={selectedGameId} options={roleOptions} disabled={!selectedGame} />
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="playersNeeded">Players needed</Label>
-          <SelectNative id="playersNeeded" name="playersNeeded" required defaultValue="">
-            <option value="" disabled>
-              How many?
-            </option>
-            {PLAYERS_NEEDED_OPTIONS.map((count) => (
-              <option key={count} value={count}>
-                {count}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="region">Region</Label>
-          <SelectNative id="region" name="region" required defaultValue="">
-            <option value="" disabled>
-              Select a region
-            </option>
-            {REGIONS.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </SelectNative>
-        </div>
-      </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="playersNeeded">Players needed</Label>
+              <SelectNative id="playersNeeded" name="playersNeeded" required defaultValue="">
+                <option value="" disabled>
+                  How many?
+                </option>
+                {PLAYERS_NEEDED_OPTIONS.map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="region">Region</Label>
+              <SelectNative id="region" name="region" required defaultValue="">
+                <option value="" disabled>
+                  Select a region
+                </option>
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </SelectNative>
+            </div>
+          </div>
+        </>
+      )}
 
       {state.error ? (
         <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

@@ -310,7 +310,9 @@ insert into public.games (name, slug) values
   ('Rocket League', 'rocket-league'),
   ('Fortnite', 'fortnite'),
   ('Dota 2', 'dota-2'),
-  ('Mobile Legends: Bang Bang', 'mobile-legends')
+  ('Mobile Legends: Bang Bang', 'mobile-legends'),
+  ('Car Parking Multiplayer', 'car-parking-multiplayer'),
+  ('Car Parking Multiplayer 2', 'car-parking-multiplayer-2')
 on conflict (slug) do nothing;
 
 -- Poster art for the game-picker card grid on /teammates. Sourced from
@@ -344,19 +346,32 @@ create table if not exists public.lfg_posts (
 
 -- players_needed: added after the initial table. The default backfills any
 -- rows created before this field existed; the app always sends an explicit
--- value going forward.
+-- value going forward. Nullable — null means "no cap" (see the meetup
+-- games below, e.g. Car Parking Multiplayer, which have no room capacity
+-- concept at all), not "zero players".
 alter table public.lfg_posts
   add column if not exists players_needed smallint not null default 1;
+alter table public.lfg_posts
+  alter column players_needed drop not null;
 
 alter table public.lfg_posts
   drop constraint if exists lfg_posts_players_needed_check;
 alter table public.lfg_posts
-  add constraint lfg_posts_players_needed_check check (players_needed between 1 and 4);
+  add constraint lfg_posts_players_needed_check
+  check (players_needed is null or players_needed between 1 and 4);
 
 -- mode: game mode the listing is for (Unranked, Ranked, Turbo for Dota 2,
 -- etc. — see src/lib/modes.ts). Options depend on the selected game.
 alter table public.lfg_posts
   add column if not exists mode text;
+
+-- server_id: the in-game server/room code to join — only meaningful for
+-- meetup-style games with no rank/role/capacity concept at all (Car
+-- Parking Multiplayer 1/2, see src/lib/meetup-games.ts), where it's the
+-- one piece of info another player actually needs to show up. Null for
+-- every other game.
+alter table public.lfg_posts
+  add column if not exists server_id text;
 
 -- request_count: total join requests ever received (any status), kept in
 -- sync by the trigger below — a simple "how much interest has this
@@ -514,9 +529,12 @@ create policy "Requesters can cancel their own pending request"
 -- 'removed' row — there's currently no route for that, by design), and
 -- caps accepted members at the listing's players_needed so a listing that
 -- needs 1 more player can never end up with 2 (racing joins or a stale
--- UI). Locks the post row first (select ... for update) so two concurrent
--- joins on the same listing serialize instead of both reading the same
--- pre-join count and both succeeding.
+-- UI) — skipped entirely when players_needed is null, meaning the
+-- listing has no capacity at all (meetup games like Car Parking
+-- Multiplayer, see src/lib/meetup-games.ts). Locks the post row first
+-- (select ... for update) so two concurrent joins on the same listing
+-- serialize instead of both reading the same pre-join count and both
+-- succeeding.
 create or replace function public.enforce_lfg_join_rules()
 returns trigger
 language plpgsql
@@ -534,12 +552,14 @@ begin
     select players_needed into needed
       from public.lfg_posts where id = new.post_id for update;
 
-    select count(*) into accepted_count
-      from public.lfg_join_requests
-      where post_id = new.post_id and status = 'accepted' and id <> new.id;
+    if needed is not null then
+      select count(*) into accepted_count
+        from public.lfg_join_requests
+        where post_id = new.post_id and status = 'accepted' and id <> new.id;
 
-    if accepted_count >= needed then
-      raise exception 'This listing is already full.';
+      if accepted_count >= needed then
+        raise exception 'This listing is already full.';
+      end if;
     end if;
   end if;
   return new;

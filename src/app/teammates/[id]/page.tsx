@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, MapPin, UserPlus, Clock, Hash } from "lucide-react";
+import { ArrowLeft, Users, MapPin, UserPlus, Clock, Hash, Server } from "lucide-react";
 
 import { Section } from "@/components/site/section";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,11 @@ export async function generateMetadata({
   const details = [post.games?.name, post.mode, post.rank, post.region].filter(Boolean);
   const description =
     post.description ||
-    `${details.join(" · ")} — looking for ${post.players_needed} more player${
-      post.players_needed === 1 ? "" : "s"
-    } on Pizzastack.gg.`;
+    (post.players_needed === null
+      ? `${details.join(" · ")} — open meetup on Pizzastack.gg.`
+      : `${details.join(" · ")} — looking for ${post.players_needed} more player${
+          post.players_needed === 1 ? "" : "s"
+        } on Pizzastack.gg.`);
 
   return { title: post.title, description };
 }
@@ -130,6 +132,12 @@ export default async function ListingPage({ params }: ListingPageProps) {
                   {accountId}
                 </span>
               ) : null}
+              {post.server_id ? (
+                <span className="flex items-center gap-1.5" title="Server ID">
+                  <Server className="size-3.5" />
+                  {post.server_id}
+                </span>
+              ) : null}
               {post.region ? (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="size-3.5" />
@@ -138,13 +146,15 @@ export default async function ListingPage({ params }: ListingPageProps) {
               ) : null}
               <span
                 className={`flex items-center gap-1.5${
-                  acceptedMembers.length >= post.players_needed
+                  post.players_needed !== null && acceptedMembers.length >= post.players_needed
                     ? " font-medium text-foreground"
                     : ""
                 }`}
               >
                 <UserPlus className="size-3.5" />
-                {acceptedMembers.length}/{post.players_needed}
+                {post.players_needed === null
+                  ? `${acceptedMembers.length} joined`
+                  : `${acceptedMembers.length}/${post.players_needed}`}
               </span>
             </div>
 

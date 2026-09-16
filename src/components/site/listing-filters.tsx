@@ -7,6 +7,7 @@ import { RANKS_BY_GAME, FALLBACK_RANKS } from "@/lib/ranks";
 import { ROLES_BY_GAME, FALLBACK_ROLES } from "@/lib/roles";
 import { MODES_BY_GAME, FALLBACK_MODES } from "@/lib/modes";
 import { REGIONS } from "@/lib/regions";
+import { MEETUP_GAME_SLUGS } from "@/lib/meetup-games";
 
 function submitOnChange(event: ChangeEvent<HTMLSelectElement>) {
   event.currentTarget.form?.requestSubmit();
@@ -32,8 +33,12 @@ export function ListingFilters({
 }) {
   // Rank/Role/Mode are per-game option lists, so they only make sense once
   // a specific game is picked — "All games" has no single list to offer.
-  // Region is game-agnostic, so it's always shown.
-  const isSpecificGame = gameSlug !== "all";
+  // Region is game-agnostic, so it's normally always shown — except for
+  // meetup games (Car Parking Multiplayer 1/2), which have none of these
+  // fields on their listings at all, so filtering by any of them would
+  // never match anything.
+  const isMeetup = (MEETUP_GAME_SLUGS as readonly string[]).includes(gameSlug);
+  const isSpecificGame = gameSlug !== "all" && !isMeetup;
   const rankOptions = RANKS_BY_GAME[gameSlug] ?? FALLBACK_RANKS;
   const roleOptions = ROLES_BY_GAME[gameSlug] ?? FALLBACK_ROLES;
   const modeOptions = MODES_BY_GAME[gameSlug] ?? FALLBACK_MODES;
@@ -107,20 +112,22 @@ export function ListingFilters({
         </>
       ) : null}
 
-      <SelectNative
-        name="region"
-        defaultValue={region ?? ""}
-        onChange={submitOnChange}
-        aria-label="Filter by region"
-        className="w-auto min-w-36"
-      >
-        <option value="">All regions</option>
-        {REGIONS.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </SelectNative>
+      {isMeetup ? null : (
+        <SelectNative
+          name="region"
+          defaultValue={region ?? ""}
+          onChange={submitOnChange}
+          aria-label="Filter by region"
+          className="w-auto min-w-36"
+        >
+          <option value="">All regions</option>
+          {REGIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </SelectNative>
+      )}
 
       {hasActiveFilter ? (
         <Link

@@ -74,7 +74,14 @@ export async function getTopHeroesForProfile(profileId: string): Promise<TopHero
 // app goes through, so narrowing it here is enough to hide the rest from
 // every dropdown without touching the data. Add a slug back here to
 // re-offer that game.
-export const SUPPORTED_GAME_SLUGS = ["dota-2", "valorant", "mobile-legends", "cs2"] as const;
+export const SUPPORTED_GAME_SLUGS = [
+  "dota-2",
+  "valorant",
+  "mobile-legends",
+  "cs2",
+  "car-parking-multiplayer",
+  "car-parking-multiplayer-2",
+] as const;
 
 export async function getGames() {
   const supabase = await createClient();

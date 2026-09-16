@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, MapPin, UserPlus, Flame, Hash } from "lucide-react";
+import { Users, MapPin, UserPlus, Flame, Hash, Server } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ export function LfgPostCard({
 }) {
   const isOwner = viewerId === post.author_id;
   const isMember = isOwner || myRequestStatus === "accepted";
-  const isFull = partyMembers.length >= post.players_needed;
+  const isFull = post.players_needed !== null && partyMembers.length >= post.players_needed;
   const accountId = isMember ? formatGameAccountId(post.games?.slug, post.profiles) : null;
 
   return (
@@ -91,6 +91,12 @@ export function LfgPostCard({
               {accountId}
             </span>
           ) : null}
+          {post.server_id ? (
+            <span className="flex items-center gap-1.5" title="Server ID">
+              <Server className="size-3.5" />
+              {post.server_id}
+            </span>
+          ) : null}
           {post.region ? (
             <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5" />
@@ -107,7 +113,9 @@ export function LfgPostCard({
             className={`flex items-center gap-1.5${isFull ? " font-medium text-foreground" : ""}`}
           >
             <UserPlus className="size-3.5" />
-            {partyMembers.length}/{post.players_needed}
+            {post.players_needed === null
+              ? `${partyMembers.length} joined`
+              : `${partyMembers.length}/${post.players_needed}`}
           </span>
         </div>
 

@@ -189,8 +189,9 @@ export interface Database {
           rank: string | null;
           region: string | null;
           roles_needed: string[] | null;
-          players_needed: number;
+          players_needed: number | null;
           mode: string | null;
+          server_id: string | null;
           status: "open" | "closed";
           request_count: number;
           created_at: string;
@@ -203,8 +204,9 @@ export interface Database {
           rank?: string | null;
           region?: string | null;
           roles_needed?: string[] | null;
-          players_needed?: number;
+          players_needed?: number | null;
           mode?: string | null;
+          server_id?: string | null;
           status?: "open" | "closed";
         };
         Update: {
@@ -213,8 +215,9 @@ export interface Database {
           rank?: string | null;
           region?: string | null;
           roles_needed?: string[] | null;
-          players_needed?: number;
+          players_needed?: number | null;
           mode?: string | null;
+          server_id?: string | null;
           status?: "open" | "closed";
         };
         Relationships: [
